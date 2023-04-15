@@ -1,0 +1,33 @@
+[package]
+name = "rusty-dialemma"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers"] }
+embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
+embassy-rp = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "critical-section-impl", "unstable-pac", "time-driver", "unstable-traits", "pio", "nightly", "pio"] }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy", features = ["defmt-timestamp-uptime"] }
+embassy-usb = { git = "https://github.com/embassy-rs/embassy", features = ["defmt"] }
+embassy-usb-logger = { git = "https://github.com/embassy-rs/embassy" }
+
+cortex-m = { version = "0.7.6" }
+cortex-m-rt = "0.7.0"
+panic-probe = { version = "0.3", features = ["print-defmt"] }
+futures = { version = "0.3.17", default-features = false, features = ["async-await", "cfg-target-has-atomic", "unstable"] }
+byte-slice-cast = { version = "1.2.0", default-features = false }
+
+embedded-hal-1 = { package = "embedded-hal", version = "=1.0.0-alpha.10" }
+embedded-hal-async = "0.2.0-alpha.1"
+embedded-io = { version = "0.4.0", features = ["async", "defmt"] }
+static_cell = "1.0.0"
+log = "0.4"
+pio-proc = "0.2"
+pio = "0.2.1"
+defmt = "0.3.4"
+defmt-rtt = "0.4.0"
