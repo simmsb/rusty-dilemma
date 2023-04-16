@@ -36,11 +36,31 @@
             sha256 = "sha256-/De+QF3/xndFuAqyt7+Nl1EuqaJtRBQqPYRYVXPYC9U=";
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
-          embeddedStuffFilter = path: _type: builtins.match "memory.x$" path != null;
+          embeddedStuffFilter = path: _type: builtins.match ".*\\.x$" path != null;
           embeddedOrCargoStuff = path: type:
             (embeddedStuffFilter path type) || (craneLib.filterCargoSources path type);
-          crate = craneLib.buildPackage {
-            src = craneLib.path ./.;             doCheck = false;
+          bootloader = craneLib.buildPackage {
+            cargoExtraArgs = "--target thumbv6m-none-eabi";
+            src = lib.cleanSourceWith {
+              src = craneLib.path ./bootloader;
+              filter = embeddedOrCargoStuff;
+            };
+            doCheck = false;
+            buildInputs = [
+              # Add additional build inputs here
+            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+              # Additional darwin specific inputs can be set here
+              pkgs.libiconv
+            ];
+          };
+          firmware = profile: craneLib.buildPackage {
+            cargoExtraArgs = "--target thumbv6m-none-eabi";
+            CARGO_PROFILE = profile;
+            src = lib.cleanSourceWith {
+              src = craneLib.path ./firmware;
+              filter = embeddedOrCargoStuff;
+            };
+            doCheck = false;
             buildInputs = [
               # Add additional build inputs here
             ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
@@ -49,13 +69,23 @@
             ];
           };
         in
+        rec
         {
-          #          devShells.default = rusty-dialemma.devShell;
-          #          # packages.rusty-dialemma = rusty-dialemma.packages.release; 
-          packages.default = crate;
-          #          packages.binary = pkgs.runCommandLocal "kb.bin" {buildInputs = with pkgs; [llvm];} ''
-          #            llvm-objcopy -O binary ${rusty-dialemma.packages.release}/bin/rusty-dialemma $out
-          #          '';
+          devShells.default = pkgs.mkShell {
+            inputsFrom = [ (firmware "dev") ];
+            nativeBuildInputs = with pkgs; [ fenix.packages.${system}.rust-analyzer cargo-binutils picotool ];
+          };
+          packages.default = firmware "release";
+          packages.dev = firmware "dev";
+          packages.bootloader = bootloader;
+          packages.binary = pkgs.runCommandLocal "kb.bin" { } ''
+            mkdir -p $out
+            cp ${packages.default}/bin/rusty-dialemma $out/rusty-dialemma.elf
+          '';
+          packages.bootloader-binary = pkgs.runCommandLocal "kb.bin" { } ''
+            mkdir -p $out
+            cp ${packages.bootloader}/bin/rusty-dialemma-boot $out/rusty-dialemma-boot.elf
+          '';
         };
     };
 }

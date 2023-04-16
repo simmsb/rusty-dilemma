@@ -1,0 +1,16 @@
+[package]
+name = "rusty-dialemma-boot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+embassy-rp = { git = "https://github.com/embassy-rs/embassy", default-features = false, features = ["nightly"] }
+embassy-time = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
+embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", default-features = false }
+
+cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+cortex-m-rt = { version = "0.7" }
+embedded-storage = "0.3.0"
+embedded-storage-async = "0.4.0"
