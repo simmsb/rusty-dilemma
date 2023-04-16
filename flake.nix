@@ -2,10 +2,16 @@
   description = "things";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
 
-    nci.url = "github:yusdacra/nix-cargo-integration";
-    nci.inputs.nixpkgs.follows = "nixpkgs";
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     parts.url = "github:hercules-ci/flake-parts";
     parts.inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -14,48 +20,42 @@
   outputs =
     inputs@{ self
     , nixpkgs
-    , flake-utils
-    , nci
+    , crane
+    , fenix
     , parts
     , ...
     }:
     parts.lib.mkFlake { inherit inputs; } {
       systems = nixpkgs.lib.systems.flakeExposed;
       imports = [
-        nci.flakeModule
       ];
-      perSystem = { config, pkgs, system, ... }:
+      perSystem = { config, pkgs, system, lib, ... }:
         let
-          outputs = config.nci.outputs;
-          rusty-dialemma = outputs."rusty-dialemma";
-#          requiredOverrides = with pkgs; { extraDeps ? [ ], envVars ? { } }: old: {
-#            nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
-#              pkg-config
-#            ];
-#            buildInputs = extraDeps ++ (old.buildInputs or [ ]) ++ [
-#              libiconv
-#            ] ++ lib.optionals stdenv.isDarwin [
-#              darwin.apple_sdk.frameworks.Security
-#            ];
-#          } // envVars;
-#          cratesCfg = { extraDeps ? [ ], extraAttrs ? { }, envVars ? { } }: {
-#            overrides = {
-#              add-inputs.overrideAttrs = requiredOverrides { inherit extraDeps envVars; };
-#            };
-#          } // extraAttrs;
+          toolchain = fenix.packages.${system}.fromToolchainFile {
+            file = ./rust-toolchain.toml;
+            sha256 = "sha256-/De+QF3/xndFuAqyt7+Nl1EuqaJtRBQqPYRYVXPYC9U=";
+          };
+          craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
+          embeddedStuffFilter = path: _type: builtins.match "memory.x$" path != null;
+          embeddedOrCargoStuff = path: type:
+            (embeddedStuffFilter path type) || (craneLib.filterCargoSources path type);
+          crate = craneLib.buildPackage {
+            src = craneLib.path ./.;             doCheck = false;
+            buildInputs = [
+              # Add additional build inputs here
+            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
+              # Additional darwin specific inputs can be set here
+              pkgs.libiconv
+            ];
+          };
         in
         {
-          nci.projects."rusty-dialemma".relPath = "";
-          nci.crates = {
-            "rusty-dialemma" = {};
-          };
-
-          devShells.default = rusty-dialemma.devShell;
-          # packages.rusty-dialemma = rusty-dialemma.packages.release; 
-          packages.default = rusty-dialemma.packages.release; 
-          packages.binary = pkgs.runCommandLocal "kb.bin" {buildInputs = with pkgs; [llvm];} ''
-            llvm-objcopy -O binary ${rusty-dialemma.packages.release}/bin/rusty-dialemma $out
-          '';
+          #          devShells.default = rusty-dialemma.devShell;
+          #          # packages.rusty-dialemma = rusty-dialemma.packages.release; 
+          packages.default = crate;
+          #          packages.binary = pkgs.runCommandLocal "kb.bin" {buildInputs = with pkgs; [llvm];} ''
+          #            llvm-objcopy -O binary ${rusty-dialemma.packages.release}/bin/rusty-dialemma $out
+          #          '';
         };
     };
 }
