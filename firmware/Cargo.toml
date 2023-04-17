@@ -6,14 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+shared = { path = "../shared" }
 embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
 embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
 embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy", features = ["defmt", "unstable-pac", "time-driver", "unstable-traits", "pio", "nightly", "pio"] }
-embassy-sync = { git = "https://github.com/embassy-rs/embassy" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
 embassy-time = { git = "https://github.com/embassy-rs/embassy", features = ["defmt-timestamp-uptime"] }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy", features = ["defmt"] }
-embassy-usb-logger = { git = "https://github.com/embassy-rs/embassy" }
 embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy" }
 
 cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
@@ -32,3 +32,7 @@ pio = "0.2.1"
 defmt = "0.3.4"
 defmt-rtt = "0.4.0"
 heapless = "0.7.16"
+usbd-hid = "0.6.0"
+postcard = "1.0.4"
+serde = { version = "1.0.160", default-features = false, features = ["derive"] }
+once_cell = { version = "1.17.1", features = ["atomic-polyfill"], default-features = false }

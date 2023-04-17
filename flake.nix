@@ -32,7 +32,7 @@
       perSystem = { config, pkgs, system, lib, ... }:
         let
           toolchain = fenix.packages.${system}.fromToolchainFile {
-            file = ./rust-toolchain.toml;
+            file = ./firmware/rust-toolchain.toml;
             sha256 = "sha256-/De+QF3/xndFuAqyt7+Nl1EuqaJtRBQqPYRYVXPYC9U=";
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
