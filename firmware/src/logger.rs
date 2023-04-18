@@ -1,9 +1,9 @@
 use core::fmt::Write as _;
 
-use embassy_time::Duration;
 use log::{Metadata, Record};
 use shared::device_to_host::{DeviceToHost, MAX_LOG_LEN};
 
+use crate::messages::unreliable_msg;
 use crate::usb;
 use crate::utils::singleton;
 
@@ -35,14 +35,18 @@ struct Writer;
 
 impl core::fmt::Write for Writer {
     fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
-        let vec = heapless::Vec::from_slice(&s.as_bytes()[..MAX_LOG_LEN])
-            .ok()
-            .expect("Log slice was too big for vec");
-        let cmd = DeviceToHost::Log {
-            from_side: shared::side::KeyboardSide::Left,
-            msg: vec,
-        };
-        let _ = usb::COMMANDS_TO_HOST.try_send((cmd, Duration::from_millis(100)));
+        for chunk in s.as_bytes().chunks(MAX_LOG_LEN) {
+            let vec = heapless::Vec::from_slice(chunk)
+                .ok()
+                .expect("Log slice was too big for vec");
+
+            let cmd = DeviceToHost::Log {
+                from_side: shared::side::KeyboardSide::Left,
+                msg: vec,
+            };
+
+            let _ = usb::COMMANDS_TO_HOST.try_send(unreliable_msg(cmd));
+        }
         Ok(())
     }
 }

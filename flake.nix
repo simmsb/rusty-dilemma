@@ -32,33 +32,24 @@
       perSystem = { config, pkgs, system, lib, ... }:
         let
           toolchain = fenix.packages.${system}.fromToolchainFile {
-            file = ./firmware/rust-toolchain.toml;
-            sha256 = "sha256-/De+QF3/xndFuAqyt7+Nl1EuqaJtRBQqPYRYVXPYC9U=";
+            file = ./rust-toolchain.toml;
+            sha256 = "sha256-C9yOGqLuqT8wuqyALfKLYHsmSEEN9RjeL7cxsDy7rOM=";
           };
           craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
-          embeddedStuffFilter = path: _type: builtins.match ".*\\.x$" path != null;
-          embeddedOrCargoStuff = path: type:
-            (embeddedStuffFilter path type) || (craneLib.filterCargoSources path type);
-          bootloader = craneLib.buildPackage {
-            cargoExtraArgs = "--target thumbv6m-none-eabi";
-            src = lib.cleanSourceWith {
-              src = craneLib.path ./bootloader;
-              filter = embeddedOrCargoStuff;
-            };
-            doCheck = false;
-            buildInputs = [
-              # Add additional build inputs here
-            ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
-              # Additional darwin specific inputs can be set here
-              pkgs.libiconv
-            ];
-          };
-          firmware = profile: craneLib.buildPackage {
-            cargoExtraArgs = "--target thumbv6m-none-eabi";
+          package = { path, target ? "thumbv6m-none-eabi", args ? "", profile ? "release" }: craneLib.buildPackage {
+            cargoExtraArgs = "--target ${target} ${args}";
             CARGO_PROFILE = profile;
+            pname = "rusty-dialemma";
+            version = "0.1.0";
             src = lib.cleanSourceWith {
-              src = craneLib.path ./firmware;
-              filter = embeddedOrCargoStuff;
+              src = craneLib.path path;
+              filter =
+                let
+                  embeddedStuffFilter = path: _type: builtins.match ".*\\.x$" path != null;
+                  embeddedOrCargoStuff = path: type:
+                    (embeddedStuffFilter path type) || (craneLib.filterCargoSources path type);
+                in
+                embeddedOrCargoStuff;
             };
             doCheck = false;
             buildInputs = [
@@ -68,19 +59,26 @@
               pkgs.libiconv
             ];
           };
+          bootloader = package { path = ./bootloader; };
+          firmware = args: package (args // { path = ./.; });
         in
         rec
         {
           devShells.default = pkgs.mkShell {
-            inputsFrom = [ (firmware "dev") ];
+            inputsFrom = [ (firmware { args = "--lib"; profile = "dev"; }) ];
             nativeBuildInputs = with pkgs; [ fenix.packages.${system}.rust-analyzer cargo-binutils picotool ];
           };
-          packages.default = firmware "release";
-          packages.dev = firmware "dev";
+          packages.default = firmware { args = "--lib"; profile = "dev"; };
+          packages.left = firmware { args = "--bin left"; profile = "release"; };
+          packages.right = firmware { args = "--bin right"; profile = "release"; };
           packages.bootloader = bootloader;
-          packages.binary = pkgs.runCommandLocal "kb.bin" { } ''
+          packages.left-binary = pkgs.runCommandLocal "kb.bin" { } ''
             mkdir -p $out
-            cp ${packages.default}/bin/rusty-dialemma $out/rusty-dialemma.elf
+            cp ${packages.left}/bin/left $out/left.elf
+          '';
+          packages.right-binary = pkgs.runCommandLocal "kb.bin" { } ''
+            mkdir -p $out
+            cp ${packages.right}/bin/right $out/right.elf
           '';
           packages.bootloader-binary = pkgs.runCommandLocal "kb.bin" { } ''
             mkdir -p $out

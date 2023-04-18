@@ -5,13 +5,18 @@ use defmt::debug;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, defmt::Format, Debug)]
+pub enum Reliabilty {
+    Reliable { uuid: u8, csum: u8 },
+    Unreliable,
+}
+
+#[derive(Serialize, Deserialize, defmt::Format, Debug)]
 pub struct Command<T> {
-    pub uuid: u8,
-    pub csum: u8,
+    pub reliability: Reliabilty,
     pub cmd: T,
 }
 
-pub fn csum<T: Hash>(v: T) -> u8 {
+pub fn calc_csum<T: Hash>(v: T) -> u8 {
     let mut hasher = StableHasher::new(fnv::FnvHasher::default());
     v.hash(&mut hasher);
     let checksum = hasher.finish();
@@ -22,35 +27,54 @@ pub fn csum<T: Hash>(v: T) -> u8 {
 }
 
 impl<T: Hash> Command<T> {
-    pub fn new(cmd: T) -> Self {
+    pub fn new_reliable(cmd: T) -> (Self, u8) {
         static UUID_GEN: AtomicU8 = AtomicU8::new(0);
         let uuid = UUID_GEN.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
-        let csum = csum((&cmd, uuid));
-        Self { uuid, csum, cmd }
+        let csum = calc_csum((&cmd, uuid));
+
+        (
+            Self {
+                reliability: Reliabilty::Reliable { uuid, csum },
+                cmd,
+            },
+            uuid,
+        )
+    }
+
+    pub fn new_unreliable(cmd: T) -> Self {
+        Self {
+            reliability: Reliabilty::Unreliable,
+            cmd,
+        }
     }
 
     /// validate the data of the command
     /// though the data will probably fail to deserialize if it has been corrupted, this just makes sure
     pub fn validate(&self) -> bool {
-        let csum = csum((&self.cmd, self.uuid));
-        if csum == self.csum {
-            true
+        if let Reliabilty::Reliable { uuid, csum } = self.reliability {
+            let expected_csum = calc_csum((&self.cmd, uuid));
+            if csum == expected_csum {
+                true
+            } else {
+                debug!(
+                    "Invalid csum on {}, expected: {}, computed: {}",
+                    core::any::type_name::<Self>(),
+                    expected_csum,
+                    csum
+                );
+                false
+            }
         } else {
-            debug!(
-                "Invalid csum on {}, expected: {}, computed: {}",
-                core::any::type_name::<Self>(),
-                self.csum,
-                csum
-            );
-            false
+            true
         }
     }
 
-    pub fn ack(&self) -> Ack {
-        let csum = csum(self.uuid);
-        Ack {
-            uuid: self.uuid,
-            csum,
+    pub fn ack(&self) -> Option<Ack> {
+        if let Reliabilty::Reliable { uuid, .. } = self.reliability {
+            let csum = calc_csum(uuid);
+            Some(Ack { uuid, csum })
+        } else {
+            None
         }
     }
 }
@@ -70,7 +94,7 @@ pub enum CmdOrAck<T> {
 
 impl Ack {
     pub fn validate(self) -> Option<Self> {
-        let csum = csum(self.uuid);
+        let csum = calc_csum(self.uuid);
         if csum == self.csum {
             Some(self)
         } else {

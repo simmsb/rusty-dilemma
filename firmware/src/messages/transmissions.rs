@@ -2,10 +2,7 @@ use core::hash::Hash;
 use core::mem::MaybeUninit;
 use defmt::{debug, warn, Format};
 use embassy_sync::{
-    blocking_mutex::raw::ThreadModeRawMutex,
-    channel::Channel,
-    mutex::Mutex,
-    pubsub::Publisher,
+    blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex, pubsub::Publisher,
 };
 use embassy_time::{with_timeout, Duration};
 use futures::Future;
@@ -16,12 +13,14 @@ use shared::cmd::{CmdOrAck, Command};
 
 use crate::{event::Event, utils};
 
+use super::TransmittedMessage;
+
 const BUF_SIZE: usize = 128;
 
 heapless::arc_pool!(P: Event);
 
 pub fn init_pool() {
-    let memory: &'static mut [u8; 1024] = utils::singleton!([0u8; 1024]);
+    let memory: &'static mut [u8; 8192] = utils::singleton!([0u8; 8192]);
 
     P::grow(&mut memory[..]);
 }
@@ -92,8 +91,10 @@ where
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
                                     debug!("Received command: {:?}", c);
-                                    self.mix_chan.send(CmdOrAck::Ack(c.ack())).await;
-                                    self.out_chan.publish(c.cmd).await;
+                                    if let Some(ack) = c.ack() {
+                                        self.mix_chan.send(CmdOrAck::Ack(ack)).await;
+                                        self.out_chan.publish(c.cmd).await;
+                                    }
                                 } else {
                                     warn!("Corrupted parsed command: {:?}", c);
                                 }
@@ -145,10 +146,14 @@ where
 }
 
 impl<'a, T: Hash + Clone> EventSender<'a, T> {
-    async fn send(&self, cmd: T, timeout: Duration) {
+    async fn send_unreliable(&self, cmd: T) {
+        let cmd = Command::new_unreliable(cmd.clone());
+        self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
+    }
+
+    async fn send_reliable(&self, cmd: T, timeout: Duration) {
         loop {
-            let cmd = Command::new(cmd.clone());
-            let uuid = cmd.uuid;
+            let (cmd, uuid) = Command::new_reliable(cmd.clone());
             let waiter = self.register_waiter(uuid).await;
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
@@ -199,7 +204,7 @@ impl<'a, T, TX, RX> Eventer<T, TX, RX> {
         const PUBS: usize,
     >(
         &'s mut self,
-        cmd_chan: &'static Channel<ThreadModeRawMutex, (T, Duration), N>,
+        cmd_chan: &'static Channel<ThreadModeRawMutex, TransmittedMessage<T>, N>,
         out_chan: Publisher<'static, ThreadModeRawMutex, U, CAP, SUBS, PUBS>,
     ) -> (impl Future + 's, impl Future + 's, impl Future + 's)
     where
@@ -228,8 +233,12 @@ impl<'a, T, TX, RX> Eventer<T, TX, RX> {
 
         let sender_proc = async move {
             loop {
-                let (evt, timeout) = cmd_chan.recv().await;
-                let _ = sender.send(evt, timeout).await;
+                let TransmittedMessage { msg, timeout } = cmd_chan.recv().await;
+                if let Some(timeout) = timeout {
+                    let _ = sender.send_reliable(msg, timeout).await;
+                } else {
+                    let _ = sender.send_unreliable(msg).await;
+                }
             }
         };
 

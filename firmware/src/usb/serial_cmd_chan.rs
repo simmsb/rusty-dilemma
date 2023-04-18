@@ -4,20 +4,20 @@ use embassy_rp::peripherals::USB;
 use embassy_sync::channel::Channel;
 use embassy_sync::pipe::{Pipe, Reader, Writer};
 use embassy_sync::pubsub::PubSubChannel;
-use embassy_time::Duration;
 use embassy_usb::class::cdc_acm::{CdcAcmClass, Receiver, Sender, State};
 use embassy_usb::driver::Driver;
 use embassy_usb::Builder;
 use shared::device_to_host::DeviceToHost;
 use shared::host_to_device::HostToDevice;
 
+use crate::messages::TransmittedMessage;
 use crate::messages::transmissions::Eventer;
 use crate::utils;
 
 use super::MAX_PACKET_SIZE;
 
 pub static COMMANDS_FROM_HOST: PubSubChannel<CS, HostToDevice, 4, 4, 1> = PubSubChannel::new();
-pub static COMMANDS_TO_HOST: Channel<CS, (DeviceToHost, Duration), 4> = Channel::new();
+pub static COMMANDS_TO_HOST: Channel<CS, TransmittedMessage<DeviceToHost>, 8> = Channel::new();
 
 const BUF_SIZE: usize = 128;
 

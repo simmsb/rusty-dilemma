@@ -10,7 +10,7 @@ embassy-rp = { git = "https://github.com/embassy-rs/embassy", default-features =
 embassy-time = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
 embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", default-features = false }
 
-cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+cortex-m = { version = "0.7.6", features = ["critical-section-single-core", "inline-asm"] }
 cortex-m-rt = { version = "0.7" }
 embedded-storage = "0.3.0"
 embedded-storage-async = "0.4.0"

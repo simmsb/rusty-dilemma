@@ -313,7 +313,7 @@ checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 [[package]]
 name = "embassy-boot"
 version = "0.1.1"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "digest",
  "embassy-sync",
@@ -325,7 +325,7 @@ dependencies = [
 [[package]]
 name = "embassy-boot-rp"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "cfg-if",
  "cortex-m",
@@ -341,7 +341,7 @@ dependencies = [
 [[package]]
 name = "embassy-cortex-m"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "atomic-polyfill 1.0.2",
  "cfg-if",
@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "embassy-embedded-hal"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "embassy-sync",
  "embedded-hal 0.2.7",
@@ -370,7 +370,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor"
 version = "0.1.1"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "atomic-polyfill 1.0.2",
  "cortex-m",
@@ -384,12 +384,12 @@ dependencies = [
 [[package]]
 name = "embassy-futures"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 
 [[package]]
 name = "embassy-hal-common"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "defmt",
  "num-traits",
@@ -398,7 +398,7 @@ dependencies = [
 [[package]]
 name = "embassy-macros"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -409,12 +409,12 @@ dependencies = [
 [[package]]
 name = "embassy-net-driver"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 
 [[package]]
 name = "embassy-net-driver-channel"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "embassy-futures",
  "embassy-net-driver",
@@ -424,7 +424,7 @@ dependencies = [
 [[package]]
 name = "embassy-rp"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "atomic-polyfill 1.0.2",
  "cfg-if",
@@ -452,13 +452,13 @@ dependencies = [
  "pio",
  "pio-proc",
  "rand_core",
- "rp2040-pac2",
+ "rp-pac",
 ]
 
 [[package]]
 name = "embassy-sync"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "cfg-if",
  "critical-section",
@@ -470,7 +470,7 @@ dependencies = [
 [[package]]
 name = "embassy-time"
 version = "0.1.1"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "atomic-polyfill 1.0.2",
  "cfg-if",
@@ -485,7 +485,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "defmt",
  "embassy-futures",
@@ -500,7 +500,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb-driver"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#1fdce6e52a51de89f48f002d5c92139f58029575"
+source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
  "defmt",
 ]
@@ -830,9 +830,9 @@ checksum = "3304a64d199bb964be99741b7a14d26972741915b3649639149b2479bb46f4b5"
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d59d8c75012853d2e872fb56bc8a2e53718e2cafe1a4c823143141c6d90c322f"
+checksum = "3f508063cc7bb32987c71511216bd5a32be15bccb6a80b52df8b9d7f01fc3aa2"
 
 [[package]]
 name = "lock_api"
@@ -1136,9 +1136,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f162c6dd7b008981e4d40210aca20b4bd0f9b60ca9271061b07f78537722f2e1"
 
 [[package]]
-name = "rp2040-pac2"
-version = "0.1.0"
-source = "git+https://github.com/embassy-rs/rp2040-pac2?rev=017e3c9007b2d3b6965f0d85b5bf8ce3fa6d7364#017e3c9007b2d3b6965f0d85b5bf8ce3fa6d7364"
+name = "rp-pac"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d28d12e49c90ec20a3f0d98cdea6204fb4d7186ade6f8cc0a52c32aaf931692"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",

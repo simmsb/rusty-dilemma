@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::side::KeyboardSide;
 
-pub const MAX_LOG_LEN: usize = 64;
+pub const MAX_LOG_LEN: usize = 16;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, defmt::Format, Hash, Clone, Debug)]
 pub enum DeviceToHost {

@@ -24,11 +24,11 @@ impl State {
 
 pub fn setup_usb<'d, D: Driver<'d>>(driver: D, state: &'d mut State) -> Builder<'d, D> {
     // TODO: update these
-    let mut config = Config::new(0xc0de, 0xcafe);
-    config.manufacturer = Some("Embassy");
-    config.product = Some("USB-serial logger");
+    let mut config = Config::new(0xf000, 0xbaaa);
+    config.manufacturer = Some("Ben Simms");
+    config.product = Some("Memer");
     config.serial_number = None;
-    config.max_power = 100;
+    config.max_power = 500;
     config.max_packet_size_0 = MAX_PACKET_SIZE as u8;
 
     // Required for windows compatiblity.

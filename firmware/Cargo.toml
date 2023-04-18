@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "left"
+path = "src/bin/left.rs"
+
+[[bin]]
+name = "right"
+path = "src/bin/right.rs"
+
 [dependencies]
 shared = { path = "../shared" }
 embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
@@ -16,7 +24,7 @@ embassy-time = { git = "https://github.com/embassy-rs/embassy", features = ["def
 embassy-usb = { git = "https://github.com/embassy-rs/embassy", features = ["defmt"] }
 embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy" }
 
-cortex-m = { version = "0.7.6", features = ["critical-section-single-core"] }
+cortex-m = { version = "0.7.6", features = ["critical-section-single-core", "inline-asm"] }
 cortex-m-rt = "0.7.0"
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 futures = { version = "0.3.17", default-features = false, features = ["async-await", "cfg-target-has-atomic", "unstable"] }
