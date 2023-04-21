@@ -31,10 +31,18 @@
       ];
       perSystem = { config, pkgs, system, lib, ... }:
         let
-          toolchain = fenix.packages.${system}.fromToolchainFile {
+          arm-toolchain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
             sha256 = "sha256-C9yOGqLuqT8wuqyALfKLYHsmSEEN9RjeL7cxsDy7rOM=";
           };
+          native-toolchain = fenix.packages.${system}.complete.withComponents [
+            "cargo"
+            "clippy"
+            "rust-src"
+            "rustc"
+            "rustfmt"
+          ];
+          toolchain = fenix.packages.${system}.combine [ arm-toolchain native-toolchain ];
           craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
           package = { path, target ? "thumbv6m-none-eabi", args ? "", profile ? "release" }: craneLib.buildPackage {
             cargoExtraArgs = "--target ${target} ${args}";

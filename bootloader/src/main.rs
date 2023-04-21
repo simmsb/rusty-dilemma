@@ -5,6 +5,8 @@ use cortex_m_rt::{entry, exception};
 use embassy_boot_rp::*;
 use embassy_time::Duration;
 
+// TODO: for the actual keyboard this is 16mb
+// but for picos it's 2mb
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 
 #[entry]
