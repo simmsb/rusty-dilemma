@@ -24,7 +24,7 @@ impl log::Log for Logger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            let _ = write!(Writer, "{}\r\n", record.args());
+            let _ = write!(Writer, "{}", record.args());
         }
     }
 
