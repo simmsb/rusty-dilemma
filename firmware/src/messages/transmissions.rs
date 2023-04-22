@@ -33,7 +33,7 @@ pub struct Eventer<T, TX, RX> {
 }
 
 struct EventSender<'e, T> {
-    uuid_gen: atomic_polyfill::AtomicU8,
+    id_gen: atomic_polyfill::AtomicU8,
     mix_chan: &'e Channel<ThreadModeRawMutex, CmdOrAck<T>, 16>,
     waiters: &'e Mutex<ThreadModeRawMutex, heapless::FnvIndexMap<u8, Arc<P>, 128>>,
 }
@@ -104,7 +104,7 @@ where
                                 if let Some(a) = a.validate() {
                                     debug!("Received ack: {:?}", a);
                                     let mut waiters = self.waiters.lock().await;
-                                    if let Some(waker) = waiters.remove(&a.uuid) {
+                                    if let Some(waker) = waiters.remove(&a.id) {
                                         waker.set();
                                     }
                                 } else {
@@ -154,36 +154,36 @@ impl<'a, T: Hash + Clone> EventSender<'a, T> {
 
     async fn send_reliable(&self, cmd: T, timeout: Duration) {
         loop {
-            let uuid = self.uuid_gen.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
-            let cmd = Command::new_reliable(cmd.clone(), uuid);
-            let waiter = self.register_waiter(uuid).await;
+            let id = self.id_gen.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
+            let cmd = Command::new_reliable(cmd.clone(), id);
+            let waiter = self.register_waiter(id).await;
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
             match with_timeout(timeout, waiter.wait()).await {
                 Ok(_) => {
-                    debug!("Waiter for uuid {} completed", uuid);
+                    debug!("Waiter for id {} completed", id);
                     return;
                 }
                 Err(_) => {
-                    warn!("Waiter for uuid{} timing out", uuid);
-                    self.deregister_waiter(uuid).await;
+                    warn!("Waiter for id{} timing out", id);
+                    self.deregister_waiter(id).await;
                 }
             }
         }
     }
 
-    async fn register_waiter(&self, uuid: u8) -> Arc<P> {
+    async fn register_waiter(&self, id: u8) -> Arc<P> {
         let signal = P::alloc(Event::new()).unwrap();
         let mut waiters = self.waiters.lock().await;
-        if waiters.insert(uuid, signal.clone()).is_ok() {
+        if waiters.insert(id, signal.clone()).is_ok() {
             signal
         } else {
-            panic!("Duped waiter uuid")
+            panic!("Duped waiter id")
         }
     }
 
-    async fn deregister_waiter(&self, uuid: u8) {
-        self.waiters.lock().await.remove(&uuid);
+    async fn deregister_waiter(&self, id: u8) {
+        self.waiters.lock().await.remove(&id);
     }
 }
 
@@ -217,7 +217,7 @@ impl<'a, T, TX, RX> Eventer<T, TX, RX> {
         <TX as embedded_io::Io>::Error: Format,
     {
         let sender = EventSender {
-            uuid_gen: atomic_polyfill::AtomicU8::new(0),
+            id_gen: atomic_polyfill::AtomicU8::new(0),
             mix_chan: &self.mix_chan,
             waiters: &self.waiters,
         };

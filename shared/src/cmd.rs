@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, defmt::Format, Debug)]
 pub enum Reliabilty {
-    Reliable { uuid: u8, csum: u8 },
+    Reliable { id: u8, csum: u8 },
     Unreliable,
 }
 
@@ -29,11 +29,11 @@ pub fn calc_csum<T: Hash>(v: T) -> u8 {
 }
 
 impl<T: Hash> Command<T> {
-    pub fn new_reliable(cmd: T, uuid: u8) -> Self {
-        let csum = calc_csum((&cmd, uuid));
+    pub fn new_reliable(cmd: T, id: u8) -> Self {
+        let csum = calc_csum((&cmd, id));
 
         Self {
-            reliability: Reliabilty::Reliable { uuid, csum },
+            reliability: Reliabilty::Reliable { id, csum },
             cmd,
         }
     }
@@ -48,8 +48,8 @@ impl<T: Hash> Command<T> {
     /// validate the data of the command
     /// though the data will probably fail to deserialize if it has been corrupted, this just makes sure
     pub fn validate(&self) -> bool {
-        if let Reliabilty::Reliable { uuid, csum } = self.reliability {
-            let expected_csum = calc_csum((&self.cmd, uuid));
+        if let Reliabilty::Reliable { id, csum } = self.reliability {
+            let expected_csum = calc_csum((&self.cmd, id));
             if csum == expected_csum {
                 true
             } else {
@@ -67,9 +67,9 @@ impl<T: Hash> Command<T> {
     }
 
     pub fn ack(&self) -> Option<Ack> {
-        if let Reliabilty::Reliable { uuid, .. } = self.reliability {
-            let csum = calc_csum(uuid);
-            Some(Ack { uuid, csum })
+        if let Reliabilty::Reliable { id, .. } = self.reliability {
+            let csum = calc_csum(id);
+            Some(Ack { id, csum })
         } else {
             None
         }
@@ -78,7 +78,7 @@ impl<T: Hash> Command<T> {
 
 #[derive(Serialize, Deserialize, defmt::Format, Debug)]
 pub struct Ack {
-    pub uuid: u8,
+    pub id: u8,
     pub csum: u8,
 }
 
@@ -91,7 +91,7 @@ pub enum CmdOrAck<T> {
 
 impl Ack {
     pub fn validate(self) -> Option<Self> {
-        let csum = calc_csum(self.uuid);
+        let csum = calc_csum(self.id);
         if csum == self.csum {
             Some(self)
         } else {
