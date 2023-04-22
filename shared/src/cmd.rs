@@ -1,6 +1,8 @@
-use core::hash::{Hash, Hasher};
+use core::{
+    hash::{Hash, Hasher},
+    u8,
+};
 
-use atomic_polyfill::AtomicU8;
 use defmt::debug;
 use serde::{Deserialize, Serialize};
 
@@ -27,18 +29,13 @@ pub fn calc_csum<T: Hash>(v: T) -> u8 {
 }
 
 impl<T: Hash> Command<T> {
-    pub fn new_reliable(cmd: T) -> (Self, u8) {
-        static UUID_GEN: AtomicU8 = AtomicU8::new(0);
-        let uuid = UUID_GEN.fetch_add(1, core::sync::atomic::Ordering::SeqCst);
+    pub fn new_reliable(cmd: T, uuid: u8) -> Self {
         let csum = calc_csum((&cmd, uuid));
 
-        (
-            Self {
-                reliability: Reliabilty::Reliable { uuid, csum },
-                cmd,
-            },
-            uuid,
-        )
+        Self {
+            reliability: Reliabilty::Reliable { uuid, csum },
+            cmd,
+        }
     }
 
     pub fn new_unreliable(cmd: T) -> Self {

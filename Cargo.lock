@@ -1187,6 +1187,7 @@ checksum = "4f3208ce4d8448b3f3e7d168a73f5e0c43a61e32930de3bceeccedb388b6bf06"
 name = "rusty-dilemma"
 version = "0.1.0"
 dependencies = [
+ "atomic-polyfill 1.0.2",
  "byte-slice-cast",
  "cortex-m",
  "cortex-m-rt",
@@ -1268,7 +1269,6 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
- "atomic-polyfill 1.0.2",
  "defmt",
  "fnv",
  "heapless",

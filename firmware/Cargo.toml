@@ -44,3 +44,4 @@ usbd-hid = "0.6.0"
 postcard = "1.0.4"
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 once_cell = { version = "1.17.1", features = ["atomic-polyfill"], default-features = false }
+atomic-polyfill = "1.0.2"
