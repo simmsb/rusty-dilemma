@@ -100,17 +100,18 @@ where
                                     log::warn!("Corrupted parsed command: {:?}", c);
                                 }
                             }
-                            CmdOrAck::Ack(a) => {
-                                if let Some(a) = a.validate() {
+                            CmdOrAck::Ack(a) => match a.validate() {
+                                Ok(a) => {
                                     log::debug!("Received ack: {:?}", a);
                                     let mut waiters = self.waiters.lock().await;
                                     if let Some(waker) = waiters.remove(&a.id) {
                                         waker.set();
                                     }
-                                } else {
-                                    log::warn!("Corrupted parsed ack");
                                 }
-                            }
+                                Err(e) => {
+                                    log::warn!("Corrupted parsed ack: {:?}", e);
+                                }
+                            },
                         }
 
                         remaining

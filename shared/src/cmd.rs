@@ -88,13 +88,20 @@ pub enum CmdOrAck<T> {
     Ack(Ack),
 }
 
+#[derive(Debug)]
+pub struct AckValidationError {
+    pub id: u8,
+    pub expected_csum: u8,
+    pub given_csum: u8,
+}
+
 impl Ack {
-    pub fn validate(self) -> Option<Self> {
+    pub fn validate(self) -> Result<Self, AckValidationError> {
         let csum = calc_csum(self.id);
         if csum == self.csum {
-            Some(self)
+            Ok(self)
         } else {
-            None
+            Err(AckValidationError { id: self.id, expected_csum: self.csum, given_csum: csum })
         }
     }
 }
