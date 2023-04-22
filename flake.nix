@@ -47,7 +47,7 @@
           package = { path, target ? "thumbv6m-none-eabi", args ? "", profile ? "release" }: craneLib.buildPackage {
             cargoExtraArgs = "--target ${target} ${args}";
             CARGO_PROFILE = profile;
-            pname = "rusty-dialemma";
+            pname = "rusty-dilemma";
             version = "0.1.0";
             src = lib.cleanSourceWith {
               src = craneLib.path path;
@@ -90,7 +90,7 @@
           '';
           packages.bootloader-binary = pkgs.runCommandLocal "kb.bin" { } ''
             mkdir -p $out
-            cp ${packages.bootloader}/bin/rusty-dialemma-boot $out/rusty-dialemma-boot.elf
+            cp ${packages.bootloader}/bin/rusty-dilemma-boot $out/rusty-dilemma-boot.elf
           '';
         };
     };

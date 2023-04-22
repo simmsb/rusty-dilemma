@@ -7,5 +7,5 @@ use {defmt_rtt as _, panic_probe as _};
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    rusty_dialemma::main(spawner, shared::side::KeyboardSide::Left).await;
+    rusty_dilemma::main(spawner, shared::side::KeyboardSide::Left).await;
 }

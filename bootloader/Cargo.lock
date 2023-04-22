@@ -578,7 +578,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusty-dialemma-boot"
+name = "rusty-dilemma-boot"
 version = "0.1.0"
 dependencies = [
  "cortex-m",
