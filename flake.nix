@@ -69,6 +69,14 @@
           };
           bootloader = package { path = ./bootloader; };
           firmware = args: package (args // { path = ./.; });
+          elf = pkg: name: pkgs.runCommandLocal "mkelf" { } ''
+            mkdir -p $out
+            cp ${pkg}/bin/${name} $out/${name}.elf
+          '';
+          binary = pkg: name: pkgs.runCommandLocal "mkbinary" { buildInputs = [ pkgs.llvm ]; } ''
+            mkdir -p $out
+            llvm-objcopy -O binary ${pkg}/bin/${name} $out/${name}.bin
+          '';
         in
         rec
         {
@@ -80,18 +88,17 @@
           packages.left = firmware { args = "--bin left"; profile = "release"; };
           packages.right = firmware { args = "--bin right"; profile = "release"; };
           packages.bootloader = bootloader;
-          packages.left-binary = pkgs.runCommandLocal "kb.bin" { } ''
-            mkdir -p $out
-            cp ${packages.left}/bin/left $out/left.elf
-          '';
-          packages.right-binary = pkgs.runCommandLocal "kb.bin" { } ''
-            mkdir -p $out
-            cp ${packages.right}/bin/right $out/right.elf
-          '';
-          packages.bootloader-binary = pkgs.runCommandLocal "kb.bin" { } ''
-            mkdir -p $out
-            cp ${packages.bootloader}/bin/rusty-dilemma-boot $out/rusty-dilemma-boot.elf
-          '';
+          packages.binaries = pkgs.symlinkJoin {
+            name = "dilemma-binaries";
+            paths = [
+              (elf packages.left "left")
+              (elf packages.right "right")
+              (elf packages.bootloader "boot")
+              (binary packages.left "left")
+              (binary packages.right "right")
+              (binary packages.bootloader "boot")
+            ];
+          };
         };
     };
 }
