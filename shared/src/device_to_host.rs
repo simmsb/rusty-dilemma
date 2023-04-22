@@ -5,7 +5,7 @@ use crate::side::KeyboardSide;
 
 pub const MAX_LOG_LEN: usize = 32;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, defmt::Format, Hash, Clone, Debug)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
 pub enum DeviceToHost {
     Log {
         from_side: KeyboardSide,

@@ -226,48 +226,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "defmt"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "956673bd3cb347512bf988d1e8d89ac9a82b64f6eec54d3c01c3529dac019882"
-dependencies = [
- "bitflags",
- "defmt-macros",
-]
-
-[[package]]
-name = "defmt-macros"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82610855c67a4dc36299cc6bfcf140f329e4f013582531c7ba7d32512ddabc47"
-dependencies = [
- "defmt-parser",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "defmt-parser"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e15e994575e38332cf4a2dc9dc745ff6a65695d37a41e00efadd57fcd42c1ba4"
-dependencies = [
- "thiserror",
-]
-
-[[package]]
-name = "defmt-rtt"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "609923761264dd99ed9c7d209718cda4631c5fe84668e0f0960124cbb844c49f"
-dependencies = [
- "critical-section",
- "defmt",
-]
-
-[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -391,7 +349,6 @@ name = "embassy-hal-common"
 version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
- "defmt",
  "num-traits",
 ]
 
@@ -431,7 +388,6 @@ dependencies = [
  "cortex-m",
  "cortex-m-rt",
  "critical-section",
- "defmt",
  "embassy-cortex-m",
  "embassy-embedded-hal",
  "embassy-executor",
@@ -475,7 +431,6 @@ dependencies = [
  "atomic-polyfill 1.0.2",
  "cfg-if",
  "critical-section",
- "defmt",
  "embedded-hal 0.2.7",
  "embedded-hal-async",
  "futures-util",
@@ -487,7 +442,6 @@ name = "embassy-usb"
 version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
 dependencies = [
- "defmt",
  "embassy-futures",
  "embassy-net-driver-channel",
  "embassy-sync",
@@ -501,9 +455,6 @@ dependencies = [
 name = "embassy-usb-driver"
 version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy#a673b9aa294a55c441f3f61c48481484629b4347"
-dependencies = [
- "defmt",
-]
 
 [[package]]
 name = "embedded-hal"
@@ -545,9 +496,6 @@ name = "embedded-io"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef1a6892d9eef45c8fa6b9e0086428a2cca8491aca8f787c534a3d6d0bcb3ced"
-dependencies = [
- "defmt",
-]
 
 [[package]]
 name = "embedded-storage"
@@ -728,7 +676,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db04bc24a18b9ea980628ecf00e6c0264f3c1426dac36c00cb49b6fbad8b0743"
 dependencies = [
  "atomic-polyfill 0.1.11",
- "defmt",
  "hash32",
  "rustc_version 0.4.0",
  "serde",
@@ -920,13 +867,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "panic-probe"
-version = "0.3.1"
+name = "panic-reset"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa6fa5645ef5a760cd340eaa92af9c1ce131c8c09e7f8926d8a24b59d26652b9"
+checksum = "6cf1ff2a5b1a478dd94572aa43476b6630e72071cbd016985003ad3903a3a4f5"
 dependencies = [
  "cortex-m",
- "defmt",
 ]
 
 [[package]]
@@ -1191,8 +1137,6 @@ dependencies = [
  "byte-slice-cast",
  "cortex-m",
  "cortex-m-rt",
- "defmt",
- "defmt-rtt",
  "embassy-boot-rp",
  "embassy-embedded-hal",
  "embassy-executor",
@@ -1208,7 +1152,7 @@ dependencies = [
  "heapless",
  "log",
  "once_cell",
- "panic-probe",
+ "panic-reset",
  "pio",
  "pio-proc",
  "postcard",
@@ -1269,9 +1213,9 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
- "defmt",
  "fnv",
  "heapless",
+ "log",
  "serde",
 ]
 

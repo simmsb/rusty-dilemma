@@ -3,16 +3,15 @@ use core::{
     u8,
 };
 
-use defmt::debug;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, defmt::Format, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Reliabilty {
     Reliable { id: u8, csum: u8 },
     Unreliable,
 }
 
-#[derive(Serialize, Deserialize, defmt::Format, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Command<T> {
     pub reliability: Reliabilty,
     pub cmd: T,
@@ -53,7 +52,7 @@ impl<T: Hash> Command<T> {
             if csum == expected_csum {
                 true
             } else {
-                debug!(
+                log::debug!(
                     "Invalid csum on {}, expected: {}, computed: {}",
                     core::any::type_name::<Self>(),
                     expected_csum,
@@ -76,13 +75,13 @@ impl<T: Hash> Command<T> {
     }
 }
 
-#[derive(Serialize, Deserialize, defmt::Format, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Ack {
     pub id: u8,
     pub csum: u8,
 }
 
-#[derive(Serialize, Deserialize, defmt::Format, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[repr(u8)]
 pub enum CmdOrAck<T> {
     Cmd(Command<T>),

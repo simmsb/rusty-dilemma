@@ -43,13 +43,13 @@ pub async fn updater_task(watchdog: WATCHDOG, flash: FLASH) {
                     updater
                         .mark_updated_blocking(&mut flash, &mut aligned_buf.0[..1])
                         .unwrap();
-                    defmt::info!("Marked update, rebooting");
+                    log::info!("Marked update, rebooting");
                     Timer::after(Duration::from_millis(500)).await;
                     cortex_m::peripheral::SCB::sys_reset();
                 }
                 FWCmd::Prepare => {
                     writer = Some(updater.prepare_update_blocking(&mut flash).unwrap());
-                    defmt::info!("Prepping for update");
+                    log::info!("Prepping for update");
                 }
                 FWCmd::WriteChunk { offset, buf } => {
                     aligned_buf.0[..buf.len()].copy_from_slice(buf.as_slice());

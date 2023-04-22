@@ -8,7 +8,7 @@ use embassy_rp::peripherals::PIN_25;
 use embassy_rp::usb::Driver;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
-use {defmt_rtt as _, panic_probe as _};
+use panic_reset as _;
 
 pub mod event;
 pub mod fw_update;
@@ -36,6 +36,8 @@ async fn blinky(mut pin: Output<'static, PIN_25>) {
 
 pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let p = embassy_rp::init(Default::default());
+
+    log::info!("Hello!");
 
     side::init(side, detect_usb());
 

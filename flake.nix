@@ -82,7 +82,13 @@
         {
           devShells.default = pkgs.mkShell {
             inputsFrom = [ (firmware { args = "--lib"; profile = "dev"; }) ];
-            nativeBuildInputs = with pkgs; [ fenix.packages.${system}.rust-analyzer cargo-binutils picotool ];
+            nativeBuildInputs = with pkgs; [
+              fenix.packages.${system}.rust-analyzer
+              cargo-binutils
+              cargo-flash
+              #probe-run
+              picotool
+            ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
           packages.left = firmware { args = "--bin left"; profile = "release"; };
