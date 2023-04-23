@@ -50,13 +50,23 @@ impl log::Log for Logger {
         // defmt::debug!("Doing a log");
         if self.enabled(record.metadata()) {
             let mut tmp = heapless::String::<128>::new();
+            let _ = write!(&mut tmp, "{}\r\n", record.args());
+            let src = tmp.as_bytes();
             self.0.lock(|i| {
                 let mut i = i.borrow_mut();
-                let Ok(mut grant) = i.producer.grant_max_remaining(128) else { return };
+                let Ok(mut grant) = i.producer.grant_max_remaining(src.len()) else { return };
                 let buf = grant.buf();
-                let _ = write!(&mut tmp, "{}\r\n", record.args());
-                let write_len = tmp.as_bytes().len().min(buf.len());
-                buf[..write_len].copy_from_slice(&tmp.as_bytes()[..write_len]);
+                let write_len = src.len().min(buf.len());
+                buf[..write_len].copy_from_slice(&src[..write_len]);
+                grant.commit(write_len);
+
+                // do this again with any remaining in case we were at the end of the circular buffer
+                let src = &src[write_len..];
+
+                let Ok(mut grant) = i.producer.grant_max_remaining(src.len()) else { return };
+                let buf = grant.buf();
+                let write_len = src.len().min(buf.len());
+                buf[..write_len].copy_from_slice(&src[..write_len]);
                 grant.commit(write_len);
             });
         }
