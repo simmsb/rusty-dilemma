@@ -85,11 +85,11 @@ where
                     FeedResult::Consumed => break 'cobs,
                     FeedResult::OverFull(buf) => buf,
                     FeedResult::DeserError(buf) => {
-                        log::warn!(
-                            "Message decoder failed to deserialize a message of type {}: {:?}",
-                            core::any::type_name::<CmdOrAck<U>>(),
-                            buf
-                        );
+                        // log::debug!(
+                        //     "Message decoder failed to deserialize a message of type {}: {:?}",
+                        //     core::any::type_name::<CmdOrAck<U>>(),
+                        //     buf
+                        // );
                         buf
                     }
                     FeedResult::Success { data, remaining } => {
@@ -98,26 +98,24 @@ where
                         match data {
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
-                                    log::debug!("Received command: {:?}", c);
-                                    log::info!("Got a command");
                                     if let Some(ack) = c.ack() {
                                         self.mix_chan.send(CmdOrAck::Ack(ack)).await;
                                     }
                                     self.out_chan.publish(c.cmd).await;
                                 } else {
-                                    log::warn!("Corrupted parsed command: {:?}", c);
+                                    // log::debug!("Corrupted parsed command: {:?}", c);
                                 }
                             }
                             CmdOrAck::Ack(a) => match a.validate() {
                                 Ok(a) => {
-                                    log::debug!("Received ack: {:?}", a);
+                                    // log::debug!("Received ack: {:?}", a);
                                     let mut waiters = self.waiters.lock().await;
                                     if let Some(waker) = waiters.remove(&a.id) {
                                         waker.set();
                                     }
                                 }
                                 Err(e) => {
-                                    log::warn!("Corrupted parsed ack: {:?}", e);
+                                    // log::debug!("Corrupted parsed ack: {:?}", e);
                                 }
                             },
                         }
@@ -148,8 +146,8 @@ where
 
             let mut buf = [0u8; BUF_SIZE];
             if let Ok(buf) = postcard::to_slice_cobs(&val, &mut buf) {
-                let r = self.tx.write(buf).await;
-                log::debug!("Transmitted {:?}, r: {:?}", val, r);
+                let _r = self.tx.write(buf).await;
+                // log::debug!("Transmitted {:?}, r: {:?}", val, r);
             }
         }
     }
@@ -176,7 +174,7 @@ impl<'a, T: Hash + Clone> EventSender<'a, T> {
                     return;
                 }
                 Err(_) => {
-                    log::warn!("Waiter for id{} timing out", id);
+                    log::debug!("Waiter for id {} timing out", id);
                     self.deregister_waiter(id).await;
                 }
             }

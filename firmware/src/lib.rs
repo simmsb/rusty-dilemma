@@ -15,22 +15,25 @@ use panic_reset as _;
 use {defmt_rtt as _, panic_probe as _};
 
 #[cfg(feature = "probe")]
-use defmt::info;
-#[cfg(not(feature = "probe"))]
-use log::info;
+use defmt as log;
 
 pub mod event;
+#[cfg(feature = "bootloader")]
 pub mod fw_update;
 pub mod logger;
 pub mod messages;
 pub mod side;
 pub mod usb;
 pub mod utils;
+pub mod onewire;
+
+pub static VERSION: &str = "0.1.1";
 
 fn detect_usb() -> bool {
-    return true;
     let regs = embassy_rp::pac::USBCTRL_REGS;
-    unsafe { regs.sie_status().read().connected() }
+    let connected = unsafe { regs.sie_status().read().connected() };
+    log::info!("Usb connected? {}", connected);
+    connected
 }
 
 #[embassy_executor::task]
@@ -47,7 +50,7 @@ async fn blinky(mut pin: Output<'static, PIN_25>) {
 pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let p = embassy_rp::init(Default::default());
 
-    info!("Hello!");
+    ::log::info!("Hello! I am version: {}", VERSION);
 
     side::init(side, detect_usb());
 
@@ -57,11 +60,12 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
 
         usb::init(&spawner, usb_driver);
     } else {
-        info!("No usb connected");
+        log::info!("No usb connected");
     }
 
     logger::setup_logger();
     messages::init(&spawner);
+    #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
     spawner.must_spawn(blinky(Output::new(p.PIN_25, embassy_rp::gpio::Level::Low)));
@@ -70,7 +74,7 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     loop {
         counter += 1;
 
-        log::info!("Tick {}", counter);
+        ::log::info!("Tick {} {}", VERSION, counter);
 
         #[cfg(feature = "probe")]
         defmt::info!("Tick {}", counter);

@@ -28,6 +28,7 @@ pub async fn from_usb_distributor() {
         if is_this_side(msg.target_side) {
             match msg.msg {
                 HostToDeviceMsg::FWCmd(cmd) => {
+                    #[cfg(feature = "bootloader")]
                     crate::fw_update::FW_CMD_CHANNEL.send(cmd).await;
                 }
             }

@@ -2,6 +2,8 @@
 #![no_main]
 
 use cortex_m_rt::{entry, exception};
+#[cfg(feature = "defmt")]
+use defmt_rtt as _;
 use embassy_boot_rp::*;
 use embassy_time::Duration;
 
@@ -15,11 +17,9 @@ fn main() -> ! {
 
     // Uncomment this if you are debugging the bootloader with debugger/RTT attached,
     // as it prevents a hard fault when accessing flash 'too early' after boot.
-    /*
-    for i in 0..10000000 {
+    for _i in 0..10000000 {
         cortex_m::asm::nop();
     }
-    */
 
     let mut bl: BootLoader = BootLoader::default();
     let flash = WatchdogFlash::<FLASH_SIZE>::start(p.FLASH, p.WATCHDOG, Duration::from_secs(8));

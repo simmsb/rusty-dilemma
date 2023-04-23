@@ -91,18 +91,29 @@
             ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
-          packages.left = firmware { args = "--bin left"; profile = "release"; };
-          packages.right = firmware { args = "--bin right"; profile = "release"; };
+          packages.bl-left = firmware { args = "--bin left --features probe,bootloader"; profile = "release"; };
+          packages.left = firmware { args = "--bin left --features probe"; profile = "release"; };
+          packages.bl-right = firmware { args = "--bin right --features probe,bootloader"; profile = "release"; };
+          packages.right = firmware { args = "--bin right --features probe"; profile = "release"; };
           packages.bootloader = bootloader;
+          packages.bl-binaries = pkgs.symlinkJoin {
+            name = "dilemma-binaries";
+            paths = [
+              (elf packages.bl-left "left")
+              (elf packages.bl-right "right")
+              (elf packages.bootloader "boot")
+              (binary packages.bl-left "left")
+              (binary packages.bl-right "right")
+              (binary packages.bootloader "boot")
+            ];
+          };
           packages.binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
             paths = [
               (elf packages.left "left")
               (elf packages.right "right")
-              (elf packages.bootloader "boot")
               (binary packages.left "left")
               (binary packages.right "right")
-              (binary packages.bootloader "boot")
             ];
           };
         };

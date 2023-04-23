@@ -1,4 +1,3 @@
-#[cfg(not(feature = "probe"))]
 use embassy_boot_rp::{AlignedBuffer, FirmwareUpdater, Partition};
 use embassy_futures::select::{self, Either};
 use embassy_rp::flash::Flash;
@@ -9,28 +8,24 @@ use embassy_sync::channel::Channel;
 use embassy_time::{Duration, Timer};
 use shared::fw::FWCmd;
 
+#[cfg(feature = "probe")]
+use defmt as log;
+
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 pub static FW_CMD_CHANNEL: Channel<ThreadModeRawMutex, FWCmd, 1> = Channel::new();
 
 #[embassy_executor::task]
 pub async fn updater_task(watchdog: WATCHDOG, flash: FLASH) {
-    #[cfg(not(feature = "probe"))]
     let mut watchdog = Watchdog::new(watchdog);
 
-    #[cfg(not(feature = "probe"))]
     watchdog.start(Duration::from_secs(8));
 
-    #[cfg(not(feature = "probe"))]
     let mut flash: Flash<_, FLASH_SIZE> = Flash::new(flash);
-    #[cfg(not(feature = "probe"))]
     let mut updater = FirmwareUpdater::default();
 
-    #[cfg(not(feature = "probe"))]
     let mut aligned_buf = AlignedBuffer([0; 32]);
-    #[cfg(not(feature = "probe"))]
     let mut writer: Option<Partition> = None;
 
-    #[cfg(not(feature = "probe"))]
     if updater
         .get_state_blocking(&mut flash, &mut aligned_buf.0[..1])
         .unwrap()
@@ -48,34 +43,30 @@ pub async fn updater_task(watchdog: WATCHDOG, flash: FLASH) {
         if let Either::First(msg) = select::select(r, t).await {
             match msg {
                 FWCmd::Commit => {
-                    // #[cfg(not(feature = "probe"))]
-                    // updater
-                    //     .mark_updated_blocking(&mut flash, &mut aligned_buf.0[..1])
-                    //     .unwrap();
+                    updater
+                        .mark_updated_blocking(&mut flash, &mut aligned_buf.0[..1])
+                        .unwrap();
                     log::info!("Marked update, rebooting");
                     Timer::after(Duration::from_millis(500)).await;
                     cortex_m::peripheral::SCB::sys_reset();
                 }
                 FWCmd::Prepare => {
-                    // #[cfg(not(feature = "probe"))]
-                    // {
-                    //     writer = Some(updater.prepare_update_blocking(&mut flash).unwrap());
-                    // }
+                    writer = Some(updater.prepare_update_blocking(&mut flash).unwrap());
                     log::info!("Prepping for update");
                 }
                 FWCmd::WriteChunk { offset, buf } => {
-                    // #[cfg(not(feature = "probe"))]
-                    // aligned_buf.0[..buf.len()].copy_from_slice(buf.as_slice());
-                    // #[cfg(not(feature = "probe"))]
-                    // if let Some(w) = &writer {
-                    //     w.write_blocking(&mut flash, offset, &aligned_buf.0)
-                    //         .unwrap();
-                    // }
+                    aligned_buf.0[..buf.len()].copy_from_slice(buf.as_slice());
+                    if let Some(w) = &writer {
+                        w.write_blocking(&mut flash, offset, &aligned_buf.0)
+                            .unwrap();
+                    } else {
+                        panic!("You didn't prep the update");
+                    }
+                    log::debug!("Applied update @ {}", offset);
                 }
             }
         }
 
-        #[cfg(not(feature = "probe"))]
         watchdog.feed();
     }
 }

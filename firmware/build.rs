@@ -6,7 +6,7 @@ use std::path::PathBuf;
 fn main() {
     // Put `memory.x` in our output directory and ensure it's
     // on the linker search path.
-    let memory_x = if env::var("CARGO_FEATURE_PROBE").is_err() {
+    let memory_x = if env::var("CARGO_FEATURE_BOOTLOADER").is_ok() {
         include_bytes!("memory.bootloader.x").as_slice()
     } else {
         include_bytes!("memory.x").as_slice()
@@ -28,8 +28,10 @@ fn main() {
 
     println!("cargo:rustc-link-arg-bins=--nmagic");
     println!("cargo:rustc-link-arg-bins=-Tlink.x");
-    if env::var("CARGO_FEATURE_PROBE").is_ok() {
+    if env::var("CARGO_FEATURE_BOOTLOADER").is_err() {
         println!("cargo:rustc-link-arg-bins=-Tlink-rp.x");
+    }
+    if env::var("CARGO_FEATURE_PROBE").is_ok() {
         println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
     }
 }

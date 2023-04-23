@@ -46,8 +46,6 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &Record) {
-        // #[cfg(feature = "probe")]
-        // defmt::debug!("Doing a log");
         if self.enabled(record.metadata()) {
             let mut tmp = heapless::String::<128>::new();
             let _ = write!(&mut tmp, "{}\r\n", record.args());
@@ -71,14 +69,12 @@ impl log::Log for Logger {
             });
         }
         self.flush();
-        // #[cfg(feature = "probe")]
-        // defmt::debug!("Done a log");
     }
 
     fn flush(&self) {
         self.0.lock(|i| {
             let mut i = i.borrow_mut();
-            while let Ok(grant) = i.consumer.read() {
+            'outer: while let Ok(grant) = i.consumer.read() {
                 let mut emitted = 0;
                 for chunk in grant.buf().chunks(MAX_LOG_LEN) {
                     let vec = heapless::Vec::from_slice(chunk)
@@ -90,7 +86,8 @@ impl log::Log for Logger {
                     if messages::try_send_to_host(unreliable_msg(cmd)).is_some() {
                         emitted += chunk.len();
                     } else {
-                        break;
+                        grant.release(emitted);
+                        break 'outer;
                     }
                 }
                 grant.release(emitted);
