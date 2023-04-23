@@ -1,21 +1,44 @@
-use core::fmt::Write as _;
+use core::cell::RefCell;
+use core::fmt::Write;
 
+use bbqueue::{BBBuffer, Consumer, Producer};
+use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
+use embassy_sync::blocking_mutex::Mutex;
 use log::{Metadata, Record};
-use shared::device_to_host::{DeviceToHost, MAX_LOG_LEN};
+use shared::device_to_host::{DeviceToHostMsg, MAX_LOG_LEN};
 
-use crate::messages::unreliable_msg;
-use crate::usb;
+use crate::messages::{self, unreliable_msg};
 use crate::utils::singleton;
 
+static BB: BBBuffer<256> = BBBuffer::new();
+
 pub fn setup_logger() {
-    let logger: &mut Logger = singleton!(Logger);
+    let logger: &mut Logger = singleton!(Logger::init());
     let logger = logger as &dyn log::Log;
     unsafe {
         let _ = log::set_logger_racy(logger).map(|()| log::set_max_level(log::LevelFilter::Info));
     }
 }
 
-struct Logger;
+struct LoggerInner {
+    producer: Producer<'static, 256>,
+    consumer: Consumer<'static, 256>,
+}
+
+struct Logger(Mutex<ThreadModeRawMutex, RefCell<LoggerInner>>);
+
+impl Logger {
+    fn init() -> Self {
+        let (p, c) = BB.try_split().unwrap();
+
+        let inner = LoggerInner {
+            producer: p,
+            consumer: c,
+        };
+
+        Self(Mutex::new(RefCell::new(inner)))
+    }
+}
 
 impl log::Log for Logger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
@@ -23,30 +46,45 @@ impl log::Log for Logger {
     }
 
     fn log(&self, record: &Record) {
+        // #[cfg(feature = "probe")]
+        // defmt::debug!("Doing a log");
         if self.enabled(record.metadata()) {
-            let _ = write!(Writer, "{}\r\n", record.args());
+            let mut tmp = heapless::String::<128>::new();
+            self.0.lock(|i| {
+                let mut i = i.borrow_mut();
+                let Ok(mut grant) = i.producer.grant_max_remaining(128) else { return };
+                let buf = grant.buf();
+                let _ = write!(&mut tmp, "{}\r\n", record.args());
+                let write_len = tmp.as_bytes().len().min(buf.len());
+                buf[..write_len].copy_from_slice(&tmp.as_bytes()[..write_len]);
+                grant.commit(write_len);
+            });
         }
+        self.flush();
+        // #[cfg(feature = "probe")]
+        // defmt::debug!("Done a log");
     }
 
-    fn flush(&self) {}
-}
+    fn flush(&self) {
+        self.0.lock(|i| {
+            let mut i = i.borrow_mut();
+            while let Ok(grant) = i.consumer.read() {
+                let mut emitted = 0;
+                for chunk in grant.buf().chunks(MAX_LOG_LEN) {
+                    let vec = heapless::Vec::from_slice(chunk)
+                        .ok()
+                        .expect("Log slice was too big for vec");
 
-struct Writer;
+                    let cmd = DeviceToHostMsg::Log { msg: vec };
 
-impl core::fmt::Write for Writer {
-    fn write_str(&mut self, s: &str) -> Result<(), core::fmt::Error> {
-        for chunk in s.as_bytes().chunks(MAX_LOG_LEN) {
-            let vec = heapless::Vec::from_slice(chunk)
-                .ok()
-                .expect("Log slice was too big for vec");
-
-            let cmd = DeviceToHost::Log {
-                from_side: shared::side::KeyboardSide::Left,
-                msg: vec,
-            };
-
-            let _ = usb::COMMANDS_TO_HOST.try_send(unreliable_msg(cmd));
-        }
-        Ok(())
+                    if messages::try_send_to_host(unreliable_msg(cmd)).is_some() {
+                        emitted += chunk.len();
+                    } else {
+                        break;
+                    }
+                }
+                grant.release(emitted);
+            }
+        });
     }
 }

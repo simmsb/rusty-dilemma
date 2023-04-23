@@ -5,13 +5,20 @@ use core::{
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "defmt")]
+use defmt::debug;
+#[cfg(not(feature = "defmt"))]
+use log::debug;
+
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Reliabilty {
     Reliable { id: u8, csum: u8 },
     Unreliable,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Command<T> {
     pub reliability: Reliabilty,
     pub cmd: T,
@@ -52,7 +59,7 @@ impl<T: Hash> Command<T> {
             if csum == expected_csum {
                 true
             } else {
-                log::debug!(
+                debug!(
                     "Invalid csum on {}, expected: {}, computed: {}",
                     core::any::type_name::<Self>(),
                     expected_csum,
@@ -76,12 +83,14 @@ impl<T: Hash> Command<T> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Ack {
     pub id: u8,
     pub csum: u8,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CmdOrAck<T> {
     Cmd(Command<T>),
@@ -89,6 +98,7 @@ pub enum CmdOrAck<T> {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AckValidationError {
     pub id: u8,
     pub expected_csum: u8,
@@ -101,7 +111,11 @@ impl Ack {
         if csum == self.csum {
             Ok(self)
         } else {
-            Err(AckValidationError { id: self.id, expected_csum: self.csum, given_csum: csum })
+            Err(AckValidationError {
+                id: self.id,
+                expected_csum: self.csum,
+                given_csum: csum,
+            })
         }
     }
 }

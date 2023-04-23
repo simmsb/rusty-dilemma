@@ -1,14 +1,20 @@
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::pubsub::PubSubChannel;
-use embassy_time::Duration;
 use shared::device_to_device::DeviceToDevice;
+use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
 use shared::host_to_device::HostToDeviceMsg;
 
-use crate::side::is_this_side;
+use crate::side::{self, is_this_side};
+use crate::usb;
 
-pub static COMMANDS_TO_OTHER_SIDE: Channel<ThreadModeRawMutex, (DeviceToDevice, Duration), 4> =
-    Channel::new();
+use super::{reliable_msg, TransmittedMessage};
+
+pub static COMMANDS_TO_OTHER_SIDE: Channel<
+    ThreadModeRawMutex,
+    TransmittedMessage<DeviceToDevice>,
+    4,
+> = Channel::new();
 pub static COMMANDS_FROM_HOST: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 4, 4, 1> =
     PubSubChannel::new();
 
@@ -27,11 +33,44 @@ pub async fn from_usb_distributor() {
             }
         } else {
             COMMANDS_TO_OTHER_SIDE
-                .send((
-                    DeviceToDevice::Forwarded(msg.msg),
-                    Duration::from_millis(50),
-                ))
+                .send(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg)))
                 .await;
         }
+    }
+}
+
+pub async fn send_to_host(
+    TransmittedMessage { msg, timeout }: TransmittedMessage<DeviceToHostMsg>,
+) {
+    let side = side::get_side();
+    let msg = DeviceToHost {
+        from_side: side,
+        msg,
+    };
+    if side::this_side_has_usb() {
+        let msg = TransmittedMessage { msg, timeout };
+        usb::COMMANDS_TO_HOST.send(msg).await;
+    } else {
+        let msg = DeviceToDevice::ForwardedToHost(msg);
+        let msg = TransmittedMessage { msg, timeout };
+        COMMANDS_TO_OTHER_SIDE.send(msg).await;
+    }
+}
+
+pub fn try_send_to_host(
+    TransmittedMessage { msg, timeout }: TransmittedMessage<DeviceToHostMsg>,
+) -> Option<()> {
+    let side = side::get_side();
+    let msg = DeviceToHost {
+        from_side: side,
+        msg,
+    };
+    if side::this_side_has_usb() {
+        let msg = TransmittedMessage { msg, timeout };
+        usb::COMMANDS_TO_HOST.try_send(msg).ok()
+    } else {
+        let msg = DeviceToDevice::ForwardedToHost(msg);
+        let msg = TransmittedMessage { msg, timeout };
+        COMMANDS_TO_OTHER_SIDE.try_send(msg).ok()
     }
 }

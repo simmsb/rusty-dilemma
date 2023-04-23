@@ -4,6 +4,8 @@ use embassy_time::Duration;
 pub mod distributors;
 pub mod transmissions;
 
+pub use distributors::{send_to_host, try_send_to_host};
+
 pub fn init(spawner: &Spawner) {
     transmissions::init_pool();
 
@@ -16,11 +18,17 @@ pub struct TransmittedMessage<T> {
 }
 
 pub fn low_latency_msg<T>(msg: T) -> TransmittedMessage<T> {
-    TransmittedMessage { msg, timeout: Some(Duration::from_millis(2)) }
+    TransmittedMessage {
+        msg,
+        timeout: Some(Duration::from_millis(2)),
+    }
 }
 
 pub fn reliable_msg<T>(msg: T) -> TransmittedMessage<T> {
-    TransmittedMessage { msg, timeout: Some(Duration::from_millis(20)) }
+    TransmittedMessage {
+        msg,
+        timeout: Some(Duration::from_millis(20)),
+    }
 }
 
 pub fn unreliable_msg<T>(msg: T) -> TransmittedMessage<T> {

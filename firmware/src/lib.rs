@@ -1,5 +1,5 @@
 #![no_std]
-#![feature(type_alias_impl_trait)]
+#![feature(type_alias_impl_trait, trait_alias)]
 
 use embassy_executor::Spawner;
 use embassy_rp::gpio::Output;
@@ -8,7 +8,16 @@ use embassy_rp::peripherals::PIN_25;
 use embassy_rp::usb::Driver;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
+
+#[cfg(not(feature = "probe"))]
 use panic_reset as _;
+#[cfg(feature = "probe")]
+use {defmt_rtt as _, panic_probe as _};
+
+#[cfg(feature = "probe")]
+use defmt::info;
+#[cfg(not(feature = "probe"))]
+use log::info;
 
 pub mod event;
 pub mod fw_update;
@@ -19,6 +28,7 @@ pub mod usb;
 pub mod utils;
 
 fn detect_usb() -> bool {
+    return true;
     let regs = embassy_rp::pac::USBCTRL_REGS;
     unsafe { regs.sie_status().read().connected() }
 }
@@ -37,14 +47,18 @@ async fn blinky(mut pin: Output<'static, PIN_25>) {
 pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let p = embassy_rp::init(Default::default());
 
-    log::info!("Hello!");
+    info!("Hello!");
 
     side::init(side, detect_usb());
 
-    let irq = interrupt::take!(USBCTRL_IRQ);
-    let usb_driver = Driver::new(p.USB, irq);
+    if side::this_side_has_usb() {
+        let irq = interrupt::take!(USBCTRL_IRQ);
+        let usb_driver = Driver::new(p.USB, irq);
 
-    usb::init(&spawner, usb_driver);
+        usb::init(&spawner, usb_driver);
+    } else {
+        info!("No usb connected");
+    }
 
     logger::setup_logger();
     messages::init(&spawner);
@@ -55,7 +69,12 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let mut counter = 0;
     loop {
         counter += 1;
+
         log::info!("Tick {}", counter);
+
+        #[cfg(feature = "probe")]
+        defmt::info!("Tick {}", counter);
+
         Timer::after(Duration::from_secs(1)).await;
     }
 }

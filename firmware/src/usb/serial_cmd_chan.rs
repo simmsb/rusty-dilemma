@@ -10,14 +10,14 @@ use embassy_usb::Builder;
 use shared::device_to_host::DeviceToHost;
 use shared::host_to_device::HostToDevice;
 
-use crate::messages::TransmittedMessage;
 use crate::messages::transmissions::Eventer;
+use crate::messages::TransmittedMessage;
 use crate::utils;
 
 use super::MAX_PACKET_SIZE;
 
 pub static COMMANDS_FROM_HOST: PubSubChannel<CS, HostToDevice, 4, 4, 1> = PubSubChannel::new();
-pub static COMMANDS_TO_HOST: Channel<CS, TransmittedMessage<DeviceToHost>, 8> = Channel::new();
+pub static COMMANDS_TO_HOST: Channel<CS, TransmittedMessage<DeviceToHost>, 16> = Channel::new();
 
 const BUF_SIZE: usize = 128;
 

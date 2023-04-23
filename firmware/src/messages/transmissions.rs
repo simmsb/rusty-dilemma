@@ -1,5 +1,5 @@
+use core::hash::Hash;
 use core::mem::MaybeUninit;
-use core::{fmt::Debug, hash::Hash};
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex, pubsub::Publisher,
 };
@@ -9,6 +9,14 @@ use heapless::Arc;
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use serde::{de::DeserializeOwned, Serialize};
 use shared::cmd::{CmdOrAck, Command};
+
+#[cfg(feature = "probe")]
+use defmt as log;
+
+#[cfg(not(feature = "probe"))]
+pub trait WhichDebug = ::core::fmt::Debug;
+#[cfg(feature = "probe")]
+pub trait WhichDebug = ::defmt::Format;
 
 use crate::{event::Event, utils};
 
@@ -61,7 +69,7 @@ struct EventInProcessor<
 impl<'a, 'e, T, U, RX, const CAP: usize, const SUBS: usize, const PUBS: usize>
     EventInProcessor<'a, 'e, T, U, RX, CAP, SUBS, PUBS>
 where
-    U: DeserializeOwned + Hash + Clone + Debug,
+    U: DeserializeOwned + Hash + Clone + WhichDebug,
     RX: embedded_io::asynch::Read,
 {
     async fn recv_task_inner(&mut self) -> Option<()> {
@@ -130,9 +138,9 @@ where
 
 impl<'e, T, TX> EventOutProcessor<'e, T, TX>
 where
-    T: Serialize + Debug,
+    T: Serialize + WhichDebug,
     TX: embedded_io::asynch::Write,
-    <TX as embedded_io::Io>::Error: Debug,
+    <TX as embedded_io::Io>::Error: WhichDebug,
 {
     async fn task(self) {
         loop {
@@ -213,11 +221,11 @@ impl<'a, T, TX, RX> Eventer<T, TX, RX> {
         out_chan: Publisher<'static, ThreadModeRawMutex, U, CAP, SUBS, PUBS>,
     ) -> (impl Future + 's, impl Future + 's, impl Future + 's)
     where
-        T: Hash + Clone + Serialize + Debug,
-        U: Hash + Clone + DeserializeOwned + Debug,
+        T: Hash + Clone + Serialize + WhichDebug,
+        U: Hash + Clone + DeserializeOwned + WhichDebug,
         TX: embedded_io::asynch::Write,
         RX: embedded_io::asynch::Read,
-        <TX as embedded_io::Io>::Error: Debug,
+        <TX as embedded_io::Io>::Error: WhichDebug,
     {
         let sender = EventSender {
             id_gen: atomic_polyfill::AtomicU8::new(0),

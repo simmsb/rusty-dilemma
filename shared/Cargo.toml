@@ -7,7 +7,11 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+defmt = { version = ">=0.3", optional = true }
 fnv = { version = "1.0", default-features = false }
 heapless = { version = "0.7.16", features = ["serde"] }
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"], default-features = false }
+
+[features]
+defmt = ["dep:defmt", "heapless/defmt", "heapless/defmt-impl"]
