@@ -2,10 +2,10 @@
 #![feature(type_alias_impl_trait, trait_alias)]
 
 use embassy_executor::Spawner;
-use embassy_rp::gpio::Output;
 use embassy_rp::interrupt;
 use embassy_rp::peripherals::PIN_25;
 use embassy_rp::usb::Driver;
+use embassy_rp::{gpio::Output, pio::PioPeripheral};
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
 
@@ -22,10 +22,10 @@ pub mod event;
 pub mod fw_update;
 pub mod logger;
 pub mod messages;
+pub mod onewire;
 pub mod side;
 pub mod usb;
 pub mod utils;
-pub mod onewire;
 
 pub static VERSION: &str = "0.1.1";
 
@@ -67,6 +67,11 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     messages::init(&spawner);
     #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
+
+    let (_pio0, sm0, sm1, _sm2, _sm3) = p.PIO0.split();
+    let usart_pin = p.PIN_1.into();
+
+    onewire::init(&spawner, sm0, sm1, usart_pin);
 
     spawner.must_spawn(blinky(Output::new(p.PIN_25, embassy_rp::gpio::Level::Low)));
 
