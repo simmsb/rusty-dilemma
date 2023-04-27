@@ -86,15 +86,17 @@
               fenix.packages.${system}.rust-analyzer
               cargo-binutils
               cargo-flash
-              #probe-run
+              probe-rs-cli
               picotool
             ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
           packages.bl-left = firmware { args = "--bin left --features probe,bootloader"; profile = "release"; };
           packages.left = firmware { args = "--bin left --features probe"; profile = "release"; };
+          packages.debug-left = firmware { args = "--bin left --features probe"; profile = "dev"; };
           packages.bl-right = firmware { args = "--bin right --features probe,bootloader"; profile = "release"; };
           packages.right = firmware { args = "--bin right --features probe"; profile = "release"; };
+          packages.debug-right = firmware { args = "--bin right --features probe"; profile = "dev"; };
           packages.bootloader = bootloader;
           packages.bl-binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
@@ -114,6 +116,15 @@
               (elf packages.right "right")
               (binary packages.left "left")
               (binary packages.right "right")
+            ];
+          };
+          packages.debug-binaries = pkgs.symlinkJoin {
+            name = "dilemma-binaries";
+            paths = [
+              (elf packages.debug-left "left")
+              (elf packages.debug-right "right")
+              (binary packages.debug-left "left")
+              (binary packages.debug-right "right")
             ];
           };
         };

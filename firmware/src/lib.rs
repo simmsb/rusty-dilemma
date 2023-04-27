@@ -52,6 +52,9 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
 
     ::log::info!("Hello! I am version: {}", VERSION);
 
+    // not sure if this makes the usb detection happier
+    Timer::after(Duration::from_micros(100)).await;
+
     side::init(side, detect_usb());
 
     if side::this_side_has_usb() {
@@ -70,14 +73,15 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
 
     let (_pio0, sm0, sm1, _sm2, _sm3) = p.PIO0.split();
     let usart_pin = p.PIN_1.into();
+    // let usart_pin = p.PIN_25.into();
 
     onewire::init(&spawner, sm0, sm1, usart_pin);
 
     spawner.must_spawn(blinky(Output::new(p.PIN_25, embassy_rp::gpio::Level::Low)));
 
-    let mut counter = 0;
+    let mut counter = 0u8;
     loop {
-        counter += 1;
+        counter = counter.wrapping_add(1);
 
         ::log::info!("Tick {} {}", VERSION, counter);
 
@@ -85,5 +89,9 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
         defmt::info!("Tick {}", counter);
 
         Timer::after(Duration::from_secs(1)).await;
+
+        if side::get_side().is_right() {
+            onewire::OTHER_SIDE_TX.write(&[counter]).await;
+        }
     }
 }

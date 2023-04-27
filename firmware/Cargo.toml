@@ -15,20 +15,20 @@ path = "src/bin/right.rs"
 
 [dependencies]
 shared = { path = "../shared" }
-embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
-embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
-embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
-embassy-rp = { git = "https://github.com/embassy-rs/embassy", features = ["unstable-pac", "time-driver", "unstable-traits", "pio", "nightly", "pio"] }
-embassy-sync = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
-embassy-time = { git = "https://github.com/embassy-rs/embassy" }
-embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
-embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", optional = true, features = ["nightly"] }
+embassy-embedded-hal = { git = "https://github.com/simmsb/embassy" }
+embassy-executor = { git = "https://github.com/simmsb/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
+embassy-futures = { git = "https://github.com/simmsb/embassy" }
+embassy-rp = { git = "https://github.com/simmsb/embassy", features = ["unstable-pac", "time-driver", "unstable-traits", "nightly"] }
+embassy-sync = { git = "https://github.com/simmsb/embassy", features = ["nightly"] }
+embassy-time = { git = "https://github.com/simmsb/embassy" }
+embassy-usb = { git = "https://github.com/simmsb/embassy" }
+embassy-boot-rp = { git = "https://github.com/simmsb/embassy", optional = true, features = ["nightly"] }
 
-cortex-m = { version = "0.7.6", features = ["critical-section-single-core", "inline-asm"] }
-cortex-m-rt = "0.7.0"
+cortex-m = { version = "0.7.7", features = ["critical-section-single-core", "inline-asm"] }
+cortex-m-rt = "0.7.3"
 panic-reset = { version = "0.1" }
-futures = { version = "0.3.17", default-features = false, features = ["async-await", "cfg-target-has-atomic", "unstable"] }
-byte-slice-cast = { version = "1.2.0", default-features = false }
+futures = { version = "0.3.28", default-features = false, features = ["async-await", "cfg-target-has-atomic", "unstable"] }
+byte-slice-cast = { version = "1.2.2", default-features = false }
 embedded-hal-1 = { package = "embedded-hal", version = "=1.0.0-alpha.10" }
 embedded-hal-async = "0.2.0-alpha.1"
 embedded-io = { version = "0.4.0", features = ["async"] }
@@ -37,7 +37,7 @@ log = "0.4"
 pio-proc = "0.2"
 pio = "0.2.1"
 heapless = "0.7.16"
-usbd-hid = "0.6.0"
+usbd-hid = "0.6.1"
 postcard = "1.0.4"
 serde = { version = "1.0.160", default-features = false, features = ["derive"] }
 once_cell = { version = "1.17.1", features = ["atomic-polyfill"], default-features = false }
@@ -58,3 +58,4 @@ probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt",
          "embassy-usb/defmt"
 ]
 bootloader = ["embassy-boot-rp"]
+default = ["probe"]
