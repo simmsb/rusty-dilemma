@@ -91,7 +91,19 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
         Timer::after(Duration::from_secs(1)).await;
 
         if side::get_side().is_right() {
-            onewire::OTHER_SIDE_TX.write(&[counter]).await;
+            onewire::OTHER_SIDE_TX.write(&[counter, counter, counter]).await;
+        }
+
+        Timer::after(Duration::from_secs(1)).await;
+
+        if side::get_side().is_right() {
+            onewire::OTHER_SIDE_TX.write(&[0xff, 0xff, 0xff]).await;
+        }
+
+        Timer::after(Duration::from_secs(1)).await;
+
+        if side::get_side().is_right() {
+            onewire::OTHER_SIDE_TX.write(&[0x00, 0x00, 0x00]).await;
         }
     }
 }
