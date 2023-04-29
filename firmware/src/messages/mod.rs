@@ -8,6 +8,7 @@ pub use distributors::{send_to_host, try_send_to_host};
 
 pub fn init(spawner: &Spawner) {
     spawner.must_spawn(distributors::from_usb_distributor());
+    spawner.must_spawn(distributors::from_other_side_distributor());
 }
 
 pub struct TransmittedMessage<T> {

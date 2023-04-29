@@ -1,22 +1,12 @@
-use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
-use embassy_sync::channel::Channel;
-use embassy_sync::pubsub::PubSubChannel;
 use shared::device_to_device::DeviceToDevice;
 use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
 use shared::host_to_device::HostToDeviceMsg;
 
-use crate::side::{self, is_this_side};
-use crate::usb;
+use crate::side;
+use crate::{usb, interboard};
+use crate::utils::log;
 
-use super::{reliable_msg, TransmittedMessage};
-
-pub static COMMANDS_TO_OTHER_SIDE: Channel<
-    ThreadModeRawMutex,
-    TransmittedMessage<DeviceToDevice>,
-    4,
-> = Channel::new();
-pub static COMMANDS_FROM_HOST: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 4, 4, 1> =
-    PubSubChannel::new();
+use super::{reliable_msg, unreliable_msg, TransmittedMessage};
 
 #[embassy_executor::task]
 pub async fn from_usb_distributor() {
@@ -25,23 +15,59 @@ pub async fn from_usb_distributor() {
     loop {
         let msg = sub.next_message_pure().await;
 
-        if is_this_side(msg.target_side) {
-            match msg.msg {
-                HostToDeviceMsg::FWCmd(cmd) => {
-                    #[cfg(feature = "bootloader")]
-                    crate::fw_update::FW_CMD_CHANNEL.send(cmd).await;
-                }
-            }
+        if side::is_this_side(msg.target_side) {
+            handle_from_host(msg.msg).await;
         } else {
-            COMMANDS_TO_OTHER_SIDE
-                .send(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg)))
-                .await;
+            interboard::send_msg(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg))).await;
         }
     }
 }
 
+async fn handle_from_host(msg: HostToDeviceMsg) {
+    match msg {
+        HostToDeviceMsg::FWCmd(_cmd) => {
+            #[cfg(feature = "bootloader")]
+            crate::fw_update::FW_CMD_CHANNEL.send(_cmd).await;
+        }
+    }
+}
+
+#[embassy_executor::task]
+pub async fn from_other_side_distributor() {
+    let mut sub = crate::interboard::COMMANDS_FROM_OTHER_SIDE
+        .subscriber()
+        .unwrap();
+
+    loop {
+        let msg = sub.next_message_pure().await;
+
+        match msg {
+            DeviceToDevice::Ping => {
+                log::info!("Got a ping");
+                interboard::send_msg(reliable_msg(DeviceToDevice::Pong)).await;
+            }
+            DeviceToDevice::Pong => {
+                log::info!("Got a pong");
+            }
+            DeviceToDevice::ForwardedToHost(msg) => {
+                usb::send_msg(unreliable_msg(msg)).await;
+            }
+            DeviceToDevice::ForwardedFromHost(msg) => {
+                handle_from_host(msg).await;
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Eq)]
+pub enum MessageProvenance {
+    Origin,
+    Forwarded,
+}
+
 pub async fn send_to_host(
     TransmittedMessage { msg, timeout }: TransmittedMessage<DeviceToHostMsg>,
+    provenance: MessageProvenance,
 ) {
     let side = side::get_side();
     let msg = DeviceToHost {
@@ -50,16 +76,17 @@ pub async fn send_to_host(
     };
     if side::this_side_has_usb() {
         let msg = TransmittedMessage { msg, timeout };
-        usb::COMMANDS_TO_HOST.send(msg).await;
-    } else {
+        usb::send_msg(msg).await;
+    } else if provenance == MessageProvenance::Origin {
         let msg = DeviceToDevice::ForwardedToHost(msg);
         let msg = TransmittedMessage { msg, timeout };
-        COMMANDS_TO_OTHER_SIDE.send(msg).await;
+        interboard::send_msg(msg).await;
     }
 }
 
 pub fn try_send_to_host(
     TransmittedMessage { msg, timeout }: TransmittedMessage<DeviceToHostMsg>,
+    provenance: MessageProvenance,
 ) -> Option<()> {
     let side = side::get_side();
     let msg = DeviceToHost {
@@ -68,10 +95,13 @@ pub fn try_send_to_host(
     };
     if side::this_side_has_usb() {
         let msg = TransmittedMessage { msg, timeout };
-        usb::COMMANDS_TO_HOST.try_send(msg).ok()
-    } else {
+        usb::try_send_msg(msg).ok()
+    } else if provenance == MessageProvenance::Origin {
         let msg = DeviceToDevice::ForwardedToHost(msg);
         let msg = TransmittedMessage { msg, timeout };
-        COMMANDS_TO_OTHER_SIDE.try_send(msg).ok()
+        interboard::try_send_msg(msg).ok()
+    } else {
+        // if we get here it means both sides have no usb connection
+        Some(())
     }
 }

@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(incomplete_features)]
 #![feature(type_alias_impl_trait, trait_alias, async_fn_in_trait)]
 
 use embassy_executor::Spawner;
@@ -14,20 +15,21 @@ use panic_reset as _;
 #[cfg(feature = "probe")]
 use {defmt_rtt as _, panic_probe as _};
 
-#[cfg(feature = "probe")]
-use defmt as log;
+use utils::log;
+
+use crate::messages::reliable_msg;
 
 pub mod event;
 #[cfg(feature = "bootloader")]
 pub mod fw_update;
 pub mod logger;
 pub mod messages;
-pub mod onewire;
+pub mod interboard;
 pub mod side;
 pub mod usb;
 pub mod utils;
 
-pub static VERSION: &str = "0.1.1";
+pub static VERSION: &str = "0.1.0";
 
 fn detect_usb() -> bool {
     let regs = embassy_rp::pac::USBCTRL_REGS;
@@ -50,7 +52,7 @@ async fn blinky(mut pin: Output<'static, PIN_25>) {
 pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let p = embassy_rp::init(Default::default());
 
-    ::log::info!("Hello! I am version: {}", VERSION);
+    log::info!("Just a whisper. I hear it in my ghost.");
 
     // not sure if this makes the usb detection happier
     Timer::after(Duration::from_micros(100)).await;
@@ -75,7 +77,7 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     let usart_pin = p.PIN_1.into();
     // let usart_pin = p.PIN_25.into();
 
-    onewire::init(&spawner, sm0, sm1, usart_pin);
+    interboard::init(&spawner, sm0, sm1, usart_pin);
 
     spawner.must_spawn(blinky(Output::new(p.PIN_25, embassy_rp::gpio::Level::Low)));
 
@@ -83,27 +85,10 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     loop {
         counter = counter.wrapping_add(1);
 
-        ::log::info!("Tick {} {}", VERSION, counter);
-
-        #[cfg(feature = "probe")]
-        defmt::info!("Tick {}", counter);
-
         Timer::after(Duration::from_secs(1)).await;
 
-        if side::get_side().is_right() {
-            onewire::OTHER_SIDE_TX.write(&[counter, counter, counter]).await;
-        }
-
-        Timer::after(Duration::from_secs(1)).await;
-
-        if side::get_side().is_right() {
-            onewire::OTHER_SIDE_TX.write(&[0xff, 0xff, 0xff]).await;
-        }
-
-        Timer::after(Duration::from_secs(1)).await;
-
-        if side::get_side().is_right() {
-            onewire::OTHER_SIDE_TX.write(&[0x00, 0x00, 0x00]).await;
+        if side::get_side().is_left() {
+            interboard::send_msg(reliable_msg(shared::device_to_device::DeviceToDevice::Ping)).await;
         }
     }
 }

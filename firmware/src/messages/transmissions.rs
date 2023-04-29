@@ -7,15 +7,8 @@ use postcard::accumulator::{CobsAccumulator, FeedResult};
 use serde::{de::DeserializeOwned, Serialize};
 use shared::cmd::{CmdOrAck, Command};
 
-#[cfg(feature = "probe")]
-use defmt as log;
-
-#[cfg(not(feature = "probe"))]
-pub trait WhichDebug = ::core::fmt::Debug;
-#[cfg(feature = "probe")]
-pub trait WhichDebug = ::defmt::Format;
-
 use crate::event::Event;
+use crate::utils::{log, WhichDebug};
 
 use super::TransmittedMessage;
 
@@ -59,7 +52,7 @@ impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
 where
     RX: embedded_io::asynch::Read,
 {
-    async fn recv_task_inner<Received, FnTxFut>(&mut self) -> Option<()>
+    async fn recv_task_inner<Received, FnTxFut>(&mut self) -> Result<(), <RX as embedded_io::Io>::Error>
     where
         Received: DeserializeOwned + Hash + Clone + WhichDebug,
         FnTxFut: Future,
@@ -69,19 +62,21 @@ where
 
         loop {
             let mut buf = [0u8; 16];
-            let n = self.rx.read(&mut buf).await.ok()?;
+            let n = self.rx.read(&mut buf).await?;
             let mut window = &buf[..n];
+
+            // log::info!("cobs: {}", accumulator);
 
             'cobs: while !window.is_empty() {
                 window = match accumulator.feed(window) {
                     FeedResult::Consumed => break 'cobs,
-                    FeedResult::OverFull(buf) => buf,
+                    FeedResult::OverFull(buf) => { log::info!("buffer overfull"); buf },
                     FeedResult::DeserError(buf) => {
-                        // log::debug!(
-                        //     "Message decoder failed to deserialize a message of type {}: {:?}",
-                        //     core::any::type_name::<CmdOrAck<U>>(),
-                        //     buf
-                        // );
+                        log::debug!(
+                            "Message decoder failed to deserialize a message of type {}: {:?}",
+                            core::any::type_name::<CmdOrAck<Received>>(),
+                            buf
+                        );
                         buf
                     }
                     FeedResult::Success { data, remaining } => {
@@ -90,6 +85,7 @@ where
                         match data {
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
+                                    // log::info!("Hi I got a command: {}", c);
                                     if let Some(ack) = c.ack() {
                                         self.mix_chan.send(CmdOrAck::Ack(ack)).await;
                                     }
@@ -106,8 +102,8 @@ where
                                         self.events[a.id as usize].set();
                                     }
                                 }
-                                Err(e) => {
-                                    // log::debug!("Corrupted parsed ack: {:?}", e);
+                                Err(_e) => {
+                                    // log::debug!("Corrupted parsed ack: {:?}", _e);
                                 }
                             },
                         }
@@ -124,9 +120,11 @@ where
         Received: DeserializeOwned + Hash + Clone + WhichDebug,
         FnTxFut: Future,
         FnTx: Fn(Received) -> FnTxFut,
+        <RX as embedded_io::Io>::Error: WhichDebug,
     {
         loop {
-            let _ = self.recv_task_inner().await;
+            let _r = self.recv_task_inner().await;
+            // log::debug!("Restarting cobs receiver for reason: {}", _r);
         }
     }
 }
@@ -143,15 +141,15 @@ where
 
             let mut buf = [0u8; BUF_SIZE];
             if let Ok(buf) = postcard::to_slice_cobs(&val, &mut buf) {
-                let _r = self.tx.write(buf).await;
-                // log::debug!("Transmitted {:?}, r: {:?}", val, r);
+                let _r = self.tx.write_all(buf).await;
+                // log::debug!("Transmitted {:?} as {:?}, r: {:?}", val, buf, _r);
             }
         }
     }
 }
 
 impl<'a, T: Hash + Clone> EventSenderImpl<'a, T> {
-    async fn register_waiter(&self, id: u8, event: &'a Event) {
+    async fn register_waiter(&self, id: u8) {
         let mut waiters = self.waiters.lock().await;
         if waiters.insert(id).is_err() {
             panic!("Duped waiter id")
@@ -175,17 +173,17 @@ impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
             let waiter = &self.events[id as usize];
             waiter.reset();
             let cmd = Command::new_reliable(cmd.clone(), id);
-            self.register_waiter(id, waiter).await;
+            self.register_waiter(id).await;
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
             match with_timeout(timeout, waiter.wait()).await {
                 Ok(_) => {
-                    log::debug!("Waiter for id {} completed", id);
+                    // log::debug!("Waiter for id {} completed", id);
                     self.id_chan.send(id).await;
                     return;
                 }
                 Err(_) => {
-                    log::debug!("Waiter for id {} timing out", id);
+                    // log::debug!("Waiter for id {} timing out", id);
                     self.deregister_waiter(id).await;
                     self.id_chan.send(id).await;
                 }
@@ -204,6 +202,7 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     Received: Hash + Clone + DeserializeOwned + WhichDebug,
     TX: embedded_io::asynch::Write,
     RX: embedded_io::asynch::Read,
+    <RX as embedded_io::Io>::Error: WhichDebug,
     <TX as embedded_io::Io>::Error: WhichDebug,
     FnRx: Fn() -> FnRxFut,
     FnTx: Fn(Received) -> FnTxFut,

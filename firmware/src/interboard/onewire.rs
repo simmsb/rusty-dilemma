@@ -11,13 +11,13 @@ use embassy_rp::{
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Timer};
+
+#[allow(unused_imports)]
+use crate::utils::log;
 
 pub static OTHER_SIDE_TX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
 pub static OTHER_SIDE_RX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
-
-#[cfg(feature = "probe")]
-use defmt as log;
 
 pub const USART_SPEED: u32 = 19200;
 
@@ -78,19 +78,19 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
     loop {
         match select(reader.read(&mut buf), rx_sm.wait_pull()).await {
             select::Either::First(n) => {
-                let now = Instant::now();
-                log::info!("sending bytes: {:08b}", &buf[..n]);
+                // let now = Instant::now();
+                // log::info!("sending bytes: {:08b}", &buf[..n]);
                 enter_tx(&mut tx_sm, &mut rx_sm, &mut flex, &pin);
                 for b in &buf[..n] {
                     tx_sm.wait_push(*b as u32).await;
                 }
                 enter_rx(&mut tx_sm, &mut rx_sm, &mut flex, &pin).await;
-                log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
+                // log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
             }
             select::Either::Second(x) => {
                 let x = x.to_be_bytes()[0];
-                log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
-                // OTHER_SIDE_RX.write(&[x as u8]).await;
+                // log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
+                OTHER_SIDE_RX.write(&[255 - x as u8]).await;
             }
         }
     }

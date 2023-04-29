@@ -1,3 +1,13 @@
+#[cfg(not(feature = "probe"))]
+pub use log_log as log;
+#[cfg(feature = "probe")]
+pub use defmt as log;
+
+#[cfg(not(feature = "probe"))]
+pub trait WhichDebug = ::core::fmt::Debug;
+#[cfg(feature = "probe")]
+pub trait WhichDebug = ::defmt::Format;
+
 macro_rules! singleton {
     ($val:expr) => {{
         type T = impl Sized;
@@ -6,6 +16,7 @@ macro_rules! singleton {
     }};
 }
 
+#[allow(unused_macros)]
 macro_rules! general_future_executor {
     ($name:ident, $tyname:ident) => {
         type $tyname = impl ::futures::Future;
@@ -17,4 +28,5 @@ macro_rules! general_future_executor {
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use {general_future_executor, singleton};

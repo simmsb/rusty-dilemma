@@ -4,9 +4,10 @@ use core::fmt::Write;
 use bbqueue::{BBBuffer, Consumer, Producer};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::blocking_mutex::Mutex;
-use log::{Metadata, Record};
+use log_log::{Metadata, Record};
 use shared::device_to_host::{DeviceToHostMsg, MAX_LOG_LEN};
 
+use crate::messages::distributors::MessageProvenance;
 use crate::messages::{self, unreliable_msg};
 use crate::utils::singleton;
 
@@ -14,9 +15,9 @@ static BB: BBBuffer<256> = BBBuffer::new();
 
 pub fn setup_logger() {
     let logger: &mut Logger = singleton!(Logger::init());
-    let logger = logger as &dyn log::Log;
+    let logger = logger as &dyn log_log::Log;
     unsafe {
-        let _ = log::set_logger_racy(logger).map(|()| log::set_max_level(log::LevelFilter::Info));
+        let _ = log_log::set_logger_racy(logger).map(|()| log_log::set_max_level(log_log::LevelFilter::Info));
     }
 }
 
@@ -40,7 +41,7 @@ impl Logger {
     }
 }
 
-impl log::Log for Logger {
+impl log_log::Log for Logger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
         true
     }
@@ -83,7 +84,9 @@ impl log::Log for Logger {
 
                     let cmd = DeviceToHostMsg::Log { msg: vec };
 
-                    if messages::try_send_to_host(unreliable_msg(cmd)).is_some() {
+                    if messages::try_send_to_host(unreliable_msg(cmd), MessageProvenance::Origin)
+                        .is_some()
+                    {
                         emitted += chunk.len();
                     } else {
                         grant.release(emitted);

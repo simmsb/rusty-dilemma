@@ -8,8 +8,7 @@ use embassy_sync::channel::Channel;
 use embassy_time::{Duration, Timer};
 use shared::fw::FWCmd;
 
-#[cfg(feature = "probe")]
-use defmt as log;
+use crate::utils::log;
 
 const FLASH_SIZE: usize = 2 * 1024 * 1024;
 pub static FW_CMD_CHANNEL: Channel<ThreadModeRawMutex, FWCmd, 1> = Channel::new();
