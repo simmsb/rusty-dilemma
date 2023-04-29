@@ -7,8 +7,6 @@ pub mod transmissions;
 pub use distributors::{send_to_host, try_send_to_host};
 
 pub fn init(spawner: &Spawner) {
-    transmissions::init_pool();
-
     spawner.must_spawn(distributors::from_usb_distributor());
 }
 

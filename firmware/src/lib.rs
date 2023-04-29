@@ -1,5 +1,5 @@
 #![no_std]
-#![feature(type_alias_impl_trait, trait_alias)]
+#![feature(type_alias_impl_trait, trait_alias, async_fn_in_trait)]
 
 use embassy_executor::Spawner;
 use embassy_rp::interrupt;

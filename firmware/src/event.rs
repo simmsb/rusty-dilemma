@@ -23,4 +23,8 @@ impl Event {
     pub fn set(&self) {
         self.0.signal(());
     }
+
+    pub fn reset(&self) {
+        self.0.reset();
+    }
 }

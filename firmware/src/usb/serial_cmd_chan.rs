@@ -1,5 +1,4 @@
 use embassy_executor::Spawner;
-use embassy_futures::join::join3;
 use embassy_rp::peripherals::USB;
 use embassy_sync::channel::Channel;
 use embassy_sync::pipe::{Pipe, Reader, Writer};
@@ -10,7 +9,7 @@ use embassy_usb::Builder;
 use shared::device_to_host::DeviceToHost;
 use shared::host_to_device::HostToDevice;
 
-use crate::messages::transmissions::Eventer;
+use crate::messages::transmissions;
 use crate::messages::TransmittedMessage;
 use crate::utils;
 
@@ -58,9 +57,10 @@ async fn serial_out_task(
 
 #[embassy_executor::task]
 async fn eventer_task(tx: Writer<'static, CS, BUF_SIZE>, rx: Reader<'static, CS, BUF_SIZE>) {
-    let mut eventer = Eventer::new(tx, rx);
-    let (a, b, c) = eventer.split_tasks(&COMMANDS_TO_HOST, COMMANDS_FROM_HOST.publisher().unwrap());
-    join3(a, b, c).await;
+    let msg_pub = COMMANDS_FROM_HOST.publisher().unwrap();
+    let rx_fn = || async { COMMANDS_TO_HOST.recv().await };
+    let tx_fn = |e| async { msg_pub.publish(e).await; };
+    transmissions::eventer(tx, rx, rx_fn, tx_fn).await;
 }
 
 pub fn start_static_serial(
