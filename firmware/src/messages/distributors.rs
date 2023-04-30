@@ -15,9 +15,10 @@ pub async fn from_usb_distributor() {
     loop {
         let msg = sub.next_message_pure().await;
 
-        if side::is_this_side(msg.target_side) {
-            handle_from_host(msg.msg).await;
-        } else {
+        if msg.targets_side(side::get_side()) {
+            handle_from_host(msg.msg.clone()).await;
+        }
+        if msg.targets_side(side::get_other_side()) {
             interboard::send_msg(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg))).await;
         }
     }

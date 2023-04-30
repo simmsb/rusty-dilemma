@@ -28,6 +28,7 @@ pub mod interboard;
 pub mod side;
 pub mod usb;
 pub mod utils;
+pub mod trackpad;
 
 pub static VERSION: &str = "0.1.0";
 

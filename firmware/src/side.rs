@@ -17,6 +17,10 @@ pub fn get_side() -> KeyboardSide {
     *SIDE.get().unwrap()
 }
 
+pub fn get_other_side() -> KeyboardSide {
+    SIDE.get().unwrap().other()
+}
+
 pub fn this_side_has_usb() -> bool {
     *HAS_USB.get().unwrap()
 }
