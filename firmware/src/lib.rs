@@ -6,10 +6,11 @@ use embassy_executor::Spawner;
 use embassy_rp::dma::Channel;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
 use embassy_rp::interrupt;
-use embassy_rp::peripherals::{PIN_25, PIN_24, PIN_19};
+use embassy_rp::peripherals::PIN_19;
+use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
-use embassy_rp::{gpio::Output, pio::PioPeripheral};
+use embassy_rp::gpio::Output;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
 
@@ -102,11 +103,11 @@ pub async fn main(spawner: Spawner, side: KeyboardSide) {
     #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
-    let (_pio0, sm0, sm1, _sm2, _sm3) = p.PIO0.split();
-    let usart_pin = p.PIN_1.into();
+    let mut pio= Pio::new(p.PIO0);
+    let usart_pin = p.PIN_1;
     // let usart_pin = p.PIN_25.into();
 
-    interboard::init(&spawner, sm0, sm1, usart_pin);
+    interboard::init(&spawner, &mut pio.common , pio.sm0, pio.sm1, usart_pin);
 
     if side::get_side().is_right() {
         trackpad::init(

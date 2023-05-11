@@ -1,17 +1,19 @@
+use embassy_embedded_hal::SetConfig;
 use embassy_executor::Spawner;
 use embassy_futures::{
     select::{self, select},
     yield_now,
 };
 use embassy_rp::{
-    gpio::{AnyPin, Flex, Pin},
-    pio::{Pio0, PioStateMachine, PioStateMachineInstance, Sm0, Sm1},
-    pio_instr_util,
+    peripherals::PIO0,
+    pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
     relocate::RelocatedProgram,
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
-use embassy_time::{Duration, Timer, Instant};
+use embassy_time::{Duration, Instant, Timer};
+use fixed::traits::ToFixed;
+use fixed_macro::types::U56F8;
 
 #[allow(unused_imports)]
 use crate::utils::log;
@@ -19,20 +21,26 @@ use crate::utils::log;
 pub static OTHER_SIDE_TX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
 pub static OTHER_SIDE_RX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
 
-pub const USART_SPEED: u32 = 19200;
+pub const USART_SPEED: u64 = 19200;
 
-pub fn init(spawner: &Spawner, tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
+pub fn init(
+    spawner: &Spawner,
+    common: &mut Common<'static, PIO0>,
+    tx_sm: SM<0>,
+    rx_sm: SM<1>,
+    pin: impl Peripheral<P = impl PioPin + 'static> + 'static,
+) {
+    let mut pin = common.make_pio_pin(pin);
+
+    let tx_sm = half_duplex_task_tx(common, tx_sm, &mut pin);
+    let rx_sm = half_duplex_task_rx(common, rx_sm, &pin);
+
     spawner.must_spawn(half_duplex_task(tx_sm, rx_sm, pin));
 }
-pub type SM<S> = PioStateMachineInstance<Pio0, S>;
+pub type SM<const SM: usize> = StateMachine<'static, PIO0, { SM }>;
 
-pub async fn enter_rx(
-    tx_sm: &mut SM<Sm0>,
-    rx_sm: &mut SM<Sm1>,
-    pin: &mut Flex<'static, AnyPin>,
-    p: &AnyPin,
-) {
-    while !tx_sm.is_tx_empty() {
+pub async fn enter_rx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'static, PIO0>) {
+    while !tx_sm.tx().empty() {
         yield_now().await;
     }
 
@@ -40,37 +48,25 @@ pub async fn enter_rx(
 
     tx_sm.set_enable(false);
     pin.set_drive_strength(embassy_rp::gpio::Drive::_2mA);
-    tx_sm.set_pindirs([(p.pin(), false)]);
-    tx_sm.set_pins([(p.pin(), true)]);
+    tx_sm.set_pin_dirs(embassy_rp::pio::Direction::In, &[pin]);
+    tx_sm.set_pins(embassy_rp::gpio::Level::High, &[pin]);
     rx_sm.set_enable(true);
 }
 
-pub fn enter_tx(
-    tx_sm: &mut SM<Sm0>,
-    rx_sm: &mut SM<Sm1>,
-    pin: &mut Flex<'static, AnyPin>,
-    p: &AnyPin,
-) {
+pub fn enter_tx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'static, PIO0>) {
     // okay so the way this works is that the pio doesn't actually set the pin
     // high or low, instead we toggle the input/output status of the pin to
     // switch it from a pull-high to a pull-low
     rx_sm.set_enable(false);
-    rx_sm.set_pins([(p.pin(), false)]);
+    rx_sm.set_pins(embassy_rp::gpio::Level::Low, &[pin]);
     pin.set_drive_strength(embassy_rp::gpio::Drive::_12mA);
     tx_sm.restart();
     tx_sm.set_enable(true);
 }
 
 #[embassy_executor::task]
-pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
-    let mut flex = Flex::new(unsafe { pin.clone_unchecked() });
-    flex.set_as_output();
-    flex.set_pull(embassy_rp::gpio::Pull::Up);
-
-    let mut tx_sm = half_duplex_task_tx(tx_sm, unsafe { pin.clone_unchecked() });
-    let mut rx_sm = half_duplex_task_rx(rx_sm, unsafe { pin.clone_unchecked() });
-
-    enter_rx(&mut tx_sm, &mut rx_sm, &mut flex, &pin).await;
+pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'static, PIO0>) {
+    enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
 
     let mut buf = [0u8; 16];
     let reader = OTHER_SIDE_TX.reader();
@@ -84,15 +80,15 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
             reader.read(&mut buf).await
         };
 
-        match select(read_fut, rx_sm.wait_pull()).await {
+        match select(read_fut, rx_sm.rx().wait_pull()).await {
             select::Either::First(n) => {
                 // let now = Instant::now();
                 // log::info!("sending bytes: {:08b}", &buf[..n]);
-                enter_tx(&mut tx_sm, &mut rx_sm, &mut flex, &pin);
+                enter_tx(&mut tx_sm, &mut rx_sm, &mut pin);
                 for b in &buf[..n] {
-                    tx_sm.wait_push(*b as u32).await;
+                    tx_sm.tx().wait_push(*b as u32).await;
                 }
-                enter_rx(&mut tx_sm, &mut rx_sm, &mut flex, &pin).await;
+                enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
                 // log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
             }
             select::Either::Second(x) => {
@@ -101,7 +97,7 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
                 // log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
                 OTHER_SIDE_RX.write(&[255 - x as u8]).await;
 
-                while let Some(x) = rx_sm.try_pull_rx() {
+                while let Some(x) = rx_sm.rx().try_pull() {
                     let x = x.to_be_bytes()[0];
                     OTHER_SIDE_RX.write(&[255 - x as u8]).await;
                 }
@@ -110,19 +106,15 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
     }
 }
 
-const CLOCK_FREQ: u32 = 125_000_000;
-
-const fn pio_divisor(freq: u32, div: u32) -> (u16, u8) {
-    let int = freq / div;
-    let rem = freq - (int * div);
-    let frac = (rem * 256) / div;
-    let int = if int == 65536 { 0 } else { int };
-    (int as u16, frac as u8)
+fn pio_freq() -> fixed::FixedU32<fixed::types::extra::U8> {
+    (U56F8!(125_000_000) / (8 * USART_SPEED)).to_fixed()
 }
 
-const PIO_FREQ: (u16, u8) = pio_divisor(CLOCK_FREQ, 8 * USART_SPEED);
-
-pub fn half_duplex_task_tx(mut sm: SM<Sm0>, pin: AnyPin) -> SM<Sm0> {
+pub fn half_duplex_task_tx(
+    common: &mut Common<'static, PIO0>,
+    mut sm: SM<0>,
+    pin: &mut Pin<'static, PIO0>,
+) -> SM<0> {
     let tx_prog = pio_proc::pio_asm!(
         ".origin 0",
         ".wrap_target",
@@ -138,33 +130,28 @@ pub fn half_duplex_task_tx(mut sm: SM<Sm0>, pin: AnyPin) -> SM<Sm0> {
     );
 
     let relocated = RelocatedProgram::new(&tx_prog.program);
-
-    let mut out_pin = sm.make_pio_pin(pin);
-    out_pin.set_slew_rate(embassy_rp::gpio::SlewRate::Fast);
-    out_pin.set_schmitt(true);
-
-    let pio_pins = &[&out_pin];
-    sm.set_set_pins(pio_pins);
-    sm.set_out_pins(pio_pins);
-
-    sm.set_pull_threshold(32);
-    sm.set_out_shift_dir(embassy_rp::pio::ShiftDirection::Right);
-    sm.set_autopull(false);
-
-    sm.set_fifo_join(embassy_rp::pio::FifoJoin::TxOnly);
-
-    sm.write_instr(relocated.origin() as usize, relocated.code());
-    let pio::Wrap { source, target } = relocated.wrap();
-    sm.set_wrap(source, target);
-
-    pio_instr_util::exec_jmp(&mut sm, relocated.origin());
-    sm.set_clkdiv(PIO_FREQ.0, PIO_FREQ.1);
+    let mut cfg = embassy_rp::pio::Config::default();
+    cfg.use_program(&common.load_program(&relocated), &[]);
+    cfg.clock_divider = pio_freq();
+    cfg.set_out_pins(&[pin]);
+    cfg.set_set_pins(&[pin]);
+    cfg.fifo_join = FifoJoin::TxOnly;
+    cfg.shift_out.direction = ShiftDirection::Right;
+    cfg.shift_in.auto_fill = false;
+    sm.set_config(&cfg);
     sm.set_enable(true);
+
+    pin.set_slew_rate(embassy_rp::gpio::SlewRate::Fast);
+    pin.set_schmitt(true);
 
     sm
 }
 
-pub fn half_duplex_task_rx(mut sm: SM<Sm1>, pin: AnyPin) -> SM<Sm1> {
+pub fn half_duplex_task_rx(
+    common: &mut Common<'static, PIO0>,
+    mut sm: SM<1>,
+    pin: &Pin<'static, PIO0>,
+) -> SM<1> {
     let rx_prog = pio_proc::pio_asm!(
         ".origin 12",
         ".wrap_target",
@@ -183,24 +170,16 @@ pub fn half_duplex_task_rx(mut sm: SM<Sm1>, pin: AnyPin) -> SM<Sm1> {
     );
 
     let relocated = RelocatedProgram::new(&rx_prog.program);
+    let mut cfg = embassy_rp::pio::Config::default();
+    cfg.use_program(&common.load_program(&relocated), &[]);
+    cfg.clock_divider = pio_freq();
+    cfg.set_in_pins(&[pin]);
+    cfg.set_jmp_pin(pin);
+    cfg.shift_out.auto_fill = false;
+    cfg.shift_in.direction = ShiftDirection::Right;
+    cfg.fifo_join = FifoJoin::RxOnly;
+    sm.set_config(&cfg);
 
-    let in_pin = sm.make_pio_pin(pin);
-
-    sm.set_in_base_pin(&in_pin);
-    sm.set_jmp_pin(in_pin.pin());
-
-    sm.set_push_threshold(32);
-    sm.set_in_shift_dir(embassy_rp::pio::ShiftDirection::Right);
-    sm.set_autopush(false);
-
-    sm.set_fifo_join(embassy_rp::pio::FifoJoin::RxOnly);
-
-    sm.write_instr(relocated.origin() as usize, relocated.code());
-    let pio::Wrap { source, target } = relocated.wrap();
-    sm.set_wrap(source, target);
-
-    pio_instr_util::exec_jmp(&mut sm, relocated.origin());
-    sm.set_clkdiv(PIO_FREQ.0, PIO_FREQ.1);
     sm.set_enable(true);
 
     sm

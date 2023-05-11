@@ -160,7 +160,7 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
                 x,
                 y,
                 z,
-                buttons,
+                buttons: _,
                 touch_down,
             } => {
                 if self.last_scale != 0 && self.last_scale == self.scale && x != 0 && y != 0 {
@@ -187,8 +187,8 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             Reading::Relative {
                 dx,
                 dy,
-                wheel_count,
-                buttons,
+                wheel_count: _,
+                buttons: _,
             } => {
                 report_x = saturating_i16_to_i8(dx);
                 report_y = saturating_i16_to_i8(dy);

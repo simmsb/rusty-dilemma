@@ -15,14 +15,14 @@ path = "src/bin/right.rs"
 
 [dependencies]
 shared = { path = "../shared" }
-embassy-embedded-hal = { git = "https://github.com/simmsb/embassy" }
-embassy-executor = { git = "https://github.com/simmsb/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
-embassy-futures = { git = "https://github.com/simmsb/embassy" }
-embassy-rp = { git = "https://github.com/simmsb/embassy", default-features = false, features = ["unstable-pac", "time-driver", "unstable-traits", "nightly"] }
-embassy-sync = { git = "https://github.com/simmsb/embassy", features = ["nightly"] }
-embassy-time = { git = "https://github.com/simmsb/embassy" }
-embassy-usb = { git = "https://github.com/simmsb/embassy" }
-embassy-boot-rp = { git = "https://github.com/simmsb/embassy", optional = true, features = ["nightly"] }
+embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
+embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
+embassy-rp = { git = "https://github.com/embassy-rs/embassy", default-features = false, features = ["unstable-pac", "time-driver", "unstable-traits", "nightly"] }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
+embassy-time = { git = "https://github.com/embassy-rs/embassy" }
+embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
+embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", optional = true, features = ["nightly"] }
 
 cortex-m = { version = "0.7.7", features = ["critical-section-single-core", "inline-asm"] }
 cortex-m-rt = "0.7.3"
@@ -39,7 +39,7 @@ pio = "0.2.1"
 heapless = "0.7.16"
 usbd-hid = "0.6.1"
 postcard = "1.0.4"
-serde = { version = "1.0.160", default-features = false, features = ["derive"] }
+serde = { version = "1.0.163", default-features = false, features = ["derive"] }
 once_cell = { version = "1.17.1", features = ["atomic-polyfill"], default-features = false }
 atomic-polyfill = "1.0.2"
 bbqueue = { version = "0.5.1", features = ["cortex-m", "thumbv6"] }
@@ -50,6 +50,8 @@ bitfield-struct = "0.4.1"
 num_enum = { version = "0.6.1", default-features = false }
 num = { version = "0.4.0", default-features = false }
 usbd-human-interface-device = "0.4.1"
+fixed-macro = "1.2.0"
+fixed = "1.23.1"
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]
