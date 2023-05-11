@@ -2,9 +2,9 @@
 #![no_main]
 #![feature(type_alias_impl_trait)]
 
-use embassy_executor::Spawner;
+use cortex_m_rt::entry;
 
-#[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    rusty_dilemma::main(spawner, shared::side::KeyboardSide::Right).await;
+#[entry]
+fn main() -> ! {
+    rusty_dilemma::entry(shared::side::KeyboardSide::Right);
 }

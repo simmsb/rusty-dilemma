@@ -2,7 +2,8 @@
 #![allow(incomplete_features)]
 #![feature(type_alias_impl_trait, trait_alias, async_fn_in_trait)]
 
-use embassy_executor::Spawner;
+use atomic_polyfill::AtomicU32;
+use embassy_executor::{Spawner, Executor};
 use embassy_rp::dma::Channel;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
 use embassy_rp::interrupt;
@@ -19,7 +20,7 @@ use panic_reset as _;
 #[cfg(feature = "probe")]
 use {defmt_rtt as _, panic_probe as _};
 
-use utils::log;
+use utils::{log, singleton};
 
 use crate::messages::reliable_msg;
 
@@ -55,7 +56,7 @@ async fn blinky(mut pin: Output<'static, AnyPin>) {
 
 #[link_section = ".ram0.bootloader_magic"]
 #[used]
-static mut BOOTLOADER_MAGIC: u32 = 0;
+static BOOTLOADER_MAGIC: AtomicU32 = AtomicU32::new(0);
 
 const MAGIC_TOKEN: u32 = 0xCAFEB0BA;
 
@@ -63,20 +64,33 @@ unsafe fn check_bootloader() {
     const CYCLES_PER_US: usize = 125;
     const WAIT_CYCLES: usize = 500 * 1000 * CYCLES_PER_US;
 
-    if BOOTLOADER_MAGIC != MAGIC_TOKEN {
-        BOOTLOADER_MAGIC = MAGIC_TOKEN;
+    if BOOTLOADER_MAGIC.load(atomic_polyfill::Ordering::SeqCst) != MAGIC_TOKEN {
+        BOOTLOADER_MAGIC.store(MAGIC_TOKEN, atomic_polyfill::Ordering::SeqCst);
 
         cortex_m::asm::delay(WAIT_CYCLES as u32);
-        BOOTLOADER_MAGIC = 0;
+        BOOTLOADER_MAGIC.store(0, atomic_polyfill::Ordering::SeqCst);
         return;
     }
 
-    BOOTLOADER_MAGIC = 0;
+    BOOTLOADER_MAGIC.store(0, atomic_polyfill::Ordering::SeqCst);
 
     reset_to_usb_boot(1 << 17, 0);
 }
 
-pub async fn main(spawner: Spawner, side: KeyboardSide) {
+pub fn entry(side: KeyboardSide) -> ! {
+    unsafe {
+        check_bootloader();
+    }
+
+    let executor: &mut Executor = singleton!(Executor::new());
+
+    executor.run(|spawner| {
+        spawner.must_spawn(main(spawner, side));
+    })
+}
+
+#[embassy_executor::task]
+async fn main(spawner: Spawner, side: KeyboardSide) {
     let p = embassy_rp::init(Default::default());
     unsafe {
         check_bootloader();
