@@ -92,10 +92,10 @@
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
           packages.bl-left = firmware { args = "--bin left --features probe,bootloader"; profile = "release"; };
-          packages.left = firmware { args = "--bin left --features probe"; profile = "release"; };
+          packages.left = firmware { args = "--bin left --no-default-features"; profile = "release"; };
           packages.debug-left = firmware { args = "--bin left --features probe"; profile = "dev"; };
           packages.bl-right = firmware { args = "--bin right --features probe,bootloader"; profile = "release"; };
-          packages.right = firmware { args = "--bin right --features probe"; profile = "release"; };
+          packages.right = firmware { args = "--bin right --no-default-features"; profile = "release"; };
           packages.debug-right = firmware { args = "--bin right --features probe"; profile = "dev"; };
           packages.bootloader = bootloader;
           packages.bl-binaries = pkgs.symlinkJoin {

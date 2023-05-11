@@ -11,7 +11,7 @@ use embassy_rp::{
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration, Timer, Instant};
 
 #[allow(unused_imports)]
 use crate::utils::log;
@@ -74,9 +74,17 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
 
     let mut buf = [0u8; 16];
     let reader = OTHER_SIDE_TX.reader();
+    let mut last_rx = Instant::now();
 
     loop {
-        match select(reader.read(&mut buf), rx_sm.wait_pull()).await {
+        let read_fut = async {
+            // if we've recently received a message, don't try and tx until after a timeout
+            Timer::at(last_rx + Duration::from_micros(1000000 * 11 / USART_SPEED as u64)).await;
+
+            reader.read(&mut buf).await
+        };
+
+        match select(read_fut, rx_sm.wait_pull()).await {
             select::Either::First(n) => {
                 // let now = Instant::now();
                 // log::info!("sending bytes: {:08b}", &buf[..n]);
@@ -88,9 +96,15 @@ pub async fn half_duplex_task(tx_sm: SM<Sm0>, rx_sm: SM<Sm1>, pin: AnyPin) {
                 // log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
             }
             select::Either::Second(x) => {
+                last_rx = Instant::now();
                 let x = x.to_be_bytes()[0];
                 // log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
                 OTHER_SIDE_RX.write(&[255 - x as u8]).await;
+
+                while let Some(x) = rx_sm.try_pull_rx() {
+                    let x = x.to_be_bytes()[0];
+                    OTHER_SIDE_RX.write(&[255 - x as u8]).await;
+                }
             }
         }
     }
@@ -160,10 +174,10 @@ pub fn half_duplex_task_rx(mut sm: SM<Sm1>, pin: AnyPin) -> SM<Sm1> {
         "bitloop:",
         "in    pins, 1",
         "jmp   x--, bitloop [6]",
-        // "jmp   pin, stop",
-        // "wait  1 pin, 0",
-        // "jmp   start",
-        // "stop:",
+        "jmp   pin, stop",
+        "wait  1 pin, 0",
+        "jmp   start",
+        "stop:",
         "push block",
         ".wrap"
     );

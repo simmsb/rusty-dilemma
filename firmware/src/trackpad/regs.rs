@@ -34,8 +34,8 @@ pub const HostReg__29: u8 = 0x1D;
 pub const HostReg__30: u8 = 0x1E;
 pub const HostReg__31: u8 = 0x1F;
 
-pub trait Register {
-    const REG: u8;
+pub trait Register<AddrSize> {
+    const REG: AddrSize;
 
     fn from_byte(b: u8) -> Self;
     fn to_byte(self) -> u8;
@@ -43,11 +43,12 @@ pub trait Register {
 }
 
 macro_rules! register {
-    ($name:ident, $reg:expr, $def:expr) => {
+    ($addrty:ty, $name:ident, $reg:expr, $def:expr) => {
+        #[doc = concat!("Default value: `", stringify!($def), "`.")]
         pub struct $name(pub u8);
 
-        impl Register for $name {
-            const REG: u8 = $reg;
+        impl Register<$addrty> for $name {
+            const REG: $addrty = $reg;
 
             fn from_byte(b: u8) -> Self {
                 Self(b)
@@ -57,17 +58,19 @@ macro_rules! register {
                 self.0
             }
 
+            #[doc = concat!("Default value: `", stringify!($def), "`.")]
             fn def() -> Self {
                 Self($def)
             }
         }
     };
-    ($name:ident, $reg:expr, $def:expr, $tt:tt) => {
+    ($addrty:ty, $name:ident, $reg:expr, $def:expr, $fields:tt) => {
         #[::bitfield_struct::bitfield(u8)]
-        pub struct $name $tt
+        #[doc = concat!("Default value: `", stringify!($def), "`.")]
+        pub struct $name $fields
 
-        impl Register for $name {
-            const REG: u8 = $reg;
+        impl Register<$addrty> for $name {
+            const REG: $addrty = $reg;
 
             fn from_byte(b: u8) -> Self {
                 Self::from(b)
@@ -77,6 +80,7 @@ macro_rules! register {
                 u8::from(self)
             }
 
+            #[doc = concat!("Default value: `", stringify!($def), "`.")]
             fn def() -> Self {
                 Self($def)
             }
@@ -90,16 +94,16 @@ macro_rules! register {
 Chip ID / Version
 \*--------------------------------------------------------------------------*/
 // Chip ID Register
-register!(ChipId, HostReg__0, 0);
+register!(u8, ChipId, HostReg__0, 0);
 
 // Chip Version Register
-register!(Version, HostReg__1, 0);
+register!(u8, Version, HostReg__1, 0);
 
 /*--------------------------------------------------------------------------*\
 Status Register
 \*--------------------------------------------------------------------------*/
 // Status 1 Register -- MUST BE HOSTREG__2
-register!(Status, HostReg__2, 0, {
+register!(u8, Status, HostReg__2, 0, {
     #[bits(2)]
     _p: u8,
     pub data_ready: bool,
@@ -111,22 +115,22 @@ register!(Status, HostReg__2, 0, {
 /*--------------------------------------------------------------------------*\
 System Config Register
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__SYSCONFIG1: u8 = HostReg__3;
-pub const HOSTREG__SYSCONFIG1__RESET: u8 = 0x01;
-pub const HOSTREG__SYSCONFIG1__STANDBY: u8 = 0x02;
-pub const HOSTREG__SYSCONFIG1__AUTO_SLEEP: u8 = 0x04;
-pub const HOSTREG__SYSCONFIG1__TRACK_DISABLE: u8 = 0x08;
-pub const HOSTREG__SYSCONFIG1__ANYMEAS_ENABLE: u8 = 0x10;
-pub const HOSTREG__SYSCONFIG1__GPIO_CTRL_ENABLE: u8 = 0x20;
-pub const HOSTREG__SYSCONFIG1__WAKEUP_TOGGLE: u8 = 0x40;
-pub const HOSTREG__SYSCONFIG1__FORCE_WAKEUP: u8 = 0x80;
-pub const HOSTREG__SYSCONFIG1_DEFVAL: u8 = 0x00;
+register!(u8, SystemConfig, HostReg__3, 0, {
+    pub reset: bool,
+    pub standby: bool,
+    pub auto_sleep: bool,
+    pub track_disable: bool,
+    pub anymeas_enable: bool,
+    pub gpio_ctrl_enable: bool,
+    pub wakeup_toggle: bool,
+    pub force_wakeup: bool,
+});
 
 /*--------------------------------------------------------------------------*\
 Feed Config Registers
 \*--------------------------------------------------------------------------*/
 // Feed Config Register1
-register!(FeedConfig, HostReg__4, 0, {
+register!(u8, FeedConfig1, HostReg__4, 0, {
     pub feed_enable: bool,
     pub data_type_relo0_abs1: bool,
     pub filter_disable: bool,
@@ -138,46 +142,49 @@ register!(FeedConfig, HostReg__4, 0, {
 });
 
 // Feed Config Register2
-pub const HOSTREG__FEEDCONFIG2: u8 = HostReg__5;
-pub const HOSTREG__FEEDCONFIG2__INTELLIMOUSE_MODE: u8 = 0x01;
-pub const HOSTREG__FEEDCONFIG2__ALL_TAP_DISABLE: u8 = 0x02;
-pub const HOSTREG__FEEDCONFIG2__SECONDARY_TAP_DISABLE: u8 = 0x04;
-pub const HOSTREG__FEEDCONFIG2__SCROLL_DISABLE: u8 = 0x08;
-pub const HOSTREG__FEEDCONFIG2__GLIDE_EXTEND_DISABLE: u8 = 0x10;
-pub const HOSTREG__FEEDCONFIG2__PALM_BEFORE_Z_ENABLE: u8 = 0x20;
-pub const HOSTREG__FEEDCONFIG2__BUTNS_46_SCROLL_5_MIDDLE: u8 = 0x40;
-pub const HOSTREG__FEEDCONFIG2__SWAP_XY_RELATIVE: u8 = 0x80;
-pub const HOSTREG__FEEDCONFIG2_DEFVAL: u8 = 0x00;
+register!(u8, FeedConfig2, HostReg__5, 0, {
+    pub intellimouse_mode: bool,
+    pub all_tap_disable: bool,
+    pub secondary_tap_disable: bool,
+    pub scroll_disable: bool,
+    pub glide_extend_disable: bool,
+    pub palm_before_z_enable: bool,
+    pub butns_46_scroll_5_middle: bool,
+    pub swap_xy_relative: bool,
+});
 
 // Feed Config Register3
-pub const HOSTREG__FEEDCONFIG3: u8 = HostReg__6;
-pub const HOSTREG__FEEDCONFIG3__BTNS_456_TO_123_IN_REL: u8 = 0x01;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_CROSS_RATE_SMOOTHING: u8 = 0x02;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_PALM_NERD_MEAS: u8 = 0x04;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_NOISE_AVOIDANCE: u8 = 0x08;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_WRAP_LOCKOUT: u8 = 0x10;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_DYNAMIC_EMI_ADJUST: u8 = 0x20;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_HW_EMI_DETECT: u8 = 0x40;
-pub const HOSTREG__FEEDCONFIG3__DISABLE_SW_EMI_DETECT: u8 = 0x80;
-pub const HOSTREG__FEEDCONFIG3_DEFVAL: u8 = 0x00;
+register!(u8, FeedConfig3, HostReg__6, 0, {
+    pub btns_456_to_123_in_rel: bool,
+    pub disable_cross_rate_smoothing: bool,
+    pub disable_palm_nerd_meas: bool,
+    pub disable_noise_avoidance: bool,
+    pub disable_wrap_lockout: bool,
+    pub disable_dynamic_emi_adjust: bool,
+    pub disable_hw_emi_detect: bool,
+    pub disable_sw_emi_detect: bool,
+});
 
 /*--------------------------------------------------------------------------*\
 Calibration Config
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__CALCONFIG1: u8 = HostReg__7;
-pub const HOSTREG__CALCONFIG1__CALIBRATE: u8 = 0x01;
-pub const HOSTREG__CALCONFIG1__BACKGROUND_COMP_ENABLE: u8 = 0x02;
-pub const HOSTREG__CALCONFIG1__NERD_COMP_ENABLE: u8 = 0x04;
-pub const HOSTREG__CALCONFIG1__TRACK_ERROR_COMP_ENABLE: u8 = 0x08;
-pub const HOSTREG__CALCONFIG1__TAP_COMP_ENABLE: u8 = 0x10;
-pub const HOSTREG__CALCONFIG1__PALM_ERROR_COMP_ENABLE: u8 = 0x20;
-pub const HOSTREG__CALCONFIG1__CALIBRATION_MATRIX_DISABLE: u8 = 0x40;
-pub const HOSTREG__CALCONFIG1__FORCE_PRECALIBRATION_NOISE_CHECK: u8 = 0x80;
-pub const HOSTREG__CALCONFIG1_DEFVAL: u8 = (HOSTREG__CALCONFIG1__BACKGROUND_COMP_ENABLE
-    | HOSTREG__CALCONFIG1__NERD_COMP_ENABLE
-    | HOSTREG__CALCONFIG1__TRACK_ERROR_COMP_ENABLE
-    | HOSTREG__CALCONFIG1__TAP_COMP_ENABLE
-    | HOSTREG__CALCONFIG1__PALM_ERROR_COMP_ENABLE);
+register!(u8, CalConfig, HostReg__7,
+          CalConfig::new()
+            .with_background_comp_enable(true)
+            .with_nerd_comp_enable(true)
+            .with_track_error_comp_enable(true)
+            .with_tap_comp_enable(true)
+            .with_palm_error_comp_enable(true)
+            .into(), {
+    pub calibrate: bool,
+    pub background_comp_enable: bool,
+    pub nerd_comp_enable: bool,
+    pub track_error_comp_enable: bool,
+    pub tap_comp_enable: bool,
+    pub palm_error_comp_enable: bool,
+    pub calibration_matrix_disable: bool,
+    pub force_precalibration_noise_check: bool,
+});
 
 /*--------------------------------------------------------------------------*\
 PS2 Aux Control Register
@@ -196,113 +203,104 @@ pub const HOSTREG__PR2AUX_CTRL_DEFVAL: u8 = 0x00;
 /*--------------------------------------------------------------------------*\
 Sample Rate Value
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__SAMPLERATE: u8 = HostReg__9;
-pub const HOSTREG__SAMPLERATE__10_SPS: u8 = 0x0A;
-pub const HOSTREG__SAMPLERATE__20_SPS: u8 = 0x14;
-pub const HOSTREG__SAMPLERATE__40_SPS: u8 = 0x28;
-pub const HOSTREG__SAMPLERATE__60_SPS: u8 = 0x3C;
-pub const HOSTREG__SAMPLERATE__80_SPS: u8 = 0x50;
-pub const HOSTREG__SAMPLERATE__100_SPS: u8 = 0x64;
-pub const HOSTREG__SAMPLERATE__200_SPS: u8 = 0xC8; // 200sps not supported
-                                                   // only for ps2 compatibility
-                                                   // rate set to 100sps
-pub const HOSTREG__SAMPLERATE_DEFVAL: u8 = HOSTREG__SAMPLERATE__100_SPS;
+register!(u8, SampleRate, HostReg__9, SampleRate::SPS_100);
+impl SampleRate {
+    pub const SPS_10: u8 = 0x0A;
+    pub const SPS_20: u8 = 0x14;
+    pub const SPS_40: u8 = 0x28;
+    pub const SPS_60: u8 = 0x3C;
+    pub const SPS_80: u8 = 0x50;
+    pub const SPS_100: u8 = 0x64;
+    pub const SPS_200: u8 = 0xC8;
+}
 
 /*--------------------------------------------------------------------------*\
 Z Idle Value
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__ZIDLE: u8 = HostReg__10;
-pub const HOSTREG__ZIDLE_DEFVAL: u8 = 30; // 0x1E
+register!(u8, ZIdle, HostReg__10, 30);
 
 /*--------------------------------------------------------------------------*\
 Z Scaler Value
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__ZSCALER: u8 = HostReg__11;
-pub const HOSTREG__ZSCALER_DEFVAL: u8 = 8; // 0x08
+register!(u8, ZScaler, HostReg__11, 8);
 
 /*--------------------------------------------------------------------------*\
 Sleep Interval Value
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__SLEEP_INTERVAL: u8 = HostReg__12;
-pub const HOSTREG__SLEEP_INTERVAL_DEFVAL: u8 = 73; // 0x49
+register!(u8, SleepInterval, HostReg__12, 73);
 
 /*--------------------------------------------------------------------------*\
 Sleep Delay Value
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__SLEEP_DELAY: u8 = HostReg__13;
-pub const HOSTREG__SLEEP_DELAY_DEFVAL: u8 = 39; // 0x27
+register!(u8, SleepDelay, HostReg__13, 39);
 
 /*--------------------------------------------------------------------------*\
 Dynamic EMI Bad Channel Count Thresholds
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__DYNAMIC_EMI_ADJUST_THRESHOLD: u8 = HostReg__14;
-pub const HOSTREG__DYNAMIC_EMI_ADJUST_THRESHOLD_DEFVAL: u8 = 66; // 0x42
+register!(u8, DynamicEmiAdjustThreshold, HostReg__14, 66);
 
 /*--------------------------------------------------------------------------*\
 Packet Registers
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__PACKETBYTE_0: u8 = HostReg__18;
-pub const HOSTREG__PACKETBYTE_1: u8 = HostReg__19;
-pub const HOSTREG__PACKETBYTE_2: u8 = HostReg__20;
-pub const HOSTREG__PACKETBYTE_3: u8 = HostReg__21;
-pub const HOSTREG__PACKETBYTE_4: u8 = HostReg__22;
-pub const HOSTREG__PACKETBYTE_5: u8 = HostReg__23;
+register!(u8, Packet0, HostReg__18, 0);
+register!(u8, Packet1, HostReg__19, 0);
+register!(u8, Packet2, HostReg__20, 0);
+register!(u8, Packet3, HostReg__21, 0);
+register!(u8, Packet4, HostReg__22, 0);
+register!(u8, Packet5, HostReg__23, 0);
 
 /*--------------------------------------------------------------------------*\
 Port A GPIO Control
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__PORTA_GPIO_CTRL: u8 = HostReg__24;
-pub const HOSTREG__PORTA_GPIO_CTRL_DEFVAL: u8 = 0xFF;
+register!(u8, PortAGPIOCtrl, HostReg__24, 0xFF);
 
 /*--------------------------------------------------------------------------*\
 Port A GPIO Data
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__PORTA_GPIO_DATA: u8 = HostReg__25;
-pub const HOSTREG__PORTA_GPIO_DATA_DEFVAL: u8 = 0x00;
+register!(u8, PortAGPIOData, HostReg__25, 0);
 
 /*--------------------------------------------------------------------------*\
 Port B GPIO Control And Data
 \*--------------------------------------------------------------------------*/
-
-pub const HOSTREG__PORTB_GPIO_CTRL_DATA: u8 = HostReg__26;
-pub const HOSTREG__PORTB_GPIO_DATA__PB0: u8 = 0x01;
-pub const HOSTREG__PORTB_GPIO_DATA__PB1: u8 = 0x02;
-pub const HOSTREG__PORTB_GPIO_DATA__PB2: u8 = 0x04;
-pub const HOSTREG__PORTB_GPIO_CTRL__PB0: u8 = 0x08;
-pub const HOSTREG__PORTB_GPIO_CTRL__PB1: u8 = 0x10;
-pub const HOSTREG__PORTB_GPIO_CTRL__PB2: u8 = 0x20;
-pub const HOSTREG__PORTB_GPIO_RSVD_0: u8 = 0x40;
-pub const HOSTREG__PORTB_GPIO_READ1_WRITE0: u8 = 0x80;
-pub const HOSTREG__PORTB_GPIO_CTRL_DATA_DEFVAL: u8 =
-    (HOSTREG__PORTB_GPIO_CTRL__PB0 | HOSTREG__PORTB_GPIO_CTRL__PB1 | HOSTREG__PORTB_GPIO_CTRL__PB2);
+register!(u8, PortBGpioCtrl, HostReg__26,
+          PortBGpioCtrl::new()
+            .with_ctrl_pb0(true)
+            .with_ctrl_pb1(true)
+            .with_ctrl_pb2(true)
+            .into(), {
+    pub data_pb0: bool,
+    pub data_pb1: bool,
+    pub data_pb2: bool,
+    pub ctrl_pb0: bool,
+    pub ctrl_pb1: bool,
+    pub ctrl_pb2: bool,
+    pub rsvd_0: bool,
+    pub read1_write0: bool,
+});
 
 /*--------------------------------------------------------------------------*\
 Extended Register Access
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__EXT_REG_AXS_VALUE: u8 = HostReg__27;
+register!(u8, AXSValue, HostReg__27, 0);
 
-pub const HOSTREG__EXT_REG_AXS_ADDR_HIGH: u8 = HostReg__28;
-pub const HOSTREG__EXT_REG_AXS_ADDR_LOW: u8 = HostReg__29;
+register!(u8, AXSAddrHigh, HostReg__28, 0);
+register!(u8, AXSAddrLow, HostReg__29, 0);
 
-pub const HOSTREG__EXT_REG_AXS_CTRL: u8 = HostReg__30;
-pub const HOSTREG__EREG_AXS__READ: u8 = 0x01;
-pub const HOSTREG__EREG_AXS__WRITE: u8 = 0x02;
-pub const HOSTREG__EREG_AXS__INC_ADDR_READ: u8 = 0x04;
-pub const HOSTREG__EREG_AXS__INC_ADDR_WRITE: u8 = 0x08;
-pub const HOSTREG__EREG_AXS__RSVD_3: u8 = 0x10;
-pub const HOSTREG__EREG_AXS__RSVD_2: u8 = 0x20;
-pub const HOSTREG__EREG_AXS__RSVD_1: u8 = 0x40;
-pub const HOSTREG__EREG_AXS__RSVD_0: u8 = 0x80;
-
-pub const HOSTREG__EXT_REG_AXS_VALUE_DEFVAL: u8 = 0x00;
-pub const HOSTREG__EXT_REG_AXS_ADDR_HIGH_DEFVAL: u8 = 0x00;
-pub const HOSTREG__EXT_REG_AXS_ADDR_LOW_DEFVAL: u8 = 0x00;
-pub const HOSTREG__EXT_REG_AXS_CTRL_DEFVAL: u8 = 0x00;
+register!(u8, AXSCtrl, HostReg__30, 0, {
+    pub read: bool,
+    pub write: bool,
+    pub inc_addr_read: bool,
+    pub inc_addr_write: bool,
+    pub rsvd_3: bool,
+    pub rsvd_2: bool,
+    pub rsvd_1: bool,
+    pub rsvd_0: bool,
+});
 
 /*--------------------------------------------------------------------------*\
 Product ID
 \*--------------------------------------------------------------------------*/
-pub const HOSTREG__PRODUCT_ID: u8 = HostReg__31;
+register!(u8, ProductId, HostReg__31, 0);
 
 //Some useful values
 pub const I2C_ADDRESS_DEFAULT: u8 = 0x2A;
@@ -312,23 +310,60 @@ pub const FIRMWARE_VERSION: u8 = 0x9D;
 //Anymeas config options
 //First setting is HostReg 5.  This sets toggle frequency (EF) and gain.
 //Gain is upper two bits (0xC0), frequency is lower 6 bits (0x3F)
-pub const AnyMeas_AccumBits_ElecFreq: u8 = HostReg__5;
-pub const ADCCNFG_ELEC_FREQ: u8 = 0x3F  /* Bit 4, 3, 2, 1, 0 */;
-pub const ADCCNFG_EF_0: u8 = 0x02; // 500,000Hz
-pub const ADCCNFG_EF_1: u8 = 0x03; // 444,444Hz
-pub const ADCCNFG_EF_2: u8 = 0x04; // 400,000Hz
-pub const ADCCNFG_EF_3: u8 = 0x05; // 363,636Hz
-pub const ADCCNFG_EF_4: u8 = 0x06; // 333,333Hz
-pub const ADCCNFG_EF_5: u8 = 0x07; // 307,692Hz
-pub const ADCCNFG_EF_6: u8 = 0x09; // 267,000Hz
-pub const ADCCNFG_EF_7: u8 = 0x0B; // 235,000Hz
-pub const ADCCNFG_ACCUMBITSSELECT: u8 = 0xC0  /* Bit 7, 6 */;
-pub const ADCCNFG_ACCBITS_17_14_0: u8 = 0x00; //This is about 2x gain
-pub const ADCCNFG_ACCBITS_17_15_1: u8 = 0x40; //This is about 1.6x gain
-pub const ADCCNFG_ACCBITS_17_2__80: u8 = 0x80; //This is about 1.3x gain
-pub const ADCCNFG_ACCBITS_17_2__C0: u8 = 0xC0; //This is lowest gain
-                                               //Note, all frequencies above are based on default 500ns aperture.  If aperture is shorter the frequencies will be faster and if aperture is longer the frequencies will be slower.
 
+register!(u8, AnyMeasAccumBitsElecFreq, HostReg__5, 0, {
+    #[bits(5)]
+    pub elec_freq: u8,
+
+    #[bits(1)]
+    _p: u8,
+
+    #[bits(2)]
+    pub accum_bits_select: u8
+});
+
+impl AnyMeasAccumBitsElecFreq {
+    /// 500,000Hz
+    const EF_0: u8 = 0x02;
+
+    /// 444,444Hz
+    const EF_1: u8 = 0x03;
+
+    /// 400,000Hz
+    const EF_2: u8 = 0x04;
+
+    /// 363,636Hz
+    const EF_3: u8 = 0x05;
+
+    /// 333,333Hz
+    const EF_4: u8 = 0x06;
+
+    /// 307,692Hz
+    const EF_5: u8 = 0x07;
+
+    /// 267,000Hz
+    const EF_6: u8 = 0x08;
+
+    /// 235,000Hz
+    const EF_7: u8 = 0x09;
+
+    const GAIN_2X: u8 = 0;
+    const GAIN_1_6X: u8 = 1;
+    const GAIN_1_3X: u8 = 2;
+    const GAIN_MIN: u8 = 3;
+}
+
+register!(u8, AnyMeasBitLength, HostReg__6, 0, {
+    #[bits(2)]
+    pub bit_length: u8,
+
+    #[bits(3)]
+    _p: u8,
+
+    enable: bool,
+    int_flag: bool,
+    start_busy: bool,
+});
 //Next is HostReg 6.  This sets the sample length.  There are four possible settings to bit length.  All other settings are not normally used and should be a 0.
 pub const AnyMeas_BitLength: u8 = HostReg__6;
 pub const ADCCTRL_BIT_LENGTH: u8 = 0x03  /* Bit 1, 0 */;
@@ -432,22 +467,29 @@ pub const EXTREG__TIMER_RELOAD__100_SPS: u8 = 0x13;
 /*--------------------------------------------------------------------------*\
                        Track ADC Config
 \*--------------------------------------------------------------------------*/
-pub const EXTREG__TRACK_ADCCONFIG: u16 = 0x0187;
-// ADC-attenuation settings (held in BIT_7 and BIT_6)
-// 1X = most sensitive, 4X = least sensitive
-pub const EXTREG__TRACK_ADCCONFIG__ADC_ATTENUATE_MASK: u8 = 0xC0;
-pub const EXTREG__TRACK_ADCCONFIG__ADC_ATTENUATE_1X: u8 = 0x00;
-pub const EXTREG__TRACK_ADCCONFIG__ADC_ATTENUATE_2X: u8 = 0x40;
-pub const EXTREG__TRACK_ADCCONFIG__ADC_ATTENUATE_3X: u8 = 0x80;
-pub const EXTREG__TRACK_ADCCONFIG__ADC_ATTENUATE_4X: u8 = 0xC0;
-pub const EXTREG__TRACK_ADCCONFIG_DEFVAL: u8 = 0x4E;
+register!(u16, TrackAdcConfig, 0x0187, 0x4e, {
+    #[bits(6)]
+    _p: u8,
+
+    #[bits(2)]
+    pub attenuate: AdcAttenuation,
+});
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+#[repr(u8)]
+pub enum AdcAttenuation {
+    #[num_enum(default)]
+    X1 = 0,
+    X2 = 1,
+    X3 = 2,
+    X4 = 3,
+}
 
 /*--------------------------------------------------------------------------*\
                         Tune Edge Sensitivity
 \*--------------------------------------------------------------------------*/
 // These registers are not detailed in any publically available documentation
 // Names inferred from debug prints in https://github.com/cirque-corp/Cirque_Pinnacle_1CA027/blob/master/Circular_Trackpad
-pub const EXTREG__XAXIS_WIDEZMIN: u16 = 0x0149;
-pub const EXTREG__YAXIS_WIDEZMIN: u16 = 0x0168;
-pub const EXTREG__XAXIS_WIDEZMIN_DEFVAL: u16 = 0x06;
-pub const EXTREG__YAXIS_WIDEZMIN_DEFVAL: u16 = 0x05;
+
+register!(u16, XAxisWideZMin, 0x0149, 0x06);
+register!(u16, YAxisWideZMin, 0x0168, 0x05);
