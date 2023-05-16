@@ -6,5 +6,5 @@ use cortex_m_rt::entry;
 
 #[entry]
 fn main() -> ! {
-    rusty_dilemma::entry(shared::side::KeyboardSide::Left);
+    rusty_dilemma::entry();
 }

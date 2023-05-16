@@ -7,7 +7,7 @@ use embassy_executor::{Spawner, Executor};
 use embassy_rp::dma::Channel;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
 use embassy_rp::interrupt;
-use embassy_rp::peripherals::PIN_19;
+use embassy_rp::peripherals::{PIN_19, PIN_29};
 use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
@@ -41,6 +41,14 @@ fn detect_usb(pin: Input<'_, PIN_19>) -> bool {
     let connected = pin.is_high();
     log::info!("Usb connected? {}", connected);
     connected
+}
+
+
+fn detect_side(pin: Input<'_, PIN_29>) -> KeyboardSide {
+    let is_right = pin.is_high();
+    let side = if is_right { KeyboardSide::Right } else { KeyboardSide::Left };
+    log::info!("I'm the {:?} side", side);
+    side
 }
 
 #[embassy_executor::task]
@@ -77,16 +85,16 @@ unsafe fn check_bootloader() {
     reset_to_usb_boot(1 << 17, 0);
 }
 
-pub fn entry(side: KeyboardSide) -> ! {
+pub fn entry() -> ! {
     let executor: &mut Executor = singleton!(Executor::new());
 
     executor.run(|spawner| {
-        spawner.must_spawn(main(spawner, side));
+        spawner.must_spawn(main(spawner));
     })
 }
 
 #[embassy_executor::task]
-async fn main(spawner: Spawner, side: KeyboardSide) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     unsafe {
         check_bootloader();
@@ -97,7 +105,8 @@ async fn main(spawner: Spawner, side: KeyboardSide) {
     // not sure if this makes the usb detection happier
     Timer::after(Duration::from_micros(100)).await;
 
-    side::init(side, detect_usb(Input::new(p.PIN_19, embassy_rp::gpio::Pull::Down)));
+    let s = detect_side(Input::new(p.PIN_29, embassy_rp::gpio::Pull::Down));
+    side::init(s, detect_usb(Input::new(p.PIN_19, embassy_rp::gpio::Pull::Down)));
 
     if side::this_side_has_usb() {
         let irq = interrupt::take!(USBCTRL_IRQ);

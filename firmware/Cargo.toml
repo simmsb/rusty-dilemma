@@ -6,12 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "left"
-path = "src/bin/left.rs"
-
-[[bin]]
-name = "right"
-path = "src/bin/right.rs"
+name = "binary"
+path = "src/bin/binary.rs"
 
 [dependencies]
 shared = { path = "../shared" }

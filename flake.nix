@@ -91,40 +91,31 @@
             ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
-          packages.bl-left = firmware { args = "--bin left --features probe,bootloader"; profile = "release"; };
-          packages.left = firmware { args = "--bin left --no-default-features"; profile = "release"; };
-          packages.debug-left = firmware { args = "--bin left --features probe"; profile = "dev"; };
-          packages.bl-right = firmware { args = "--bin right --features probe,bootloader"; profile = "release"; };
-          packages.right = firmware { args = "--bin right --no-default-features"; profile = "release"; };
-          packages.debug-right = firmware { args = "--bin right --features probe"; profile = "dev"; };
+          packages.bl-bin = firmware { args = "--bin binary --features probe,bootloader"; profile = "release"; };
+          packages.bin = firmware { args = "--bin binary --no-default-features"; profile = "release"; };
+          packages.debug-bin = firmware { args = "--bin binary --features probe"; profile = "dev"; };
           packages.bootloader = bootloader;
           packages.bl-binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
             paths = [
-              (elf packages.bl-left "left")
-              (elf packages.bl-right "right")
+              (elf packages.bl-bin "binary")
               (elf packages.bootloader "boot")
-              (binary packages.bl-left "left")
-              (binary packages.bl-right "right")
+              (binary packages.bl-bin "binary")
               (binary packages.bootloader "boot")
             ];
           };
           packages.binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
             paths = [
-              (elf packages.left "left")
-              (elf packages.right "right")
-              (binary packages.left "left")
-              (binary packages.right "right")
+              (elf packages.bin "binary")
+              (binary packages.bin "binary")
             ];
           };
           packages.debug-binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
             paths = [
-              (elf packages.debug-left "left")
-              (elf packages.debug-right "right")
-              (binary packages.debug-left "left")
-              (binary packages.debug-right "right")
+              (elf packages.debug-bin "binary")
+              (binary packages.debug-bin "binary")
             ];
           };
         };
