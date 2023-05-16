@@ -10,11 +10,30 @@ pub struct Trackpad<SPI, const DIAMETER: u32> {
     spi: SPI,
     position_mode: PositionMode,
     overlay: Overlay,
+    transform: TransformMode,
     relative_remainder: (i16, i16),
     glide: Option<GlideContext>,
-    last_pos: (u16, u16),
+    last_pos: Option<(u16, u16)>,
     scale: u16,
     last_scale: u16,
+}
+
+pub enum TransformMode {
+    Normal,
+    Rotate90,
+    Rotate180,
+    Rotate270,
+}
+
+impl TransformMode {
+    fn transform(&self, x: i8, y: i8) -> (i8, i8) {
+        match self {
+            TransformMode::Normal => (x, y),
+            TransformMode::Rotate90 => (y, -x),
+            TransformMode::Rotate180 => (-x, -y),
+            TransformMode::Rotate270 => (-y, x),
+        }
+    }
 }
 
 pub enum Overlay {
@@ -27,6 +46,8 @@ pub enum PositionMode {
     Relative,
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "probe", derive(defmt::Format))]
 pub enum Reading {
     Absolute {
         x: u16,
@@ -76,15 +97,17 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         spi: SPI,
         position_mode: PositionMode,
         overlay: Overlay,
+        transform: TransformMode,
         glide_config: Option<GlideConfig>,
     ) -> Self {
         Self {
             spi,
             position_mode,
             overlay,
+            transform,
             glide: glide_config.map(|c| GlideContext::new(c)),
             relative_remainder: (0, 0),
-            last_pos: (0, 0),
+            last_pos: None,
             scale: ((800 as u32 * DIAMETER * 10) / 254) as u16,
             last_scale: 0,
         }
@@ -94,24 +117,24 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         self.scale = ((cpi as u32 * DIAMETER * 10) / 254) as u16;
     }
 
-    pub async fn init(&mut self) {
+    pub async fn init(&mut self) -> Result<(), SPI::Error> {
         self.rap_write_reg(regs::SystemConfig::def().with_reset(true))
-            .await;
+            .await?;
 
         Timer::after(Duration::from_millis(30)).await;
 
-        self.rap_write_reg(regs::SystemConfig::def()).await;
+        self.rap_write_reg(regs::SystemConfig::def()).await?;
 
         Timer::after(Duration::from_micros(50)).await;
 
-        self.clear_flags().await;
+        self.clear_flags().await?;
 
         match self.position_mode {
             PositionMode::Absolute => {
-                self.rap_write_reg(regs::FeedConfig2::def()).await;
+                self.rap_write_reg(regs::FeedConfig2::def()).await?;
                 self.rap_write_reg(regs::FeedConfig1::def().with_data_type_relo0_abs1(true))
-                    .await;
-                self.rap_write_reg(regs::ZIdle(5)).await;
+                    .await?;
+                self.rap_write_reg(regs::ZIdle(5)).await?;
             }
             PositionMode::Relative => {
                 let cfg = regs::FeedConfig2::new()
@@ -121,35 +144,36 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
                     .with_secondary_tap_disable(true)
                     .with_scroll_disable(true);
 
-                self.rap_write_reg(cfg).await;
-                self.rap_write_reg(regs::FeedConfig1::def()).await;
+                self.rap_write_reg(cfg).await?;
+                self.rap_write_reg(regs::FeedConfig1::def()).await?;
             }
         }
 
         let should_calibrate = match self.overlay {
             Overlay::Curved => {
-                self.set_adc_attenuation(regs::AdcAttenuation::X2).await;
-                self.tune_edge_sensivity().await;
+                self.set_adc_attenuation(regs::AdcAttenuation::X2).await?;
+                self.tune_edge_sensivity().await?;
                 true
             }
-            Overlay::Other => {
-                self.set_adc_attenuation(regs::AdcAttenuation::X2).await
-            }
+            Overlay::Other => self.set_adc_attenuation(regs::AdcAttenuation::X2).await?,
         };
 
         if should_calibrate {
-            self.calibrate().await;
+            self.calibrate().await?;
         }
 
-        self.set_feed_enable(true).await;
+        self.set_feed_enable(true).await?;
+
+        Ok(())
     }
 
-    pub async fn get_report(&mut self) -> Option<(i8, i8)> {
-        let reading = self.read_data().await;
+    pub async fn get_report(&mut self) -> Result<Option<(i8, i8)>, SPI::Error> {
+        let reading = self.read_data().await?;
+        // crate::log::info!("raw reading: {:?}", reading);
 
         let glide_report = self.glide.as_mut().and_then(|g| g.check());
 
-        let Some(reading) = reading else { return None; };
+        let Some(reading) = reading else { return Ok(None); };
 
         let reading = self.scale_reading(reading);
 
@@ -163,13 +187,23 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
                 buttons: _,
                 touch_down,
             } => {
-                if self.last_scale != 0 && self.last_scale == self.scale && x != 0 && y != 0 {
-                    report_x = saturating_i16_to_i8(x as i16 - self.last_pos.0 as i16);
-                    report_y = saturating_i16_to_i8(y as i16 - self.last_pos.1 as i16);
+                if !touch_down {
+                    self.last_pos = None;
                 }
 
-                self.last_pos = (x, y);
-                self.last_scale = self.scale;
+                // crate::log::info!("handling report: {:?} last: {:?}", reading, self.last_pos);
+
+                if self.last_scale != 0 && self.last_scale == self.scale && x != 0 && y != 0 {
+                    if let Some((last_x, last_y)) = self.last_pos {
+                        report_x = saturating_i16_to_i8(x as i16 - last_x as i16);
+                        report_y = saturating_i16_to_i8(y as i16 - last_y as i16);
+                    }
+                }
+
+                if touch_down {
+                    self.last_pos = Some((x, y));
+                    self.last_scale = self.scale;
+                }
 
                 if let Some(glide_ctx) = &mut self.glide {
                     if touch_down {
@@ -195,18 +229,22 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             }
         }
 
-        Some((report_x, report_y))
+        Ok(Some(self.transform.transform(report_x, report_y)))
     }
 
-    async fn read_data(&mut self) -> Option<Reading> {
-        let status = self.rap_read_reg::<regs::Status>().await;
+    async fn read_data(&mut self) -> Result<Option<Reading>, SPI::Error> {
+        let status = self.rap_read_reg::<regs::Status>().await?;
         if !status.data_ready() {
-            return None;
+            return Ok(None);
         }
 
+        // crate::log::info!("status: {:?}", status);
+
         let mut data = [0u8; 6];
-        self.rap_read(regs::Packet0::REG, &mut data).await;
-        self.clear_flags().await;
+        self.rap_read(regs::Packet0::REG, &mut data).await?;
+        self.clear_flags().await?;
+
+        // crate::log::info!("read raw bytes: {:?}", data);
 
         match self.position_mode {
             PositionMode::Absolute => {
@@ -216,13 +254,14 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
                 let z = (data[5] & 0x3f) as u16;
                 let touch_down = x != 0 || y != 0;
 
-                Some(Reading::Absolute {
+                let reading = Reading::Absolute {
                     x,
                     y,
                     z,
                     buttons,
                     touch_down,
-                })
+                };
+                Ok(Some(reading))
             }
             PositionMode::Relative => {
                 let buttons = data[0] & 0x07;
@@ -241,12 +280,12 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
                 let wheel_count = i8::from_be_bytes([data[2]]);
 
-                Some(Reading::Relative {
+                Ok(Some(Reading::Relative {
                     dx,
                     dy,
                     wheel_count,
                     buttons,
-                })
+                }))
             }
         }
     }
@@ -262,8 +301,8 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             } => {
                 let (x, y) = Reading::resolve_abs(x, y);
 
-                let x = x * self.scale / Reading::ABS_X_RANGE;
-                let y = y * self.scale / Reading::ABS_Y_RANGE;
+                let x = (x as u32 * self.scale as u32 / Reading::ABS_X_RANGE as u32) as u16;
+                let y = (y as u32 * self.scale as u32 / Reading::ABS_Y_RANGE as u32) as u16;
 
                 Reading::Absolute {
                     x,
@@ -303,53 +342,60 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
 /// utility stuff
 impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
-    async fn set_feed_enable(&mut self, enabled: bool) {
-        let mut feed_config = self.rap_read_reg::<regs::FeedConfig1>().await;
+    async fn set_feed_enable(&mut self, enabled: bool) -> Result<(), SPI::Error> {
+        let mut feed_config = self.rap_read_reg::<regs::FeedConfig1>().await?;
         feed_config.set_feed_enable(enabled);
-        self.rap_write_reg(feed_config).await;
+        self.rap_write_reg(feed_config).await?;
+        Ok(())
     }
 
-    async fn clear_flags(&mut self) {
+    async fn clear_flags(&mut self) -> Result<(), SPI::Error> {
         self.rap_write_reg(
             regs::Status::def()
                 .with_command_complete(false)
                 .with_data_ready(false),
         )
-        .await;
+        .await?;
         Timer::after(Duration::from_micros(50)).await;
+        Ok(())
     }
 
-    async fn set_adc_attenuation(&mut self, gain: regs::AdcAttenuation) -> bool {
-        let mut cfg = self.era_read_reg::<regs::TrackAdcConfig>().await;
+    async fn set_adc_attenuation(
+        &mut self,
+        gain: regs::AdcAttenuation,
+    ) -> Result<bool, SPI::Error> {
+        let mut cfg = self.era_read_reg::<regs::TrackAdcConfig>().await?;
 
         if gain == cfg.attenuate() {
-            return false;
+            return Ok(false);
         }
 
         cfg.set_attenuate(gain);
-        self.era_write_reg(cfg).await;
-        self.era_read_reg::<regs::TrackAdcConfig>().await;
+        self.era_write_reg(cfg).await?;
+        self.era_read_reg::<regs::TrackAdcConfig>().await?;
 
-        return true;
+        return Ok(true);
     }
 
-    async fn tune_edge_sensivity(&mut self) {
-        self.era_read_reg::<regs::XAxisWideZMin>().await;
-        self.era_write_reg(regs::XAxisWideZMin(0x04)).await;
-        self.era_read_reg::<regs::XAxisWideZMin>().await;
+    async fn tune_edge_sensivity(&mut self) -> Result<(), SPI::Error> {
+        self.era_read_reg::<regs::XAxisWideZMin>().await?;
+        self.era_write_reg(regs::XAxisWideZMin(0x04)).await?;
+        self.era_read_reg::<regs::XAxisWideZMin>().await?;
 
-        self.era_read_reg::<regs::YAxisWideZMin>().await;
-        self.era_write_reg(regs::YAxisWideZMin(0x03)).await;
-        self.era_read_reg::<regs::YAxisWideZMin>().await;
+        self.era_read_reg::<regs::YAxisWideZMin>().await?;
+        self.era_write_reg(regs::YAxisWideZMin(0x03)).await?;
+        self.era_read_reg::<regs::YAxisWideZMin>().await?;
+
+        Ok(())
     }
 
-    async fn calibrate(&mut self) {
-        let cfg = self.rap_read_reg::<regs::CalConfig>().await;
-        self.rap_write_reg(cfg.with_calibrate(true)).await;
+    async fn calibrate(&mut self) -> Result<(), SPI::Error> {
+        let cfg = self.rap_read_reg::<regs::CalConfig>().await?;
+        self.rap_write_reg(cfg.with_calibrate(true)).await?;
 
         let _ = with_timeout(Duration::from_millis(200), async {
             loop {
-                let v = self.rap_read_reg::<regs::CalConfig>().await;
+                let Ok(v) = self.rap_read_reg::<regs::CalConfig>().await else { continue; };
                 if !v.calibrate() {
                     break;
                 }
@@ -357,34 +403,37 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         })
         .await;
 
-        self.clear_flags().await;
+        self.clear_flags().await?;
+
+        Ok(())
     }
 
-    async fn set_cursor_smoothing(&mut self, enabled: bool) {
-        let cfg = self.rap_read_reg::<regs::FeedConfig3>().await;
+    #[allow(unused)]
+    async fn set_cursor_smoothing(&mut self, enabled: bool) -> Result<(), SPI::Error> {
+        let cfg = self.rap_read_reg::<regs::FeedConfig3>().await?;
         self.rap_write_reg(cfg.with_disable_cross_rate_smoothing(!enabled))
-            .await;
+            .await
     }
 }
 
 /// era reading
 impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
-    async fn era_read_reg<R: regs::Register<u16>>(&mut self) -> R {
+    async fn era_read_reg<R: regs::Register<u16>>(&mut self) -> Result<R, SPI::Error> {
         let mut b: u8 = 0u8;
-        self.era_read(R::REG, core::slice::from_mut(&mut b)).await;
-        R::from_byte(b)
+        self.era_read(R::REG, core::slice::from_mut(&mut b)).await?;
+        Ok(R::from_byte(b))
     }
 
-    async fn era_write_reg<R: regs::Register<u16>>(&mut self, value: R) {
-        self.era_write(R::REG, value.to_byte()).await;
+    async fn era_write_reg<R: regs::Register<u16>>(&mut self, value: R) -> Result<(), SPI::Error> {
+        self.era_write(R::REG, value.to_byte()).await
     }
 
-    async fn era_read(&mut self, address: u16, buf: &mut [u8]) {
-        self.set_feed_enable(false).await;
+    async fn era_read(&mut self, address: u16, buf: &mut [u8]) -> Result<(), SPI::Error> {
+        self.set_feed_enable(false).await?;
 
         let [upper, lower] = address.to_be_bytes();
-        self.rap_write_reg(regs::AXSAddrHigh(upper)).await;
-        self.rap_write_reg(regs::AXSAddrLow(lower)).await;
+        self.rap_write_reg(regs::AXSAddrHigh(upper)).await?;
+        self.rap_write_reg(regs::AXSAddrLow(lower)).await?;
 
         for dst in buf {
             self.rap_write_reg(
@@ -392,11 +441,11 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
                     .with_inc_addr_read(true)
                     .with_read(true),
             )
-            .await;
+            .await?;
 
             let _ = with_timeout(Duration::from_millis(20), async {
                 loop {
-                    let v = self.rap_read_reg::<regs::AXSCtrl>().await;
+                    let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else { continue; };
                     if u8::from(v) == 0 {
                         break;
                     }
@@ -404,27 +453,29 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             })
             .await;
 
-            *dst = self.rap_read_reg::<regs::AXSValue>().await.0;
+            *dst = self.rap_read_reg::<regs::AXSValue>().await?.0;
         }
 
-        self.clear_flags().await;
+        self.clear_flags().await?;
+
+        Ok(())
     }
 
-    async fn era_write(&mut self, address: u16, data: u8) {
-        self.set_feed_enable(false).await;
+    async fn era_write(&mut self, address: u16, data: u8) -> Result<(), SPI::Error> {
+        self.set_feed_enable(false).await?;
 
-        self.rap_write_reg(regs::AXSValue(data)).await;
+        self.rap_write_reg(regs::AXSValue(data)).await?;
 
         let [upper, lower] = address.to_be_bytes();
-        self.rap_write_reg(regs::AXSAddrHigh(upper)).await;
-        self.rap_write_reg(regs::AXSAddrLow(lower)).await;
+        self.rap_write_reg(regs::AXSAddrHigh(upper)).await?;
+        self.rap_write_reg(regs::AXSAddrLow(lower)).await?;
 
         self.rap_write_reg(regs::AXSCtrl::def().with_write(true))
-            .await;
+            .await?;
 
         let _ = with_timeout(Duration::from_millis(20), async {
             loop {
-                let v = self.rap_read_reg::<regs::AXSCtrl>().await;
+                let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else { continue; };
                 if u8::from(v) == 0 {
                     break;
                 }
@@ -432,45 +483,51 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         })
         .await;
 
-        self.clear_flags().await;
+        self.clear_flags().await?;
+
+        Ok(())
     }
 }
 
 /// rap reading
 impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
-    async fn rap_read_reg<R: regs::Register<u8>>(&mut self) -> R {
+    async fn rap_read_reg<R: regs::Register<u8>>(&mut self) -> Result<R, SPI::Error> {
         let mut b: u8 = 0u8;
-        self.rap_read(R::REG, core::slice::from_mut(&mut b)).await;
-        R::from_byte(b)
+        self.rap_read(R::REG, core::slice::from_mut(&mut b)).await?;
+        Ok(R::from_byte(b))
     }
 
-    async fn rap_write_reg<R: regs::Register<u8>>(&mut self, value: R) {
-        self.rap_write(R::REG, &[value.to_byte()]).await;
+    async fn rap_write_reg<R: regs::Register<u8>>(&mut self, value: R) -> Result<(), SPI::Error> {
+        self.rap_write(R::REG, &[value.to_byte()]).await
     }
 
-    async fn rap_read_byte(&mut self, address: u8) -> u8 {
-        let mut b: u8 = 0u8;
-        self.rap_read(address, core::slice::from_mut(&mut b)).await;
-        b
-    }
+    // async fn rap_read_byte(&mut self, address: u8) -> Result<u8, SPI::Error> {
+    //     let mut b: u8 = 0u8;
+    //     self.rap_read(address, core::slice::from_mut(&mut b))
+    //         .await?;
+    //     Ok(b)
+    // }
 
-    async fn rap_write_byte(&mut self, address: u8, value: u8) {
-        self.rap_write(address, &[value]).await;
-    }
+    // async fn rap_write_byte(&mut self, address: u8, value: u8) -> Result<(), SPI::Error> {
+    //     self.rap_write(address, &[value]).await
+    // }
 
-    async fn rap_read(&mut self, address: u8, buf: &mut [u8]) {
+    async fn rap_read(&mut self, address: u8, buf: &mut [u8]) -> Result<(), SPI::Error> {
         let cmd = address | READ_MASK;
-        let _ = self.spi.write(&[cmd, FILLER_BYTE, FILLER_BYTE]).await;
+        let mut bin = [0u8; 3];
+        self.spi
+            .transfer(&mut bin, &[cmd, FILLER_BYTE, FILLER_BYTE])
+            .await?;
         for dst in buf {
-            let _ = self
-                .spi
+            self.spi
                 .transfer(core::slice::from_mut(dst), &[FILLER_BYTE])
-                .await;
+                .await?;
         }
+        Ok(())
     }
 
-    async fn rap_write(&mut self, address: u8, buf: &[u8]) {
+    async fn rap_write(&mut self, address: u8, buf: &[u8]) -> Result<(), SPI::Error> {
         let cmd = address | WRITE_MASK;
-        let _ = self.spi.write_transaction(&[&[cmd], buf]).await;
+        self.spi.write_transaction(&[&[cmd], buf]).await
     }
 }

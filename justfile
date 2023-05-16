@@ -1,6 +1,6 @@
 flash:
   nix build .#binaries
-  picotool load ./result/left.elf
+  picotool load -f ./result/right.elf
   picotool reboot
 
 flash-bl:
@@ -16,3 +16,4 @@ dbg-left:
 dbg-right:
   nix build .#debug-binaries
   probe-rs-cli run --probe cafe:4005:6E16C40339A0F7B2 --chip RP2040 ./result/right.elf --speed 400
+

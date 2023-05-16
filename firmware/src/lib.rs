@@ -54,7 +54,7 @@ async fn blinky(mut pin: Output<'static, AnyPin>) {
     }
 }
 
-#[link_section = ".ram0.bootloader_magic"]
+#[link_section = ".uninit.bootloader_magic"]
 #[used]
 static BOOTLOADER_MAGIC: AtomicU32 = AtomicU32::new(0);
 
@@ -62,7 +62,7 @@ const MAGIC_TOKEN: u32 = 0xCAFEB0BA;
 
 unsafe fn check_bootloader() {
     const CYCLES_PER_US: usize = 125;
-    const WAIT_CYCLES: usize = 500 * 1000 * CYCLES_PER_US;
+    const WAIT_CYCLES: usize = 100 * 1000 * CYCLES_PER_US;
 
     if BOOTLOADER_MAGIC.load(atomic_polyfill::Ordering::SeqCst) != MAGIC_TOKEN {
         BOOTLOADER_MAGIC.store(MAGIC_TOKEN, atomic_polyfill::Ordering::SeqCst);
@@ -78,10 +78,6 @@ unsafe fn check_bootloader() {
 }
 
 pub fn entry(side: KeyboardSide) -> ! {
-    unsafe {
-        check_bootloader();
-    }
-
     let executor: &mut Executor = singleton!(Executor::new());
 
     executor.run(|spawner| {

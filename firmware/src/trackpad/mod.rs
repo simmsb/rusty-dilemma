@@ -5,7 +5,7 @@ use embassy_rp::{
     peripherals::{PIN_20, PIN_21, PIN_22, PIN_23, SPI0},
     spi::{self, Async, Spi},
 };
-use embassy_time::Duration;
+use embassy_time::{Duration, Timer};
 use embedded_hal_async::spi::ExclusiveDevice;
 
 pub mod driver;
@@ -24,9 +24,10 @@ pub fn init(
     tx_dma: AnyChannel,
     rx_dma: AnyChannel,
 ) {
-    let config = spi::Config::default();
+    let mut config = spi::Config::default();
+    config.phase = spi::Phase::CaptureOnSecondTransition;
     let spi = Spi::new(spi, clk, mosi, miso, tx_dma, rx_dma, config);
-    let spi = ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::High));
+    let spi = ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::Low));
 
     spawner.must_spawn(trackpad_task(spi));
 }
@@ -35,18 +36,38 @@ pub fn init(
 async fn trackpad_task(spi: TrackpadSpi) {
     let mut trackpad = driver::Trackpad::<_, 35>::new(
         spi,
-        driver::PositionMode::Relative,
+        driver::PositionMode::Absolute,
         driver::Overlay::Curved,
+        driver::TransformMode::Rotate90,
         None,
     );
 
-    trackpad.init().await;
+    Timer::after(Duration::from_secs(1)).await;
+
+    if let Err(e) = trackpad.init().await {
+        crate::log::error!("Couldn't init trackpad: {:?}", e);
+        return;
+    }
 
     let mut ticker = embassy_time::Ticker::every(Duration::from_millis(10));
 
     loop {
-        if let Some(report) = trackpad.get_report().await {
-            crate::log::info!("trackpad report: {:?}", report);
+        match trackpad.get_report().await {
+            Ok(Some(report)) => {
+                crate::usb::publish_mouse_report(usbd_hid::descriptor::MouseReport {
+                    buttons: 0,
+                    x: report.0,
+                    y: report.1,
+                    wheel: 0,
+                    pan: 0,
+                })
+                .await;
+                // crate::log::info!("trackpad report: {:?}", report);
+            }
+            Err(e) => {
+                crate::log::error!("Failed to get a trackpad report: {:?}", e);
+            }
+            _ => (),
         }
 
         ticker.next().await;

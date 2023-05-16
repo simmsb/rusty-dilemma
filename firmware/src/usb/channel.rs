@@ -63,7 +63,7 @@ async fn eventer_task(tx: Writer<'static, CS, BUF_SIZE>, rx: Reader<'static, CS,
     transmissions::eventer(tx, rx, rx_fn, tx_fn).await;
 }
 
-pub fn start_static_serial(
+pub fn setup(
     spawner: &Spawner,
     builder: &mut Builder<'static, embassy_rp::usb::Driver<'static, USB>>,
 ) {

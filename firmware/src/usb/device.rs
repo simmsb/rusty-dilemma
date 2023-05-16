@@ -24,7 +24,7 @@ impl State {
 
 pub fn setup_usb<'d, D: Driver<'d>>(driver: D, state: &'d mut State) -> Builder<'d, D> {
     // TODO: update these
-    let mut config = Config::new(0xf000, 0xbaaa);
+    let mut config = Config::new(0x2e8a, 0x000a);
     config.manufacturer = Some("Ben Simms");
     config.product = Some("Memer");
     config.serial_number = None;
