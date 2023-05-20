@@ -1,17 +1,27 @@
 #![no_std]
 #![allow(incomplete_features)]
-#![feature(type_alias_impl_trait, trait_alias, async_fn_in_trait)]
+#![feature(
+    type_alias_impl_trait,
+    trait_alias,
+    async_fn_in_trait,
+    maybe_uninit_uninit_array,
+    const_maybe_uninit_uninit_array,
+    maybe_uninit_array_assume_init,
+    const_maybe_uninit_array_assume_init,
+    const_mut_refs,
+    const_maybe_uninit_write
+)]
 
 use atomic_polyfill::AtomicU32;
-use embassy_executor::{Spawner, Executor};
+use embassy_executor::{Executor, Spawner};
 use embassy_rp::dma::Channel;
+use embassy_rp::gpio::Output;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
-use embassy_rp::interrupt;
-use embassy_rp::peripherals::{PIN_19, PIN_29};
+use embassy_rp::peripherals::{PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
-use embassy_rp::gpio::Output;
+use embassy_rp::{bind_interrupts, interrupt};
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
 
@@ -30,6 +40,7 @@ pub mod fw_update;
 pub mod interboard;
 pub mod logger;
 pub mod messages;
+pub mod rgb;
 pub mod side;
 pub mod trackpad;
 pub mod usb;
@@ -43,10 +54,13 @@ fn detect_usb(pin: Input<'_, PIN_19>) -> bool {
     connected
 }
 
-
 fn detect_side(pin: Input<'_, PIN_29>) -> KeyboardSide {
     let is_right = pin.is_high();
-    let side = if is_right { KeyboardSide::Right } else { KeyboardSide::Left };
+    let side = if is_right {
+        KeyboardSide::Right
+    } else {
+        KeyboardSide::Left
+    };
     log::info!("I'm the {:?} side", side);
     side
 }
@@ -106,27 +120,32 @@ async fn main(spawner: Spawner) {
     Timer::after(Duration::from_micros(100)).await;
 
     let s = detect_side(Input::new(p.PIN_29, embassy_rp::gpio::Pull::Down));
-    side::init(s, detect_usb(Input::new(p.PIN_19, embassy_rp::gpio::Pull::Down)));
+    side::init(
+        s,
+        detect_usb(Input::new(p.PIN_19, embassy_rp::gpio::Pull::Down)),
+    );
 
     if side::this_side_has_usb() {
-        let irq = interrupt::take!(USBCTRL_IRQ);
-        let usb_driver = Driver::new(p.USB, irq);
+        bind_interrupts!(struct Irqs {
+            USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
+        });
+
+        let usb_driver = Driver::new(p.USB, Irqs);
 
         usb::init(&spawner, usb_driver);
     } else {
         log::info!("No usb connected");
     }
 
-    logger::setup_logger();
+    logger::init();
     messages::init(&spawner);
     #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
-    let mut pio= Pio::new(p.PIO0);
-    let usart_pin = p.PIN_1;
-    // let usart_pin = p.PIN_25.into();
-
-    interboard::init(&spawner, &mut pio.common , pio.sm0, pio.sm1, usart_pin);
+    let mut pio0 = Pio::new(p.PIO0);
+    interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
+    let mut pio1 = Pio::new(p.PIO1);
+    rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
 
     if side::get_side().is_right() {
         trackpad::init(

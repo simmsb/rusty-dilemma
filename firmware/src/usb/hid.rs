@@ -23,7 +23,7 @@ async fn hid_writer_task(mut writer: HidWriter<'static, Driver<'static, USB>, 64
     }
 }
 
-pub fn setup(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, USB>>) {
+pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, USB>>) {
     let mouse_state = utils::singleton!(embassy_usb::class::hid::State::new());
 
     let mouse_hid_writer = HidWriter::new(

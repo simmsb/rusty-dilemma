@@ -59,11 +59,13 @@ async fn serial_out_task(
 async fn eventer_task(tx: Writer<'static, CS, BUF_SIZE>, rx: Reader<'static, CS, BUF_SIZE>) {
     let msg_pub = COMMANDS_FROM_HOST.publisher().unwrap();
     let rx_fn = || async { COMMANDS_TO_HOST.recv().await };
-    let tx_fn = |e| async { msg_pub.publish(e).await; };
+    let tx_fn = |e| async {
+        msg_pub.publish(e).await;
+    };
     transmissions::eventer(tx, rx, rx_fn, tx_fn).await;
 }
 
-pub fn setup(
+pub fn init(
     spawner: &Spawner,
     builder: &mut Builder<'static, embassy_rp::usb::Driver<'static, USB>>,
 ) {

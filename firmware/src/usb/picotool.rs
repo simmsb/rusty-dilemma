@@ -79,7 +79,7 @@ impl PicoToolClass {
     }
 }
 
-pub fn setup<'d, D: Driver<'d>>(builder: &mut Builder<'d, D>) {
+pub fn init<'d, D: Driver<'d>>(builder: &mut Builder<'d, D>) {
     let state = utils::singleton!(State { control: MaybeUninit::uninit() });
 
     PicoToolClass::new(builder, state);

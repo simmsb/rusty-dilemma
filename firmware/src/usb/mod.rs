@@ -21,11 +21,11 @@ pub fn init(spawner: &Spawner, driver: Driver<'static, USB>) {
     log::info!("Initializing usb");
 
     let usb_state = crate::utils::singleton!(device::State::new());
-    let mut builder = device::setup_usb(driver, usb_state);
+    let mut builder = device::init_usb(driver, usb_state);
 
-    channel::setup(spawner, &mut builder);
-    picotool::setup(&mut builder);
-    hid::setup(spawner, &mut builder);
+    channel::init(spawner, &mut builder);
+    picotool::init(&mut builder);
+    hid::init(spawner, &mut builder);
 
     spawner.must_spawn(device::run_usb(builder));
 }
