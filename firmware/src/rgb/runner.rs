@@ -1,6 +1,6 @@
 use cichlid::ColorRGB;
 use embassy_rp::peripherals::PIO1;
-use embassy_time::{Duration, Ticker, Timer};
+use embassy_time::Ticker;
 
 use crate::side::get_side;
 
