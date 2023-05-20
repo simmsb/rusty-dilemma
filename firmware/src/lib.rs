@@ -172,10 +172,5 @@ async fn main(spawner: Spawner) {
         Timer::after(Duration::from_secs(1)).await;
 
         log::info!("tick");
-
-        if side::get_side().is_left() {
-            interboard::send_msg(reliable_msg(shared::device_to_device::DeviceToDevice::Ping))
-                .await;
-        }
     }
 }

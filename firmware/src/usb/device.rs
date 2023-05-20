@@ -23,10 +23,9 @@ impl State {
 }
 
 pub fn init_usb<'d, D: Driver<'d>>(driver: D, state: &'d mut State) -> Builder<'d, D> {
-    // TODO: update these
     let mut config = Config::new(0x2e8a, 0x000a);
     config.manufacturer = Some("Ben Simms");
-    config.product = Some("Memer");
+    config.product = Some("Dilemma");
     config.serial_number = None;
     config.max_power = 500;
     config.max_packet_size_0 = MAX_PACKET_SIZE as u8;

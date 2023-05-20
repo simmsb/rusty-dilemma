@@ -84,7 +84,7 @@ impl GlideContext {
         let dx = x - self.status.x;
         let dy = y - self.status.y;
 
-        if dx <= 1 && dx >= -1 && dy <= 1 && dy >= -1 {
+        if (-1..1).contains(&dx) && (-1..1).contains(&dy) {
             self.status = GlideStatus::default();
         } else {
             self.status.x = x;

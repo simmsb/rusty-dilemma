@@ -7,6 +7,7 @@ use embassy_rp::{
 };
 use embassy_time::{Duration, Timer};
 use embedded_hal_async::spi::ExclusiveDevice;
+use shared::hid::MouseReport;
 
 pub mod driver;
 mod glide;
@@ -14,6 +15,7 @@ pub mod regs;
 
 type TrackpadSpi = ExclusiveDevice<Spi<'static, SPI0, Async>, Output<'static, PIN_21>>;
 
+#[allow(clippy::too_many_arguments)]
 pub fn init(
     spawner: &Spawner,
     spi: SPI0,
@@ -54,13 +56,12 @@ async fn trackpad_task(spi: TrackpadSpi) {
     loop {
         match trackpad.get_report().await {
             Ok(Some(report)) => {
-                crate::usb::publish_mouse_report(usbd_hid::descriptor::MouseReport {
-                    buttons: 0,
+                crate::messages::send_hid_to_host(shared::hid::HidReport::Mouse(MouseReport {
                     x: report.0,
                     y: report.1,
                     wheel: 0,
                     pan: 0,
-                })
+                }))
                 .await;
                 // crate::log::info!("trackpad report: {:?}", report);
             }

@@ -1,4 +1,3 @@
-use embassy_embedded_hal::SetConfig;
 use embassy_executor::Spawner;
 use embassy_futures::{
     select::{self, select},
@@ -31,6 +30,7 @@ pub fn init(
     pin: impl Peripheral<P = impl PioPin + 'static> + 'static,
 ) {
     let mut pin = common.make_pio_pin(pin);
+    pin.set_pull(embassy_rp::gpio::Pull::Up);
 
     let tx_sm = half_duplex_task_tx(common, tx_sm, &mut pin);
     let rx_sm = half_duplex_task_rx(common, rx_sm, &pin);
@@ -44,7 +44,7 @@ pub async fn enter_rx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'stati
         yield_now().await;
     }
 
-    Timer::after(Duration::from_micros(1000000 * 11 / USART_SPEED as u64)).await;
+    Timer::after(Duration::from_micros(1000000 * 11 / USART_SPEED)).await;
 
     tx_sm.set_enable(false);
     pin.set_drive_strength(embassy_rp::gpio::Drive::_2mA);
@@ -75,7 +75,7 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
     loop {
         let read_fut = async {
             // if we've recently received a message, don't try and tx until after a timeout
-            Timer::at(last_rx + Duration::from_micros(1000000 * 11 / USART_SPEED as u64)).await;
+            Timer::at(last_rx + Duration::from_micros(1000000 * 11 / USART_SPEED)).await;
 
             reader.read(&mut buf).await
         };
@@ -83,7 +83,7 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
         match select(read_fut, rx_sm.rx().wait_pull()).await {
             select::Either::First(n) => {
                 // let now = Instant::now();
-                // log::info!("sending bytes: {:08b}", &buf[..n]);
+                // crate::log::info!("sending bytes: {:?}", &buf[..n]);
                 enter_tx(&mut tx_sm, &mut rx_sm, &mut pin);
                 for b in &buf[..n] {
                     tx_sm.tx().wait_push(*b as u32).await;
@@ -94,12 +94,12 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
             select::Either::Second(x) => {
                 last_rx = Instant::now();
                 let x = x.to_be_bytes()[0];
-                // log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
-                OTHER_SIDE_RX.write(&[255 - x as u8]).await;
+                // crate::log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
+                OTHER_SIDE_RX.write(&[255 - x]).await;
 
                 while let Some(x) = rx_sm.rx().try_pull() {
                     let x = x.to_be_bytes()[0];
-                    OTHER_SIDE_RX.write(&[255 - x as u8]).await;
+                    OTHER_SIDE_RX.write(&[255 - x]).await;
                 }
             }
         }

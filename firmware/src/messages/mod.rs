@@ -4,13 +4,14 @@ use embassy_time::Duration;
 pub mod distributors;
 pub mod transmissions;
 
-pub use distributors::{send_to_host, try_send_to_host};
+pub use distributors::{send_to_host, try_send_to_host, send_hid_to_host};
 
 pub fn init(spawner: &Spawner) {
     spawner.must_spawn(distributors::from_usb_distributor());
     spawner.must_spawn(distributors::from_other_side_distributor());
 }
 
+#[derive(Debug)]
 pub struct TransmittedMessage<T> {
     pub msg: T,
     pub timeout: Option<Duration>,

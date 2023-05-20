@@ -105,10 +105,10 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             position_mode,
             overlay,
             transform,
-            glide: glide_config.map(|c| GlideContext::new(c)),
+            glide: glide_config.map(GlideContext::new),
             relative_remainder: (0, 0),
             last_pos: None,
-            scale: ((800 as u32 * DIAMETER * 10) / 254) as u16,
+            scale: ((800 * DIAMETER * 10) / 254) as u16,
             last_scale: 0,
         }
     }
@@ -374,7 +374,7 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         self.era_write_reg(cfg).await?;
         self.era_read_reg::<regs::TrackAdcConfig>().await?;
 
-        return Ok(true);
+        Ok(true)
     }
 
     async fn tune_edge_sensivity(&mut self) -> Result<(), SPI::Error> {

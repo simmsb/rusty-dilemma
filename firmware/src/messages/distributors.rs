@@ -1,5 +1,6 @@
 use shared::device_to_device::DeviceToDevice;
 use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
+use shared::hid::HidReport;
 use shared::host_to_device::HostToDeviceMsg;
 
 use crate::side;
@@ -41,14 +42,15 @@ pub async fn from_other_side_distributor() {
 
     loop {
         let msg = sub.next_message_pure().await;
+        // crate::log::info!("got msg: {:?}", msg);
 
         match msg {
             DeviceToDevice::Ping => {
-                log::info!("Got a ping");
+                // log::info!("Got a ping");
                 interboard::send_msg(reliable_msg(DeviceToDevice::Pong)).await;
             }
             DeviceToDevice::Pong => {
-                log::info!("Got a pong");
+                // log::info!("Got a pong");
             }
             DeviceToDevice::ForwardedToHost(msg) => {
                 usb::send_msg(unreliable_msg(msg)).await;
@@ -56,7 +58,22 @@ pub async fn from_other_side_distributor() {
             DeviceToDevice::ForwardedFromHost(msg) => {
                 handle_from_host(msg).await;
             }
+            DeviceToDevice::ForwardedToHostHid(report) => {
+                if side::this_side_has_usb() {
+                    self::usb::publish_report(report).await;
+                }
+            }
         }
+    }
+}
+
+pub async fn send_hid_to_host(report: HidReport) {
+    if side::this_side_has_usb() {
+        self::usb::publish_report(report).await;
+    } else {
+        let msg = DeviceToDevice::ForwardedToHostHid(report);
+        let msg = reliable_msg(msg);
+        interboard::send_msg(msg).await;
     }
 }
 

@@ -6,3 +6,4 @@ pub mod device_to_host;
 pub mod fw;
 pub mod host_to_device;
 pub mod side;
+pub mod hid;

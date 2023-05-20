@@ -82,7 +82,7 @@ impl PicoToolClass {
         );
         let mut iface = func.interface();
         let comm_if = iface.interface_number();
-        let alt = iface.alt_setting(
+        iface.alt_setting(
             CLASS_VENDOR_SPECIFIC,
             RESET_INTERFACE_SUBCLASS,
             RESET_INTERFACE_PROTOCOL,
@@ -91,8 +91,6 @@ impl PicoToolClass {
 
         let handler = state.control.write(Control { comm_if, str_idx });
 
-        drop(alt);
-        drop(iface);
         drop(func);
 
         builder.handler(handler);

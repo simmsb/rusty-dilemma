@@ -80,8 +80,7 @@ impl log_log::Log for Logger {
                 let mut emitted = 0;
                 for chunk in grant.buf().chunks(MAX_LOG_LEN) {
                     let vec = heapless::Vec::from_slice(chunk)
-                        .ok()
-                        .expect("Log slice was too big for vec");
+                        .expect("Log slice was too big for vec (should be impossible)");
 
                     let cmd = DeviceToHostMsg::Log { msg: vec };
 

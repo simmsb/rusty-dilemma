@@ -28,12 +28,8 @@ async fn serial_in_task(
     loop {
         let mut rx: [u8; MAX_PACKET_SIZE as usize] = [0; MAX_PACKET_SIZE as usize];
         serial_rx.wait_connection().await;
-        loop {
-            if let Ok(len) = serial_rx.read_packet(&mut rx[..]).await {
-                let _ = out_pipe.write(&rx[..len]).await;
-            } else {
-                break;
-            }
+        while let Ok(len) = serial_rx.read_packet(&mut rx[..]).await {
+            let _ = out_pipe.write(&rx[..len]).await;
         }
     }
 }
@@ -48,7 +44,7 @@ async fn serial_out_task(
         serial_tx.wait_connection().await;
         loop {
             let len = in_pipe.read(&mut rx[..]).await;
-            if let Err(_) = serial_tx.write_packet(&rx[..len]).await {
+            if serial_tx.write_packet(&rx[..len]).await.is_err() {
                 break;
             }
         }
@@ -89,7 +85,7 @@ where
     D: Driver<'d>,
 {
     // Create classes on the builder.
-    let class = CdcAcmClass::new(builder, cdc_state, MAX_PACKET_SIZE as u16);
+    let class = CdcAcmClass::new(builder, cdc_state, MAX_PACKET_SIZE);
 
     SerialState { class }
 }

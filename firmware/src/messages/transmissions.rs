@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use core::mem::MaybeUninit;
 use embassy_futures::select;
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{with_timeout, Duration};
@@ -91,10 +92,11 @@ where
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
                                     // log::info!("Hi I got a command: {}", c);
-                                    if let Some(ack) = c.ack() {
+                                    let ack = c.ack();
+                                    (self.out_cb)(c.cmd).await;
+                                    if let Some(ack) = ack {
                                         self.mix_chan.send(CmdOrAck::Ack(ack)).await;
                                     }
-                                    (self.out_cb)(c.cmd).await;
                                 } else {
                                     // log::debug!("Corrupted parsed command: {:?}", c);
                                 }
@@ -214,8 +216,12 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     FnRxFut: Future<Output = TransmittedMessage<Sent>>,
     FnTxFut: Future,
 {
-    const E: Event = Event::new();
-    let events = [E; 128];
+    let mut events: [MaybeUninit<Event>; 128] = MaybeUninit::uninit_array();
+    for evt in &mut events {
+        evt.write(Event::new());
+    }
+    let events = unsafe { MaybeUninit::array_assume_init(events) };
+
     let id_chan = Channel::<ThreadModeRawMutex, u8, 128>::new();
     let mix_chan = Channel::new();
     let waiters = Mutex::new(heapless::FnvIndexSet::new());

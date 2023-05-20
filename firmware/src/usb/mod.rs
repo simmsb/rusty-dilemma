@@ -7,7 +7,7 @@ use shared::device_to_host::DeviceToHost;
 
 pub use channel::COMMANDS_FROM_HOST;
 pub use device::MAX_PACKET_SIZE;
-pub use hid::publish_mouse_report;
+pub use hid::publish_report;
 
 use crate::messages::TransmittedMessage;
 use crate::utils::log;

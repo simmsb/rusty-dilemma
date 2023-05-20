@@ -2,24 +2,36 @@ use embassy_executor::Spawner;
 use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
+use shared::hid::HidReport;
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
 
 use crate::utils;
 
 type CS = embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 
-static MOUSE_REPORTS: Channel<CS, MouseReport, 2> = Channel::new();
+static REPORTS: Channel<CS, HidReport, 2> = Channel::new();
 
-pub async fn publish_mouse_report(report: MouseReport) {
-    MOUSE_REPORTS.send(report).await;
+pub async fn publish_report(report: HidReport) {
+    REPORTS.send(report).await;
 }
 
 #[embassy_executor::task]
 async fn hid_writer_task(mut writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
-        let report = MOUSE_REPORTS.recv().await;
+        let report = REPORTS.recv().await;
 
-        let _ = writer.write_serialize(&report).await;
+        match report {
+            HidReport::Mouse(shared::hid::MouseReport { x, y, wheel, pan }) => {
+                let report = MouseReport {
+                    buttons: 0,
+                    x,
+                    y,
+                    wheel,
+                    pan,
+                };
+                let _ = writer.write_serialize(&report).await;
+            }
+        }
     }
 }
 
