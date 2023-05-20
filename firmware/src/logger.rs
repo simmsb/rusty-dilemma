@@ -17,7 +17,8 @@ pub fn init() {
     let logger: &mut Logger = singleton!(Logger::init());
     let logger = logger as &dyn log_log::Log;
     unsafe {
-        let _ = log_log::set_logger_racy(logger).map(|()| log_log::set_max_level(log_log::LevelFilter::Info));
+        let _ = log_log::set_logger_racy(logger)
+            .map(|()| log_log::set_max_level(log_log::LevelFilter::Info));
     }
 }
 

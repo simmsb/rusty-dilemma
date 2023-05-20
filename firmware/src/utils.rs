@@ -1,7 +1,7 @@
-#[cfg(not(feature = "probe"))]
-pub use log_log as log;
 #[cfg(feature = "probe")]
 pub use defmt as log;
+#[cfg(not(feature = "probe"))]
+pub use log_log as log;
 
 #[cfg(not(feature = "probe"))]
 pub trait WhichDebug = ::core::fmt::Debug;

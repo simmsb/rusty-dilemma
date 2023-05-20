@@ -49,7 +49,10 @@ fn saturating_i32_to_i8(v: i32) -> i8 {
 
 impl GlideContext {
     pub fn new(config: GlideConfig) -> Self {
-        GlideContext { config, status: GlideStatus::default() }
+        GlideContext {
+            config,
+            status: GlideStatus::default(),
+        }
     }
 
     pub fn check(&mut self) -> Option<Glide> {

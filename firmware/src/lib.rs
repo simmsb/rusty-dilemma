@@ -14,6 +14,7 @@
 
 use atomic_polyfill::AtomicU32;
 use embassy_executor::{Executor, Spawner};
+use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
 use embassy_rp::gpio::Output;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
@@ -21,7 +22,6 @@ use embassy_rp::peripherals::{PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
-use embassy_rp::bind_interrupts;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
 

@@ -52,7 +52,9 @@ impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
 where
     RX: embedded_io::asynch::Read,
 {
-    async fn recv_task_inner<Received, FnTxFut>(&mut self) -> Result<(), <RX as embedded_io::Io>::Error>
+    async fn recv_task_inner<Received, FnTxFut>(
+        &mut self,
+    ) -> Result<(), <RX as embedded_io::Io>::Error>
     where
         Received: DeserializeOwned + Hash + Clone + WhichDebug,
         FnTxFut: Future,
@@ -70,7 +72,10 @@ where
             'cobs: while !window.is_empty() {
                 window = match accumulator.feed(window) {
                     FeedResult::Consumed => break 'cobs,
-                    FeedResult::OverFull(buf) => { log::info!("buffer overfull"); buf },
+                    FeedResult::OverFull(buf) => {
+                        log::info!("buffer overfull");
+                        buf
+                    }
                     FeedResult::DeserError(buf) => {
                         log::debug!(
                             "Message decoder failed to deserialize a message of type {}: {:?}",

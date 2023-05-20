@@ -3,8 +3,8 @@ use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
 use shared::host_to_device::HostToDeviceMsg;
 
 use crate::side;
-use crate::{usb, interboard};
 use crate::utils::log;
+use crate::{interboard, usb};
 
 use super::{reliable_msg, unreliable_msg, TransmittedMessage};
 
