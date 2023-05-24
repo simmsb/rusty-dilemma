@@ -1,5 +1,4 @@
 use core::hash::Hash;
-use core::mem::MaybeUninit;
 use embassy_futures::select;
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex};
 use embassy_time::{with_timeout, Duration};
@@ -8,7 +7,6 @@ use postcard::accumulator::{CobsAccumulator, FeedResult};
 use serde::{de::DeserializeOwned, Serialize};
 use shared::cmd::{CmdOrAck, Command};
 
-use crate::event::Event;
 use crate::utils::{log, WhichDebug};
 
 use super::TransmittedMessage;
@@ -16,10 +14,8 @@ use super::TransmittedMessage;
 const BUF_SIZE: usize = 128;
 
 struct EventSenderImpl<'e, T> {
-    id_chan: &'e Channel<ThreadModeRawMutex, u8, 128>,
-    events: &'e [Event],
     mix_chan: &'e Channel<ThreadModeRawMutex, CmdOrAck<T>, 16>,
-    waiters: &'e Mutex<ThreadModeRawMutex, heapless::FnvIndexSet<u8, 128>>,
+    ack_chan: &'e Channel<ThreadModeRawMutex, (), 4>,
 }
 
 pub trait EventSender<T> {
@@ -45,8 +41,7 @@ struct EventInProcessor<'e, Sent, RX, FnTx> {
     rx: RX,
     out_cb: FnTx,
     mix_chan: &'e Channel<ThreadModeRawMutex, CmdOrAck<Sent>, 16>,
-    events: &'e [Event],
-    waiters: &'e Mutex<ThreadModeRawMutex, heapless::FnvIndexSet<u8, 128>>,
+    ack_chan: &'e Channel<ThreadModeRawMutex, (), 4>,
 }
 
 impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
@@ -64,7 +59,7 @@ where
         let mut accumulator = CobsAccumulator::<BUF_SIZE>::new();
 
         loop {
-            let mut buf = [0u8; 16];
+            let mut buf = [0u8; BUF_SIZE];
             let n = self.rx.read(&mut buf).await?;
             let mut window = &buf[..n];
 
@@ -74,7 +69,7 @@ where
                 window = match accumulator.feed(window) {
                     FeedResult::Consumed => break 'cobs,
                     FeedResult::OverFull(buf) => {
-                        log::info!("buffer overfull");
+                        log::debug!("buffer overfull");
                         buf
                     }
                     FeedResult::DeserError(buf) => {
@@ -92,27 +87,18 @@ where
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
                                     // log::info!("Hi I got a command: {}", c);
-                                    let ack = c.ack();
+                                    let send_ack = c.reliable;
                                     (self.out_cb)(c.cmd).await;
-                                    if let Some(ack) = ack {
-                                        self.mix_chan.send(CmdOrAck::Ack(ack)).await;
+                                    if send_ack {
+                                        self.mix_chan.send(CmdOrAck::Ack).await;
                                     }
                                 } else {
                                     // log::debug!("Corrupted parsed command: {:?}", c);
                                 }
                             }
-                            CmdOrAck::Ack(a) => match a.validate() {
-                                Ok(a) => {
-                                    // log::debug!("Received ack: {:?}", a);
-                                    let mut waiters = self.waiters.lock().await;
-                                    if waiters.remove(&a.id) {
-                                        self.events[a.id as usize].set();
-                                    }
-                                }
-                                Err(_e) => {
-                                    // log::debug!("Corrupted parsed ack: {:?}", _e);
-                                }
-                            },
+                            CmdOrAck::Ack => {
+                                self.ack_chan.send(()).await;
+                            }
                         }
 
                         remaining
@@ -155,46 +141,28 @@ where
     }
 }
 
-impl<'a, T: Hash + Clone> EventSenderImpl<'a, T> {
-    async fn register_waiter(&self, id: u8) {
-        let mut waiters = self.waiters.lock().await;
-        if waiters.insert(id).is_err() {
-            panic!("Duped waiter id")
-        }
-    }
-
-    async fn deregister_waiter(&self, id: u8) {
-        self.waiters.lock().await.remove(&id);
-    }
-}
-
 impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
     async fn send_unreliable(&self, cmd: T) {
         let cmd = Command::new_unreliable(cmd.clone());
         self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
     }
 
-    async fn send_reliable(&self, cmd: T, timeout: Duration) {
+    async fn send_reliable(&self, cmd: T, mut timeout: Duration) {
         loop {
-            let id = self.id_chan.recv().await;
-            let waiter = &self.events[id as usize];
-            waiter.reset();
-            let cmd = Command::new_reliable(cmd.clone(), id);
-            self.register_waiter(id).await;
+            let cmd = Command::new_reliable(cmd.clone());
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
-            match with_timeout(timeout, waiter.wait()).await {
+            match with_timeout(timeout, self.ack_chan.recv()).await {
                 Ok(_) => {
                     // log::debug!("Waiter for id {} completed", id);
-                    self.id_chan.send(id).await;
                     return;
                 }
                 Err(_) => {
                     // log::debug!("Waiter for id {} timing out", id);
-                    self.deregister_waiter(id).await;
-                    self.id_chan.send(id).await;
                 }
             }
+
+            timeout += Duration::from_micros(100);
         }
     }
 }
@@ -216,25 +184,12 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     FnRxFut: Future<Output = TransmittedMessage<Sent>>,
     FnTxFut: Future,
 {
-    let mut events: [MaybeUninit<Event>; 128] = MaybeUninit::uninit_array();
-    for evt in &mut events {
-        evt.write(Event::new());
-    }
-    let events = unsafe { MaybeUninit::array_assume_init(events) };
-
-    let id_chan = Channel::<ThreadModeRawMutex, u8, 128>::new();
     let mix_chan = Channel::new();
-    let waiters = Mutex::new(heapless::FnvIndexSet::new());
-
-    for (i, _) in events.iter().enumerate() {
-        id_chan.try_send(i as u8).unwrap();
-    }
+    let ack_chan = Channel::new();
 
     let sender = EventSenderImpl {
-        id_chan: &id_chan,
-        events: &events,
         mix_chan: &mix_chan,
-        waiters: &waiters,
+        ack_chan: &ack_chan,
     };
 
     let mut out_processor = EventOutProcessor::<Sent, TX> {
@@ -246,8 +201,7 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
         rx,
         out_cb: fn_tx,
         mix_chan: &mix_chan,
-        events: &events,
-        waiters: &waiters,
+        ack_chan: &ack_chan,
     };
 
     let sender_proc = async {

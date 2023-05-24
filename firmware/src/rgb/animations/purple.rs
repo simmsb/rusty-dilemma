@@ -6,7 +6,7 @@ use fixed_macro::fixed;
 use crate::rgb::animation::Animation;
 
 pub struct Purple {
-    tick: usize,
+    tick: I16F16,
     noise: PerlinNoise2D,
 }
 
@@ -23,15 +23,16 @@ impl Animation for Purple {
     const TICK_RATE: Duration = Duration::from_hz(60);
 
     fn tick(&mut self) {
-        self.tick = self.tick.wrapping_add(1);
+        self.tick += fixed!(0.01: I16F16);
+        self.tick %= I16F16::PI * 2;
     }
 
     fn render(&self, light: &crate::rgb::layout::Light) -> cichlid::ColorRGB {
+        let (dx, dy) = cordic::sin_cos(self.tick);
+
         let brightness = self.noise.get_noise(
-            I16F16::from_num(light.location.0) * fixed!(0.02: I16F16),
-            (I16F16::from_num(light.location.1)
-                + I16F16::from_num(self.tick) * fixed!(1.0: I16F16))
-                * fixed!(0.02: I16F16),
+            (I16F16::from_num(light.location.0) + dx * 100) * fixed!(0.02: I16F16),
+            (I16F16::from_num(light.location.1) + dy * 100) * fixed!(0.02: I16F16),
         );
 
         let brightness = brightness.int().saturating_to_num::<i16>();

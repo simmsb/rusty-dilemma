@@ -1,4 +1,5 @@
 use embassy_executor::Spawner;
+use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
@@ -13,6 +14,7 @@ static REPORTS: Channel<CS, HidReport, 2> = Channel::new();
 
 pub async fn publish_report(report: HidReport) {
     REPORTS.send(report).await;
+    yield_now().await;
 }
 
 #[embassy_executor::task]
@@ -29,6 +31,7 @@ async fn hid_writer_task(mut writer: HidWriter<'static, Driver<'static, USB>, 64
                     wheel,
                     pan,
                 };
+
                 let _ = writer.write_serialize(&report).await;
             }
         }

@@ -20,8 +20,7 @@ pub mod picotool;
 pub fn init(spawner: &Spawner, driver: Driver<'static, USB>) {
     log::info!("Initializing usb");
 
-    let usb_state = crate::utils::singleton!(device::State::new());
-    let mut builder = device::init_usb(driver, usb_state);
+    let mut builder = device::init_usb(driver);
 
     channel::init(spawner, &mut builder);
     picotool::init(&mut builder);

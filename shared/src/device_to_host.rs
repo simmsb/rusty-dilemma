@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::side::KeyboardSide;
 
-pub const MAX_LOG_LEN: usize = 32;
+pub const MAX_LOG_LEN: usize = 16;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

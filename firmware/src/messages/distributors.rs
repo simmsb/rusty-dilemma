@@ -4,10 +4,9 @@ use shared::hid::HidReport;
 use shared::host_to_device::HostToDeviceMsg;
 
 use crate::side;
-use crate::utils::log;
 use crate::{interboard, usb};
 
-use super::{reliable_msg, unreliable_msg, TransmittedMessage};
+use super::{low_latency_msg, reliable_msg, unreliable_msg, TransmittedMessage};
 
 #[embassy_executor::task]
 pub async fn from_usb_distributor() {
@@ -72,7 +71,7 @@ pub async fn send_hid_to_host(report: HidReport) {
         self::usb::publish_report(report).await;
     } else {
         let msg = DeviceToDevice::ForwardedToHostHid(report);
-        let msg = reliable_msg(msg);
+        let msg = low_latency_msg(msg);
         interboard::send_msg(msg).await;
     }
 }

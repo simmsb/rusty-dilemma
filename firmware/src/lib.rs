@@ -32,8 +32,6 @@ use {defmt_rtt as _, panic_probe as _};
 
 use utils::{log, singleton};
 
-use crate::messages::reliable_msg;
-
 pub mod event;
 #[cfg(feature = "bootloader")]
 pub mod fw_update;

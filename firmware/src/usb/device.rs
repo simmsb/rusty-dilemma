@@ -2,27 +2,11 @@ use embassy_rp::peripherals::USB;
 use embassy_usb::driver::Driver;
 use embassy_usb::{Builder, Config};
 
+use crate::utils;
+
 pub const MAX_PACKET_SIZE: u16 = 64;
 
-pub struct State {
-    device_descriptor: [u8; 32],
-    config_descriptor: [u8; 128],
-    bos_descriptor: [u8; 16],
-    control_buf: [u8; 64],
-}
-
-impl State {
-    pub const fn new() -> State {
-        State {
-            device_descriptor: [0u8; 32],
-            config_descriptor: [0u8; 128],
-            bos_descriptor: [0u8; 16],
-            control_buf: [0u8; 64],
-        }
-    }
-}
-
-pub fn init_usb<'d, D: Driver<'d>>(driver: D, state: &'d mut State) -> Builder<'d, D> {
+pub fn init_usb<'d, D: Driver<'d>>(driver: D) -> Builder<'d, D> {
     let mut config = Config::new(0x2e8a, 0x000a);
     config.manufacturer = Some("Ben Simms");
     config.product = Some("Dilemma");
@@ -40,10 +24,10 @@ pub fn init_usb<'d, D: Driver<'d>>(driver: D, state: &'d mut State) -> Builder<'
     Builder::new(
         driver,
         config,
-        &mut state.device_descriptor,
-        &mut state.config_descriptor,
-        &mut state.bos_descriptor,
-        &mut state.control_buf,
+        &mut utils::singleton!([0; 256])[..],
+        &mut utils::singleton!([0; 256])[..],
+        &mut utils::singleton!([0; 256])[..],
+        &mut utils::singleton!([0; 128])[..],
     )
 }
 
