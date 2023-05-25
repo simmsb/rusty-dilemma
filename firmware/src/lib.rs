@@ -9,7 +9,7 @@
     maybe_uninit_array_assume_init,
     const_maybe_uninit_array_assume_init,
     const_mut_refs,
-    const_maybe_uninit_write
+    const_maybe_uninit_write,
 )]
 
 use atomic_polyfill::AtomicU32;
@@ -43,6 +43,7 @@ pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
+pub mod keys;
 
 pub static VERSION: &str = "0.1.0";
 

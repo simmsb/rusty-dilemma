@@ -26,6 +26,7 @@ panic-reset = "0.1.1"
 futures = { version = "0.3.28", default-features = false, features = ["async-await", "cfg-target-has-atomic", "unstable"] }
 byte-slice-cast = { version = "1.2.2", default-features = false }
 embedded-hal-1 = { package = "embedded-hal", version = "1.0.0-alpha.10" }
+embedded-hal-0-2 = { package = "embedded-hal", version = "0.2" }
 embedded-hal-async = "0.2.0-alpha.1"
 embedded-io = { version = "0.4.0", features = ["async"] }
 static_cell = "1.0.0"
@@ -51,6 +52,7 @@ fixed = "1.23.1"
 cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", default-features = false, features = ["nightly", "no-std"] }
 cordic = "0.1.5"
 crc32fast = { version = "1.3.2", default-features = false }
+keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]

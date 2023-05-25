@@ -21,6 +21,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "arraydeque"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0ffd3d69bd89910509a5d31d1f1353f38ccffdd116dd0099bbd6627f7bd8ad8"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1043,6 +1049,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyberon"
+version = "0.2.0"
+source = "git+https://github.com/TeXitoi/keyberon#a94f2392551e6e1241bf523b41685c6ae7d02313"
+dependencies = [
+ "arraydeque",
+ "either",
+ "embedded-hal 0.2.7",
+ "heapless",
+ "keyberon-macros",
+ "usb-device",
+]
+
+[[package]]
+name = "keyberon-macros"
+version = "0.1.0"
+source = "git+https://github.com/TeXitoi/keyberon#a94f2392551e6e1241bf523b41685c6ae7d02313"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+]
+
+[[package]]
 name = "lalrpop"
 version = "0.19.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1584,6 +1613,7 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embassy-usb",
+ "embedded-hal 0.2.7",
  "embedded-hal 1.0.0-alpha.10",
  "embedded-hal-async",
  "embedded-io",
@@ -1591,6 +1621,7 @@ dependencies = [
  "fixed-macro",
  "futures",
  "heapless",
+ "keyberon",
  "log",
  "num",
  "num_enum 0.6.1",

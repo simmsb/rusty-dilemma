@@ -14,13 +14,6 @@ pub fn init_usb<'d, D: Driver<'d>>(driver: D) -> Builder<'d, D> {
     config.max_power = 500;
     config.max_packet_size_0 = MAX_PACKET_SIZE as u8;
 
-    // Required for windows compatiblity.
-    // https://developer.nordicsemi.com/nRF_Connect_SDK/doc/1.9.1/kconfig/CONFIG_CDC_ACM_IAD.html#help
-    config.device_class = 0xEF;
-    config.device_sub_class = 0x02;
-    config.device_protocol = 0x01;
-    config.composite_with_iads = true;
-
     Builder::new(
         driver,
         config,
