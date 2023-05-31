@@ -54,10 +54,9 @@ async fn trackpad_task(spi: TrackpadSpi) {
     let mut ticker = embassy_time::Ticker::every(Duration::from_millis(10));
 
     loop {
-
         match trackpad.get_report().await {
             Ok(Some(report)) => {
-                crate::messages::send_hid_to_host(shared::hid::HidReport::Mouse(MouseReport {
+                crate::usb::hid::send_hid_to_host(shared::hid::HidReport::Mouse(MouseReport {
                     x: report.0,
                     y: report.1,
                     wheel: 0,

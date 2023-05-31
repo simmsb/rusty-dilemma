@@ -9,7 +9,7 @@
     maybe_uninit_array_assume_init,
     const_maybe_uninit_array_assume_init,
     const_mut_refs,
-    const_maybe_uninit_write,
+    const_maybe_uninit_write
 )]
 
 use atomic_polyfill::AtomicU32;
@@ -36,6 +36,7 @@ pub mod event;
 #[cfg(feature = "bootloader")]
 pub mod fw_update;
 pub mod interboard;
+pub mod keys;
 pub mod logger;
 pub mod messages;
 pub mod rgb;
@@ -43,7 +44,6 @@ pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
-pub mod keys;
 
 pub static VERSION: &str = "0.1.0";
 
@@ -145,6 +145,7 @@ async fn main(spawner: Spawner) {
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
     let mut pio1 = Pio::new(p.PIO1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
+    keys::init(&spawner);
 
     if side::get_side().is_right() {
         trackpad::init(

@@ -11,4 +11,6 @@ pub enum DeviceToDevice {
     ForwardedFromHost(HostToDeviceMsg),
     ForwardedToHost(DeviceToHost),
     ForwardedToHostHid(HidReport),
+    KeyPress(u8, u8),
+    KeyRelease(u8, u8),
 }

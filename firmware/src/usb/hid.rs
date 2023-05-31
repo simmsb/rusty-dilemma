@@ -3,10 +3,14 @@ use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
-use shared::hid::HidReport;
+use shared::{device_to_device::DeviceToDevice, hid::HidReport};
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
 
-use crate::utils;
+use crate::{
+    interboard::{self, COMMANDS_FROM_OTHER_SIDE},
+    messages::low_latency_msg,
+    side, utils,
+};
 
 type CS = embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 
@@ -18,7 +22,7 @@ pub async fn publish_report(report: HidReport) {
 }
 
 #[embassy_executor::task]
-async fn hid_writer_task(mut writer: HidWriter<'static, Driver<'static, USB>, 64>) {
+async fn hid_writer(mut writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
         let report = REPORTS.recv().await;
 
@@ -38,6 +42,17 @@ async fn hid_writer_task(mut writer: HidWriter<'static, Driver<'static, USB>, 64
     }
 }
 
+#[embassy_executor::task]
+async fn interboard_receiver() {
+    let mut sub = COMMANDS_FROM_OTHER_SIDE.subscriber().unwrap();
+
+    loop {
+        let DeviceToDevice::ForwardedToHostHid(report) = sub.next_message_pure().await else { continue; };
+
+        publish_report(report).await;
+    }
+}
+
 pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, USB>>) {
     let mouse_state = utils::singleton!(embassy_usb::class::hid::State::new());
 
@@ -52,5 +67,19 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
         },
     );
 
-    spawner.must_spawn(hid_writer_task(mouse_hid_writer));
+    spawner.must_spawn(hid_writer(mouse_hid_writer));
+
+    if side::this_side_has_usb() {
+        spawner.must_spawn(interboard_receiver());
+    }
+}
+
+pub async fn send_hid_to_host(report: HidReport) {
+    if side::this_side_has_usb() {
+        publish_report(report).await;
+    } else {
+        let msg = DeviceToDevice::ForwardedToHostHid(report);
+        let msg = low_latency_msg(msg);
+        interboard::send_msg(msg).await;
+    }
 }

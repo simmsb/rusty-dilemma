@@ -57,22 +57,8 @@ pub async fn from_other_side_distributor() {
             DeviceToDevice::ForwardedFromHost(msg) => {
                 handle_from_host(msg).await;
             }
-            DeviceToDevice::ForwardedToHostHid(report) => {
-                if side::this_side_has_usb() {
-                    self::usb::publish_report(report).await;
-                }
-            }
+            _ => {}
         }
-    }
-}
-
-pub async fn send_hid_to_host(report: HidReport) {
-    if side::this_side_has_usb() {
-        self::usb::publish_report(report).await;
-    } else {
-        let msg = DeviceToDevice::ForwardedToHostHid(report);
-        let msg = low_latency_msg(msg);
-        interboard::send_msg(msg).await;
     }
 }
 
