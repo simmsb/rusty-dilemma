@@ -8,8 +8,10 @@ fn main() {
     // on the linker search path.
     let memory_x = if env::var("CARGO_FEATURE_BOOTLOADER").is_ok() {
         include_bytes!("memory.bootloader.x").as_slice()
+    } else if env::var("CARGO_FEATURE_M2").is_ok() {
+        include_bytes!("memory.2m.x").as_slice()
     } else {
-        include_bytes!("memory.x").as_slice()
+        include_bytes!("memory.16m.x").as_slice()
     };
 
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());

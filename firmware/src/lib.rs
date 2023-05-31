@@ -125,6 +125,7 @@ async fn main(spawner: Spawner) {
     );
 
     if side::this_side_has_usb() {
+        log::info!("usb connected");
         bind_interrupts!(struct Irqs {
             USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
         });
@@ -145,7 +146,7 @@ async fn main(spawner: Spawner) {
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
     let mut pio1 = Pio::new(p.PIO1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
-    keys::init(&spawner);
+    // keys::init(&spawner);
 
     if side::get_side().is_right() {
         trackpad::init(

@@ -93,7 +93,7 @@
           packages.default = firmware { args = "--lib"; profile = "dev"; };
           packages.bl-bin = firmware { args = "--bin binary --features probe,bootloader"; profile = "release"; };
           packages.bin = firmware { args = "--bin binary --no-default-features"; profile = "release"; };
-          packages.debug-bin = firmware { args = "--bin binary --features probe"; profile = "dev"; };
+          packages.debug-bin = firmware { args = "--bin binary --features probe,m2"; profile = "dev"; };
           packages.bootloader = bootloader;
           packages.bl-binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";

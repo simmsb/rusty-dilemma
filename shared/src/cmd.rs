@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "defmt")]
 use defmt::debug;
-#[cfg(not(feature = "defmt"))]
-use log::debug;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

@@ -46,8 +46,8 @@ async fn trackpad_task(spi: TrackpadSpi) {
 
     Timer::after(Duration::from_secs(1)).await;
 
-    if let Err(e) = trackpad.init().await {
-        crate::log::error!("Couldn't init trackpad: {:?}", e);
+    if let Err(_e) = trackpad.init().await {
+        crate::log::error!("Couldn't init trackpad");
         return;
     }
 
@@ -65,8 +65,8 @@ async fn trackpad_task(spi: TrackpadSpi) {
                 .await;
                 // crate::log::info!("trackpad report: {:?}", report);
             }
-            Err(e) => {
-                crate::log::error!("Failed to get a trackpad report: {:?}", e);
+            Err(_e) => {
+                crate::log::error!("Failed to get a trackpad report");
             }
             _ => (),
         }

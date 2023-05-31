@@ -2,7 +2,7 @@ use core::{future::poll_fn, task::Poll};
 
 #[cfg(feature = "probe")]
 pub use defmt as log;
-use embassy_time::{Instant, Duration, Timer};
+use embassy_time::{Duration, Instant, Timer};
 use futures::Future;
 #[cfg(not(feature = "probe"))]
 pub use log_log as log;
@@ -36,7 +36,6 @@ macro_rules! general_future_executor {
 #[allow(unused_imports)]
 pub(crate) use {general_future_executor, singleton};
 
-
 pub struct Ticker {
     last_tick: Instant,
     duration: Duration,
@@ -45,7 +44,10 @@ pub struct Ticker {
 impl Ticker {
     pub fn every(duration: Duration) -> Self {
         let last_tick = Instant::now();
-        Self { last_tick, duration }
+        Self {
+            last_tick,
+            duration,
+        }
     }
 
     pub async fn next(&mut self) {
