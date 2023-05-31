@@ -98,16 +98,7 @@ unsafe fn check_bootloader() {
     reset_to_usb_boot(1 << 17, 0);
 }
 
-pub fn entry() -> ! {
-    let executor: &mut Executor = singleton!(Executor::new());
-
-    executor.run(|spawner| {
-        spawner.must_spawn(main(spawner));
-    })
-}
-
-#[embassy_executor::task]
-async fn main(spawner: Spawner) {
+pub async fn main(spawner: &Spawner) {
     let p = embassy_rp::init(Default::default());
     unsafe {
         check_bootloader();

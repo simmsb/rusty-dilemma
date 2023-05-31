@@ -2,9 +2,9 @@
 #![no_main]
 #![feature(type_alias_impl_trait)]
 
-use cortex_m_rt::entry;
+use embassy_executor::Spawner;
 
-#[entry]
-fn main() -> ! {
-    rusty_dilemma::entry();
+#[embassy_executor::main]
+async fn main(spawner: Spawner) {
+    rusty_dilemma::main(&spawner).await;
 }
