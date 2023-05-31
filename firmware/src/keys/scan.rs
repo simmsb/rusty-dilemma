@@ -55,24 +55,23 @@ pub trait ScanColumns {
 
 const DEBOUNCE_PERIOD: u8 = 4;
 
-impl<C0, C1, C2, C3, C4> ScanColumns for (C0, C1, C2, C3, C4)
+impl<C0, C1, C2, C3> ScanColumns for (C0, C1, C2, C3)
 where
     C0: InputPin<Error = Infallible>,
     C1: InputPin<Error = Infallible>,
     C2: InputPin<Error = Infallible>,
     C3: InputPin<Error = Infallible>,
-    C4: InputPin<Error = Infallible>,
 {
-    type Result = [Option<bool>; 5];
-    type Debouncers = [Debouncer<DEBOUNCE_PERIOD>; 5];
+    type Result = [Option<bool>; 4];
+    type Debouncers = [Debouncer<DEBOUNCE_PERIOD>; 4];
 
     fn scan_columns(&self, debouncers: &mut Self::Debouncers) -> Self::Result {
+        cortex_m::asm::delay(1000);
         [
-            debouncers[0].update(self.0.is_high().unwrap()),
-            debouncers[1].update(self.1.is_high().unwrap()),
-            debouncers[2].update(self.2.is_high().unwrap()),
-            debouncers[3].update(self.3.is_high().unwrap()),
-            debouncers[4].update(self.4.is_high().unwrap()),
+            debouncers[0].update(self.0.is_low().unwrap()),
+            debouncers[1].update(self.1.is_low().unwrap()),
+            debouncers[2].update(self.2.is_low().unwrap()),
+            debouncers[3].update(self.3.is_low().unwrap()),
         ]
     }
 }
@@ -84,48 +83,53 @@ pub trait ScanMatrix<C: ScanColumns> {
     fn scan_matrix(&mut self, columns: &C, debouncers: &mut Self::Debouncers) -> Self::Result;
 }
 
-impl<C, R0, R1, R2, R3> ScanMatrix<C> for (R0, R1, R2, R3)
+impl<C, R0, R1, R2, R3, R4> ScanMatrix<C> for (R0, R1, R2, R3, R4)
 where
     C: ScanColumns,
     R0: OutputPin<Error = Infallible>,
     R1: OutputPin<Error = Infallible>,
     R2: OutputPin<Error = Infallible>,
     R3: OutputPin<Error = Infallible>,
+    R4: OutputPin<Error = Infallible>,
 {
-    type Result = [C::Result; 4];
-    type Debouncers = [C::Debouncers; 4];
+    type Result = [C::Result; 5];
+    type Debouncers = [C::Debouncers; 5];
 
     fn scan_matrix(&mut self, columns: &C, debouncers: &mut Self::Debouncers) -> Self::Result {
-        self.0.set_high().unwrap();
-        let a = columns.scan_columns(&mut debouncers[0]);
         self.0.set_low().unwrap();
+        let a = columns.scan_columns(&mut debouncers[0]);
+        self.0.set_high().unwrap();
 
-        self.1.set_high().unwrap();
-        let b = columns.scan_columns(&mut debouncers[1]);
         self.1.set_low().unwrap();
+        let b = columns.scan_columns(&mut debouncers[1]);
+        self.1.set_high().unwrap();
 
-        self.2.set_high().unwrap();
-        let c = columns.scan_columns(&mut debouncers[2]);
         self.2.set_low().unwrap();
+        let c = columns.scan_columns(&mut debouncers[2]);
+        self.2.set_high().unwrap();
 
-        self.3.set_high().unwrap();
-        let d = columns.scan_columns(&mut debouncers[3]);
         self.3.set_low().unwrap();
+        let d = columns.scan_columns(&mut debouncers[3]);
+        self.3.set_high().unwrap();
 
-        [a, b, c, d]
+        self.4.set_low().unwrap();
+        let e = columns.scan_columns(&mut debouncers[4]);
+        self.4.set_high().unwrap();
+
+        [a, b, c, d, e]
     }
 }
 
 pub struct Debouncer<const MAX: u8> {
     integrator: u8,
-    is_high: bool,
+    is_pressed: bool,
 }
 
 impl<const MAX: u8> Default for Debouncer<MAX> {
     fn default() -> Self {
         Self {
             integrator: Default::default(),
-            is_high: Default::default(),
+            is_pressed: Default::default(),
         }
     }
 }
@@ -134,16 +138,16 @@ impl<const MAX: u8> Debouncer<MAX> {
     const fn new() -> Self {
         Self {
             integrator: 0,
-            is_high: false,
+            is_pressed: false,
         }
     }
 
-    fn is_high(&self) -> bool {
-        self.is_high
+    fn is_pressed(&self) -> bool {
+        self.is_pressed
     }
 
-    fn update(&mut self, is_high: bool) -> Option<bool> {
-        if is_high {
+    fn update(&mut self, is_pressed: bool) -> Option<bool> {
+        if is_pressed {
             self.increment()
         } else {
             self.decrement()
@@ -153,8 +157,8 @@ impl<const MAX: u8> Debouncer<MAX> {
     fn decrement(&mut self) -> Option<bool> {
         self.integrator = self.integrator.saturating_sub(1);
 
-        if self.integrator == 0 {
-            self.is_high = false;
+        if self.integrator == 0 && self.is_pressed {
+            self.is_pressed = false;
             return Some(false);
         }
 
@@ -163,8 +167,10 @@ impl<const MAX: u8> Debouncer<MAX> {
 
     fn increment(&mut self) -> Option<bool> {
         if self.integrator >= MAX {
-            self.is_high = true;
-            return Some(true);
+            if !self.is_pressed {
+                self.is_pressed = true;
+                return Some(true);
+            }
         } else {
             self.integrator = self.integrator.saturating_add(1);
         }

@@ -16,8 +16,8 @@ use atomic_polyfill::AtomicU32;
 use embassy_executor::{Executor, Spawner};
 use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
-use embassy_rp::gpio::Output;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
+use embassy_rp::gpio::{Level, Output, Pull};
 use embassy_rp::peripherals::{PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
@@ -31,6 +31,8 @@ use panic_reset as _;
 use {defmt_rtt as _, panic_probe as _};
 
 use utils::{log, singleton};
+
+use crate::keys::ScannerInstance;
 
 pub mod event;
 #[cfg(feature = "bootloader")]
@@ -137,7 +139,23 @@ pub async fn main(spawner: &Spawner) {
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
     let mut pio1 = Pio::new(p.PIO1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
-    keys::init(&spawner);
+
+    let scanner = ScannerInstance::new(
+        (
+            Input::new(p.PIN_4, Pull::Up),
+            Input::new(p.PIN_5, Pull::Up),
+            Input::new(p.PIN_27, Pull::Up),
+            Input::new(p.PIN_26, Pull::Up),
+        ),
+        (
+            Output::new(p.PIN_8, Level::Low),
+            Output::new(p.PIN_9, Level::Low),
+            Output::new(p.PIN_7, Level::Low),
+            Output::new(p.PIN_6, Level::Low),
+            Output::new(p.PIN_28, Level::Low),
+        ),
+    );
+    keys::init(&spawner, scanner);
 
     if side::get_side().is_right() {
         log::info!("Initializing trackpad");
