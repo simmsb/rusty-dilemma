@@ -104,7 +104,7 @@ pub async fn main(spawner: &Spawner) {
         check_bootloader();
     }
 
-    log::info!("Just a whisper. I hear it in my ghost.");
+    log::info!("Just a whisper, I hear it in my ghost.");
 
     // not sure if this makes the usb detection happier
     Timer::after(Duration::from_micros(100)).await;
@@ -137,9 +137,10 @@ pub async fn main(spawner: &Spawner) {
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
     let mut pio1 = Pio::new(p.PIO1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
-    // keys::init(&spawner);
+    keys::init(&spawner);
 
     if side::get_side().is_right() {
+        log::info!("Initializing trackpad");
         trackpad::init(
             &spawner,
             p.SPI0,

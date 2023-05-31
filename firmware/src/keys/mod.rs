@@ -16,7 +16,7 @@ pub static MATRIX_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Ev
     PubSubChannel::new();
 
 /// Chord-processed events
-pub static KEY_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Event, 4, 4, 1> =
+pub static KEY_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Event, 4, 4, 2> =
     PubSubChannel::new();
 
 #[embassy_executor::task]
