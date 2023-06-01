@@ -79,14 +79,14 @@ pub async fn half_duplex_task(
     let mut last_rx = Instant::now();
 
     loop {
-        let read_fut = async {
+        let read_for_tx_fut = async {
             // if we've recently received a message, don't try and tx until after a timeout
             Timer::at(last_rx + Duration::from_micros(1000000 * 11 / USART_SPEED)).await;
 
             reader.read(&mut buf).await
         };
 
-        match select(read_fut, rx_sm.rx().wait_pull()).await {
+        match select(read_for_tx_fut, rx_sm.rx().wait_pull()).await {
             select::Either::First(n) => {
                 // let now = Instant::now();
                 // crate::log::info!("sending bytes: {:?}", &buf[..n]);
@@ -98,6 +98,7 @@ pub async fn half_duplex_task(
                 // log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
             }
             select::Either::Second(x) => {
+                crate::set_status_led(embassy_rp::gpio::Level::High);
                 last_rx = Instant::now();
                 let x = x.to_be_bytes()[0];
                 // crate::log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
@@ -108,6 +109,7 @@ pub async fn half_duplex_task(
                     let x = x.to_be_bytes()[0];
                     OTHER_SIDE_RX.write(&[x]).await;
                 }
+                crate::set_status_led(embassy_rp::gpio::Level::Low);
             }
         }
     }

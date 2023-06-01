@@ -134,8 +134,8 @@ pub async fn main(spawner: &Spawner) {
 
     let mut pio0 = Pio::new(p.PIO0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
-    // let mut pio1 = Pio::new(p.PIO1);
-    // rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
+    let mut pio1 = Pio::new(p.PIO1);
+    rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
 
     let scanner = ScannerInstance::new(
         (

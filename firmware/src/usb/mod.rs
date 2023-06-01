@@ -30,7 +30,19 @@ pub fn init(spawner: &Spawner, driver: Driver<'static, USB>) {
 }
 
 pub async fn send_msg(msg: TransmittedMessage<DeviceToHost>) {
-    channel::COMMANDS_TO_HOST.send(msg).await;
+    if let Err(TrySendError::Full(msg)) = try_send_msg(msg) {
+        // this is a bit of a hack, for messages destined over the usb serial we
+        // allow non-reliable messages to be dropped here if the queue is full,
+        // as it likely means that the serial channel is not open
+        //
+        // we shouldn't be sending anything other than unreliable messages over
+        // here anyway
+        if msg.timeout.is_none() {
+            return;
+        }
+
+        channel::COMMANDS_TO_HOST.send(msg).await;
+    }
 }
 
 pub fn try_send_msg(

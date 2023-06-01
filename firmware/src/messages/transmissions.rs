@@ -148,7 +148,7 @@ impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
     }
 
     async fn send_reliable(&self, cmd: T, mut timeout: Duration) {
-        for _ in 0..10 {
+        loop {
             let cmd = Command::new_reliable(cmd.clone());
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
