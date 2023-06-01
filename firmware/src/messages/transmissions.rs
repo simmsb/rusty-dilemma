@@ -87,11 +87,10 @@ where
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
                                     // log::info!("Hi I got a command: {}", c);
-                                    let send_ack = c.reliable;
-                                    (self.out_cb)(c.cmd).await;
-                                    if send_ack {
+                                    if c.reliable {
                                         self.mix_chan.send(CmdOrAck::Ack).await;
                                     }
+                                    (self.out_cb)(c.cmd).await;
                                 } else {
                                     // log::debug!("Corrupted parsed command: {:?}", c);
                                 }

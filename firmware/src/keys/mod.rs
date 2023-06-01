@@ -11,7 +11,12 @@ use embassy_time::Duration;
 use keyberon::{chording::Chording, layout::Event};
 use shared::device_to_device::DeviceToDevice;
 
-use crate::{interboard, messages::low_latency_msg, side, utils::{Ticker, self}};
+use crate::{
+    interboard,
+    messages::low_latency_msg,
+    side,
+    utils::{self, Ticker},
+};
 
 pub mod layout;
 pub mod scan;
@@ -45,8 +50,15 @@ async fn matrix_scanner(mut scanner: ScannerInstance<'static>) {
     let mut ticker = Ticker::every(Duration::from_hz(100));
     let matrix_events = MATRIX_EVENTS.publisher().unwrap();
 
+    let is_right = side::get_side().is_right();
+
     loop {
         for evt in scanner.scan() {
+            let evt = if is_right {
+                evt.transform(|x, y| (9 - x, y))
+            } else {
+                evt
+            };
             utils::log::info!("evt: {:?}", evt);
             matrix_events.publish(evt).await;
         }

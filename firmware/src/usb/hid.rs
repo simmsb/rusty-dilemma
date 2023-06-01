@@ -62,7 +62,7 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
         embassy_usb::class::hid::Config {
             report_descriptor: MouseReport::desc(),
             request_handler: None,
-            poll_ms: 10,
+            poll_ms: 1,
             max_packet_size: 8,
         },
     );

@@ -9,6 +9,8 @@ use embassy_time::{Duration, Timer};
 use embedded_hal_async::spi::ExclusiveDevice;
 use shared::hid::MouseReport;
 
+use crate::utils::Ticker;
+
 pub mod driver;
 mod glide;
 pub mod regs;
@@ -44,14 +46,12 @@ async fn trackpad_task(spi: TrackpadSpi) {
         None,
     );
 
-    Timer::after(Duration::from_secs(1)).await;
-
     if let Err(_e) = trackpad.init().await {
         crate::log::error!("Couldn't init trackpad");
         return;
     }
 
-    let mut ticker = embassy_time::Ticker::every(Duration::from_millis(10));
+    let mut ticker = Ticker::every(Duration::from_millis(10));
 
     loop {
         match trackpad.get_report().await {
