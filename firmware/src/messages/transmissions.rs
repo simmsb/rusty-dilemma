@@ -1,7 +1,7 @@
 use core::hash::Hash;
 use embassy_futures::select;
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex};
-use embassy_time::{with_timeout, Duration};
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex, signal::Signal};
+use embassy_time::{with_timeout, Duration, Timer};
 use futures::Future;
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use serde::{de::DeserializeOwned, Serialize};
@@ -15,7 +15,7 @@ const BUF_SIZE: usize = 128;
 
 struct EventSenderImpl<'e, T> {
     mix_chan: &'e Channel<ThreadModeRawMutex, CmdOrAck<T>, 16>,
-    ack_chan: &'e Channel<ThreadModeRawMutex, (), 4>,
+    ack_signal: &'e Signal<ThreadModeRawMutex, ()>,
 }
 
 pub trait EventSender<T> {
@@ -41,7 +41,7 @@ struct EventInProcessor<'e, Sent, RX, FnTx> {
     rx: RX,
     out_cb: FnTx,
     mix_chan: &'e Channel<ThreadModeRawMutex, CmdOrAck<Sent>, 16>,
-    ack_chan: &'e Channel<ThreadModeRawMutex, (), 4>,
+    ack_signal: &'e Signal<ThreadModeRawMutex, ()>,
 }
 
 impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
@@ -69,15 +69,15 @@ where
                 window = match accumulator.feed(window) {
                     FeedResult::Consumed => break 'cobs,
                     FeedResult::OverFull(buf) => {
-                        log::debug!("buffer overfull");
+                        // log::debug!("buffer overfull");
                         buf
                     }
                     FeedResult::DeserError(buf) => {
-                        log::debug!(
-                            "Message decoder failed to deserialize a message of type {}: {:?}",
-                            core::any::type_name::<CmdOrAck<Received>>(),
-                            buf
-                        );
+                        // log::debug!(
+                        //     "Message decoder failed to deserialize a message of type {}: {:?}",
+                        //     core::any::type_name::<CmdOrAck<Received>>(),
+                        //     buf
+                        // );
                         buf
                     }
                     FeedResult::Success { data, remaining } => {
@@ -97,13 +97,13 @@ where
                                 }
                             }
                             CmdOrAck::Ack => {
-                                self.ack_chan.send(()).await;
+                                self.ack_signal.signal(());
                             }
                         }
 
                         remaining
                     }
-                }
+                };
             }
         }
     }
@@ -148,11 +148,13 @@ impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
     }
 
     async fn send_reliable(&self, cmd: T, mut timeout: Duration) {
-        loop {
+        for _ in 0..10 {
             let cmd = Command::new_reliable(cmd.clone());
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
-            match with_timeout(timeout, self.ack_chan.recv()).await {
+            self.ack_signal.reset();
+
+            match with_timeout(timeout, self.ack_signal.wait()).await {
                 Ok(_) => {
                     // log::debug!("Waiter for id {} completed", id);
                     return;
@@ -185,11 +187,11 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     FnTxFut: Future,
 {
     let mix_chan = Channel::new();
-    let ack_chan = Channel::new();
+    let ack_signal = Signal::new();
 
     let sender = EventSenderImpl {
         mix_chan: &mix_chan,
-        ack_chan: &ack_chan,
+        ack_signal: &ack_signal,
     };
 
     let mut out_processor = EventOutProcessor::<Sent, TX> {
@@ -201,7 +203,7 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
         rx,
         out_cb: fn_tx,
         mix_chan: &mix_chan,
-        ack_chan: &ack_chan,
+        ack_signal: &ack_signal,
     };
 
     let sender_proc = async {

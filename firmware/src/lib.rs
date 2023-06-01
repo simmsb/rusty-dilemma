@@ -12,13 +12,16 @@
     const_maybe_uninit_write
 )]
 
+use core::cell::OnceCell;
+use core::mem::ManuallyDrop;
+
 use atomic_polyfill::AtomicU32;
 use embassy_executor::{Executor, Spawner};
 use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
 use embassy_rp::gpio::{AnyPin, Input, Pin};
 use embassy_rp::gpio::{Level, Output, Pull};
-use embassy_rp::peripherals::{PIN_19, PIN_29, USB};
+use embassy_rp::peripherals::{PIN_17, PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
@@ -30,6 +33,7 @@ use panic_reset as _;
 #[cfg(feature = "probe")]
 use {defmt_rtt as _, panic_probe as _};
 
+use static_cell::StaticCell;
 use utils::{log, singleton};
 
 use crate::keys::ScannerInstance;
@@ -46,6 +50,10 @@ pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
+
+pub fn set_status_led(value: Level) {
+    unsafe { ManuallyDrop::new(Output::new(PIN_17::steal(), value)).set_level(value) };
+}
 
 pub static VERSION: &str = "0.1.0";
 
@@ -64,17 +72,6 @@ fn detect_side(pin: Input<'_, PIN_29>) -> KeyboardSide {
     };
     log::info!("I'm the {:?} side", side);
     side
-}
-
-#[embassy_executor::task]
-async fn blinky(mut pin: Output<'static, AnyPin>) {
-    loop {
-        pin.set_high();
-        Timer::after(Duration::from_secs(1)).await;
-
-        pin.set_low();
-        Timer::after(Duration::from_secs(1)).await;
-    }
 }
 
 #[link_section = ".uninit.bootloader_magic"]
@@ -137,8 +134,8 @@ pub async fn main(spawner: &Spawner) {
 
     let mut pio0 = Pio::new(p.PIO0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
-    let mut pio1 = Pio::new(p.PIO1);
-    rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
+    // let mut pio1 = Pio::new(p.PIO1);
+    // rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
 
     let scanner = ScannerInstance::new(
         (
@@ -170,11 +167,6 @@ pub async fn main(spawner: &Spawner) {
             p.DMA_CH1.degrade(),
         );
     }
-
-    spawner.must_spawn(blinky(Output::new(
-        p.PIN_17.degrade(),
-        embassy_rp::gpio::Level::Low,
-    )));
 
     let mut counter = 0u8;
     loop {

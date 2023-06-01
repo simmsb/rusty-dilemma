@@ -76,7 +76,7 @@ impl log_log::Log for Logger {
     fn flush(&self) {
         self.0.lock(|i| {
             let mut i = i.borrow_mut();
-            'outer: while let Ok(grant) = i.consumer.read() {
+            while let Ok(grant) = i.consumer.read() {
                 let mut emitted = 0;
                 for chunk in grant.buf().chunks(MAX_LOG_LEN) {
                     let vec = heapless::Vec::from_slice(chunk)
@@ -90,7 +90,7 @@ impl log_log::Log for Logger {
                         emitted += chunk.len();
                     } else {
                         grant.release(emitted);
-                        break 'outer;
+                        return;
                     }
                 }
                 grant.release(emitted);

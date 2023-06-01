@@ -4,6 +4,7 @@ use embassy_futures::{
     yield_now,
 };
 use embassy_rp::{
+    gpio::{AnyPin, Output},
     peripherals::PIO0,
     pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
     relocate::RelocatedProgram,
@@ -17,8 +18,8 @@ use fixed_macro::types::U56F8;
 #[allow(unused_imports)]
 use crate::utils::log;
 
-pub static OTHER_SIDE_TX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
-pub static OTHER_SIDE_RX: Pipe<ThreadModeRawMutex, 16> = Pipe::new();
+pub static OTHER_SIDE_TX: Pipe<ThreadModeRawMutex, 32> = Pipe::new();
+pub static OTHER_SIDE_RX: Pipe<ThreadModeRawMutex, 32> = Pipe::new();
 
 pub const USART_SPEED: u64 = 115200;
 
@@ -50,6 +51,7 @@ pub async fn enter_rx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'stati
     pin.set_drive_strength(embassy_rp::gpio::Drive::_2mA);
     tx_sm.set_pin_dirs(embassy_rp::pio::Direction::In, &[pin]);
     tx_sm.set_pins(embassy_rp::gpio::Level::High, &[pin]);
+    rx_sm.restart();
     rx_sm.set_enable(true);
 }
 
@@ -65,10 +67,14 @@ pub fn enter_tx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'static, PIO
 }
 
 #[embassy_executor::task]
-pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'static, PIO0>) {
+pub async fn half_duplex_task(
+    mut tx_sm: SM<0>,
+    mut rx_sm: SM<1>,
+    mut pin: Pin<'static, PIO0>,
+) {
     enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
 
-    let mut buf = [0u8; 16];
+    let mut buf = [0u8; 4];
     let reader = OTHER_SIDE_TX.reader();
     let mut last_rx = Instant::now();
 
@@ -86,7 +92,7 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
                 // crate::log::info!("sending bytes: {:?}", &buf[..n]);
                 enter_tx(&mut tx_sm, &mut rx_sm, &mut pin);
                 for b in &buf[..n] {
-                    tx_sm.tx().wait_push(*b as u32).await;
+                    tx_sm.tx().wait_push(!*b as u32).await;
                 }
                 enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
                 // log::info!("sent bytes: {} in {}", &buf[..n], now.elapsed());
@@ -95,11 +101,12 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
                 last_rx = Instant::now();
                 let x = x.to_be_bytes()[0];
                 // crate::log::info!("got byte: {:08b}: {}", 255 - x, 255 - x);
-                OTHER_SIDE_RX.write(&[255 - x]).await;
+                OTHER_SIDE_RX.write(&[x]).await;
 
-                while let Some(x) = rx_sm.rx().try_pull() {
+                while !OTHER_SIDE_RX.is_full() {
+                    let Some(x) = rx_sm.rx().try_pull() else { break; };
                     let x = x.to_be_bytes()[0];
-                    OTHER_SIDE_RX.write(&[255 - x]).await;
+                    OTHER_SIDE_RX.write(&[x]).await;
                 }
             }
         }

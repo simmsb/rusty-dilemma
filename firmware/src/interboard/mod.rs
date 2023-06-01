@@ -2,7 +2,7 @@ use embassy_executor::Spawner;
 use embassy_rp::{
     peripherals::PIO0,
     pio::{Common, PioPin},
-    Peripheral,
+    Peripheral, gpio::{Output, AnyPin},
 };
 use embassy_sync::channel::TrySendError;
 use shared::device_to_device::DeviceToDevice;
