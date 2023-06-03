@@ -98,6 +98,7 @@ macro_rules! m {
 // row 4 is weird
 //
 // x x 2 0 1  -  8 9 7 x x
+// 3 4 2 0 0  -  0 0 7 5 6
 #[rustfmt::skip]
 pub static LAYERS: Layers  = keyberon::layout::layout! {
     {
@@ -112,7 +113,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [! @ '{' '}' | '`' ~ '\\' n '"' ],
         [# $ '(' ')' n  +  -  /   * '\''],
         [% ^ '[' ']' n  &  =  ,   . '_' ],
-        [= LAlt LGui n  n  n n BSpace = Tab],
+        [LAlt = n n  n  n n n = n],
         [n n n n n n n  n  n n],
         [n n n n n n n  n  n n],
     }
@@ -120,7 +121,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [Kb1 Kb2 Kb3 Kb4 Kb5 Kb6 Kb7 Kb8 Kb9 Kb0],
         [F1  F2  F3  F4  F5  Left Down Up Right VolUp],
         [F6  F7  F8  F9  F10 PgDown {m!(KeyCode::LCtrl, KeyCode::Down)} {m!(KeyCode::LCtrl, KeyCode::Up)} PgUp VolDown],
-        [n n F11 F12 t t RAlt End n n],
+        [F12 n F11   n t t n End n n],
         [n n n   n   n n n    n   n n],
         [n n n   n   n n n    n   n n],
     }
