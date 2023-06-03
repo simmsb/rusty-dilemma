@@ -11,11 +11,7 @@ use shared::device_to_device::DeviceToDevice;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard,
-    messages::low_latency_msg,
-    side,
-    usb::hid::publish_keyboard_report,
-    utils::{self, Ticker},
+    interboard, messages::low_latency_msg, side, usb::hid::publish_keyboard_report, utils::Ticker,
 };
 
 use self::{chord::ChordingEngine, layout::LAYERS};
@@ -139,7 +135,6 @@ async fn key_event_processor() {
     loop {
         match with_timeout(Duration::from_hz(1000), sub.next_message_pure()).await {
             Ok(evt) => {
-                utils::log::info!("evt: {:?}", evt);
                 layout.event(evt);
             }
             Err(_) => {
