@@ -1,5 +1,3 @@
-
-
 #[cfg(feature = "probe")]
 pub use defmt as log;
 use embassy_time::{Duration, Instant, Timer};

@@ -12,7 +12,6 @@
     const_maybe_uninit_write
 )]
 
-
 use core::mem::ManuallyDrop;
 
 use atomic_polyfill::AtomicU32;
@@ -33,8 +32,7 @@ use panic_reset as _;
 #[cfg(feature = "probe")]
 use {defmt_rtt as _, panic_probe as _};
 
-
-use utils::{log};
+use utils::log;
 
 use crate::keys::ScannerInstance;
 

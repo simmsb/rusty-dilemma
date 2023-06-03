@@ -5,7 +5,7 @@ use embassy_rp::{
     peripherals::{PIN_20, PIN_21, PIN_22, PIN_23, SPI0},
     spi::{self, Async, Spi},
 };
-use embassy_time::{Duration};
+use embassy_time::Duration;
 use embedded_hal_async::spi::ExclusiveDevice;
 use shared::hid::MouseReport;
 

@@ -66,11 +66,7 @@ pub fn enter_tx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'static, PIO
 }
 
 #[embassy_executor::task]
-pub async fn half_duplex_task(
-    mut tx_sm: SM<0>,
-    mut rx_sm: SM<1>,
-    mut pin: Pin<'static, PIO0>,
-) {
+pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'static, PIO0>) {
     enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
 
     let mut buf = [0u8; 4];

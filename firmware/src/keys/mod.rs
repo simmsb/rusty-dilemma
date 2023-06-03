@@ -11,7 +11,11 @@ use shared::device_to_device::DeviceToDevice;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard, messages::low_latency_msg, side, usb::hid::publish_keyboard_report, utils::{Ticker, self},
+    interboard,
+    messages::low_latency_msg,
+    side,
+    usb::hid::publish_keyboard_report,
+    utils::{self, Ticker},
 };
 
 use self::{chord::ChordingEngine, layout::LAYERS};
