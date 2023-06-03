@@ -12,7 +12,7 @@ use shared::device_to_device::DeviceToDevice;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard, messages::low_latency_msg, side, usb::hid::publish_keyboard_report, utils::Ticker,
+    interboard, messages::{low_latency_msg, reliable_msg}, side, usb::hid::publish_keyboard_report, utils::Ticker,
 };
 
 use self::{chord::ChordingEngine, layout::LAYERS};
@@ -72,16 +72,18 @@ async fn matrix_processor() {
     let mut sub = MATRIX_EVENTS.subscriber().unwrap();
     let key_events = KEY_EVENTS.publisher().unwrap();
     let mut chorder = ChordingEngine::new(layout::chorder());
+    let mut ticker = Ticker::every(Duration::from_hz(1000));
 
     loop {
-        match with_timeout(Duration::from_hz(1000), sub.next_message_pure()).await {
-            Ok(evt) => {
+        match select(ticker.next(), sub.next_message_pure()).await {
+            embassy_futures::select::Either::Second(evt) => {
+                //key_events.publish(evt).await;
                 let evts = chorder.process(evt);
                 for evt in evts {
                     key_events.publish(evt).await;
                 }
             }
-            Err(_) => {
+            embassy_futures::select::Either::First(_) => {
                 let keys = chorder.tick();
                 for (x, y) in keys {
                     key_events
@@ -103,7 +105,7 @@ async fn send_events_to_side_with_usb() {
             Event::Press(x, y) => DeviceToDevice::KeyPress(x, y),
             Event::Release(x, y) => DeviceToDevice::KeyRelease(x, y),
         };
-        interboard::send_msg(low_latency_msg(evt)).await;
+        interboard::send_msg(reliable_msg(evt)).await;
     }
 }
 
@@ -137,6 +139,8 @@ async fn key_event_processor() {
     loop {
         match select(ticker.next(), sub.next_message_pure()).await {
             embassy_futures::select::Either::Second(evt) => {
+                // crate::utils::log::info!("evt: {:?}", evt);
+
                 layout.event(evt);
             }
             embassy_futures::select::Either::First(_) => {
