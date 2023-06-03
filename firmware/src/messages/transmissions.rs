@@ -1,13 +1,13 @@
 use core::hash::Hash;
 use embassy_futures::select;
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, mutex::Mutex, signal::Signal};
-use embassy_time::{with_timeout, Duration, Timer};
+use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, signal::Signal};
+use embassy_time::{with_timeout, Duration};
 use futures::Future;
 use postcard::accumulator::{CobsAccumulator, FeedResult};
 use serde::{de::DeserializeOwned, Serialize};
 use shared::cmd::{CmdOrAck, Command};
 
-use crate::utils::{log, WhichDebug};
+use crate::utils::WhichDebug;
 
 use super::TransmittedMessage;
 
@@ -153,14 +153,9 @@ impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
 
             self.ack_signal.reset();
 
-            match with_timeout(timeout, self.ack_signal.wait()).await {
-                Ok(_) => {
-                    // log::debug!("Waiter for id {} completed", id);
-                    return;
-                }
-                Err(_) => {
-                    // log::debug!("Waiter for id {} timing out", id);
-                }
+            if with_timeout(timeout, self.ack_signal.wait()).await.is_ok() {
+                // log::debug!("Waiter for id {} completed", id);
+                return;
             }
 
             timeout += Duration::from_micros(100);

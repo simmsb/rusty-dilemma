@@ -4,14 +4,13 @@ use embassy_futures::{
     yield_now,
 };
 use embassy_rp::{
-    gpio::{AnyPin, Output},
     peripherals::PIO0,
     pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
     relocate::RelocatedProgram,
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
-use embassy_time::{Duration, Instant, Timer};
+use embassy_time::{Duration, Timer};
 use fixed::traits::ToFixed;
 use fixed_macro::types::U56F8;
 

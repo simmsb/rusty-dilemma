@@ -1,6 +1,7 @@
 use keyberon::action::{k, l, Action, HoldTapAction};
-use keyberon::chording::ChordDef;
 use keyberon::key_code::KeyCode;
+
+use super::chord::Chorder;
 
 pub const COLS_PER_SIDE: usize = 5;
 pub const COLS: usize = COLS_PER_SIDE * 2;
@@ -35,28 +36,58 @@ const L2_SP: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
     tap_hold_interval: 0,
 });
 
-pub const NUM_CHORDS: usize = 13;
+const CTRL_Z: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
+    timeout: 200,
+    hold: k(KeyCode::LCtrl),
+    tap: k(KeyCode::Z),
+    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    tap_hold_interval: 0,
+});
 
-#[rustfmt::skip]
-pub static CHORDS: [ChordDef; NUM_CHORDS] = [
-    ((5, 0), &[(0, 5), (0, 6)]), // y + u = bspc
-    ((4, 3), &[(0, 6), (0, 7)]), // u + i = del
-    ((4, 0), &[(0, 0), (0, 1)]), // q + w = esc
-    ((4, 1), &[(2, 1), (2, 2)]), // x + c = M-x
-    ((4, 2), &[(2, 2), (2, 3)]), // c + v = spc, grave
+const SHIFT_A: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
+    timeout: 200,
+    hold: k(KeyCode::LShift),
+    tap: k(KeyCode::A),
+    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    tap_hold_interval: 0,
+});
 
-    ((4, 4), &[(1, 5), (1, 6)]), // h + j = <
-    ((4, 5), &[(1, 6), (1, 7)]), // j + k = :
-    ((4, 6), &[(1, 7), (1, 8)]), // k + l = >
+const CTRL_SLASH: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
+    timeout: 200,
+    hold: k(KeyCode::RCtrl),
+    tap: k(KeyCode::Slash),
+    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    tap_hold_interval: 0,
+});
 
-    ((4, 7), &[(0, 7), (0, 8)]), // i + o = \
-    ((4, 8), &[(0, 8), (0, 9)]), // o + p = /
+const SHIFT_SCOL: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
+    timeout: 200,
+    hold: k(KeyCode::RShift),
+    tap: k(KeyCode::SColon),
+    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    tap_hold_interval: 0,
+});
 
-    ((4, 9), &[(2, 5), (2, 6)]), // n + m = "
-    ((4, 10), &[(2, 6), (2, 7)]), // m + , = '
-    ((4, 11), &[(2, 7), (2, 8)]), // , + . = _
+pub fn chorder() -> Chorder {
+    dilemma_macros::chords!(
+        [(0, 5), (0, 6)] => [(5, 0)],  // y + u = bspc
+        [(0, 6), (0, 7)] => [(4, 3)],  // u + i = del
+        [(0, 0), (0, 1)] => [(4, 0)],  // q + w = esc
+        [(2, 1), (2, 2)] => [(4, 1)],  // x + c = M-x
+        [(2, 2), (2, 3)] => [(4, 2)],  // c + v = spc, grave
 
-];
+        [(1, 5), (1, 6)] => [(4, 4)],  // h + j = <
+        [(1, 6), (1, 7)] => [(4, 5)],  // j + k = :
+        [(1, 7), (1, 8)] => [(4, 6)],  // k + l = >
+
+        [(0, 7), (0, 8)] => [(4, 7)],  // i + o = \
+        [(0, 8), (0, 9)] => [(4, 8)],  // o + p = /
+
+        [(2, 5), (2, 6)] => [(4, 9)],  // n + m = "
+        [(2, 6), (2, 7)] => [(4, 10)], // m + , = '
+        [(2, 7), (2, 8)] => [(4, 11)]  // , + . = _
+    )
+}
 
 macro_rules! m {
     ($($keys:expr),*) => {
@@ -64,13 +95,16 @@ macro_rules! m {
     };
 }
 
+// row 4 is weird
+//
+// x x 2 0 1  -  8 9 7 x x
 #[rustfmt::skip]
 pub static LAYERS: Layers  = keyberon::layout::layout! {
     {
         [Q W E R T Y U I O P],
-        [A S D F G H J K L ;],
-        [Z X C V B N M , . /],
-        [n n LGui {ALT_TAB} {L1_SP} {L2_SP} Enter BSpace n n],
+        [{SHIFT_A} S D F G H J K L {SHIFT_SCOL}],
+        [{CTRL_Z} X C V B N M , . {CTRL_SLASH}],
+        [{ALT_TAB} {L1_SP} LGui n n n n BSpace {L2_SP} Enter],
         [Escape {m!(KeyCode::LAlt, KeyCode::X)} {m!(KeyCode::Space, KeyCode::Grave)} Delete < {m!(KeyCode::LShift, KeyCode::SColon)} > / '\\' '"'],
         [BSpace '\'' '_' n    n  n n   n      n n],
     }
@@ -78,9 +112,9 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [! @ '{' '}' | '`' ~ '\\' n '"' ],
         [# $ '(' ')' n  +  -  /   * '\''],
         [% ^ '[' ']' n  &  =  ,   . '_' ],
-        [n n LGui LAlt =  = Tab BSpace n n],
-        [n n n    n    n  n n   n      n n],
-        [n n n    n    n  n n   n      n n],
+        [= LAlt LGui n  n  n n BSpace = Tab],
+        [n n n n n n n  n  n n],
+        [n n n n n n n  n  n n],
     }
     {
         [Kb1 Kb2 Kb3 Kb4 Kb5 Kb6 Kb7 Kb8 Kb9 Kb0],

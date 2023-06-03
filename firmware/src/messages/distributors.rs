@@ -1,12 +1,11 @@
 use shared::device_to_device::DeviceToDevice;
 use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
-use shared::hid::HidReport;
 use shared::host_to_device::HostToDeviceMsg;
 
 use crate::side;
 use crate::{interboard, usb};
 
-use super::{low_latency_msg, reliable_msg, unreliable_msg, TransmittedMessage};
+use super::{reliable_msg, unreliable_msg, TransmittedMessage};
 
 #[embassy_executor::task]
 pub async fn from_usb_distributor() {

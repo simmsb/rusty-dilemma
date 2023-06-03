@@ -6,5 +6,5 @@ use embassy_executor::Spawner;
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    rusty_dilemma::main(&spawner).await;
+    rusty_dilemma::main(spawner).await;
 }

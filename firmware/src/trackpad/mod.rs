@@ -5,7 +5,7 @@ use embassy_rp::{
     peripherals::{PIN_20, PIN_21, PIN_22, PIN_23, SPI0},
     spi::{self, Async, Spi},
 };
-use embassy_time::{Duration, Timer};
+use embassy_time::{Duration};
 use embedded_hal_async::spi::ExclusiveDevice;
 use shared::hid::MouseReport;
 
@@ -56,12 +56,12 @@ async fn trackpad_task(spi: TrackpadSpi) {
     loop {
         match trackpad.get_report().await {
             Ok(Some(report)) => {
-                crate::usb::hid::send_hid_to_host(shared::hid::HidReport::Mouse(MouseReport {
+                crate::usb::hid::send_mouse_hid_to_host(MouseReport {
                     x: report.0,
                     y: report.1,
                     wheel: 0,
                     pan: 0,
-                }))
+                })
                 .await;
                 // crate::log::info!("trackpad report: {:?}", report);
             }

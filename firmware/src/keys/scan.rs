@@ -36,9 +36,9 @@ where
                 .filter_map(move |(j, press_state)| {
                     press_state.map(|press| {
                         if press {
-                            keyberon::layout::Event::Press(i as u8, j as u8)
+                            keyberon::layout::Event::Press(j as u8, i as u8)
                         } else {
-                            keyberon::layout::Event::Release(i as u8, j as u8)
+                            keyberon::layout::Event::Release(j as u8, i as u8)
                         }
                     })
                 })
@@ -53,7 +53,7 @@ pub trait ScanColumns {
     fn scan_columns(&self, debouncers: &mut Self::Debouncers) -> Self::Result;
 }
 
-const DEBOUNCE_PERIOD: u8 = 4;
+const DEBOUNCE_PERIOD: u8 = 10; // polling at 500hz, 10 ticks should be 20ms
 
 impl<C0, C1, C2, C3> ScanColumns for (C0, C1, C2, C3)
 where
@@ -135,17 +135,6 @@ impl<const MAX: u8> Default for Debouncer<MAX> {
 }
 
 impl<const MAX: u8> Debouncer<MAX> {
-    const fn new() -> Self {
-        Self {
-            integrator: 0,
-            is_pressed: false,
-        }
-    }
-
-    fn is_pressed(&self) -> bool {
-        self.is_pressed
-    }
-
     fn update(&mut self, is_pressed: bool) -> Option<bool> {
         if is_pressed {
             self.increment()

@@ -12,14 +12,14 @@
     const_maybe_uninit_write
 )]
 
-use core::cell::OnceCell;
+
 use core::mem::ManuallyDrop;
 
 use atomic_polyfill::AtomicU32;
-use embassy_executor::{Executor, Spawner};
+use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
-use embassy_rp::gpio::{AnyPin, Input, Pin};
+use embassy_rp::gpio::Input;
 use embassy_rp::gpio::{Level, Output, Pull};
 use embassy_rp::peripherals::{PIN_17, PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
@@ -33,8 +33,8 @@ use panic_reset as _;
 #[cfg(feature = "probe")]
 use {defmt_rtt as _, panic_probe as _};
 
-use static_cell::StaticCell;
-use utils::{log, singleton};
+
+use utils::{log};
 
 use crate::keys::ScannerInstance;
 
@@ -97,7 +97,7 @@ unsafe fn check_bootloader() {
     reset_to_usb_boot(1 << 17, 0);
 }
 
-pub async fn main(spawner: &Spawner) {
+pub async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     unsafe {
         check_bootloader();

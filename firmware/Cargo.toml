@@ -2,6 +2,7 @@
 name = "rusty-dilemma"
 version = "0.1.0"
 edition = "2021"
+resolver = "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,13 +12,14 @@ path = "src/bin/binary.rs"
 
 [dependencies]
 shared = { path = "../shared" }
+dilemma_macros = { path = "../macros" }
 embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
 embassy-executor = { git = "https://github.com/embassy-rs/embassy", features = ["arch-cortex-m", "executor-thread", "integrated-timers", "nightly"] }
 embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy", default-features = false, features = ["unstable-pac", "time-driver", "unstable-traits", "nightly"] }
 embassy-sync = { git = "https://github.com/embassy-rs/embassy", features = ["nightly"] }
 embassy-time = { git = "https://github.com/embassy-rs/embassy" }
-embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
+embassy-usb = { git = "https://github.com/embassy-rs/embassy", features = ["max-interface-count-6"] }
 embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", optional = true, features = ["nightly"] }
 
 cortex-m = { version = "0.7.7", features = ["critical-section-single-core", "inline-asm"] }
@@ -53,6 +55,8 @@ cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", defaul
 cordic = "0.1.5"
 crc32fast = { version = "1.3.2", default-features = false }
 keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
+phf = { version = "0.11.1", default-features = false }
+packed_struct = { version = "0.10.1", default-features = false }
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]

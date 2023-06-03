@@ -1,9 +1,9 @@
-use core::{future::poll_fn, task::Poll};
+
 
 #[cfg(feature = "probe")]
 pub use defmt as log;
 use embassy_time::{Duration, Instant, Timer};
-use futures::Future;
+
 #[cfg(not(feature = "probe"))]
 pub use log_log as log;
 

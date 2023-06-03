@@ -3,8 +3,12 @@ use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
-use shared::{device_to_device::DeviceToDevice, hid::HidReport};
+use packed_struct::PackedStruct;
+use shared::device_to_device::DeviceToDevice;
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
+use usbd_human_interface_device::device::keyboard::{
+    NKROBootKeyboardReport, NKRO_BOOT_KEYBOARD_REPORT_DESCRIPTOR,
+};
 
 use crate::{
     interboard::{self, COMMANDS_FROM_OTHER_SIDE},
@@ -14,31 +18,40 @@ use crate::{
 
 type CS = embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 
-static REPORTS: Channel<CS, HidReport, 2> = Channel::new();
+static MOUSE_REPORTS: Channel<CS, shared::hid::MouseReport, 2> = Channel::new();
+static KEYBOARD_REPORTS: Channel<CS, NKROBootKeyboardReport, 2> = Channel::new();
 
-pub async fn publish_report(report: HidReport) {
-    REPORTS.send(report).await;
+pub async fn publish_mouse_report(report: shared::hid::MouseReport) {
+    MOUSE_REPORTS.send(report).await;
     yield_now().await;
 }
 
+pub async fn publish_keyboard_report(report: NKROBootKeyboardReport) {
+    KEYBOARD_REPORTS.send(report).await;
+}
+
 #[embassy_executor::task]
-async fn hid_writer(mut writer: HidWriter<'static, Driver<'static, USB>, 64>) {
+async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
-        let report = REPORTS.recv().await;
+        let shared::hid::MouseReport { x, y, wheel, pan } = MOUSE_REPORTS.recv().await;
 
-        match report {
-            HidReport::Mouse(shared::hid::MouseReport { x, y, wheel, pan }) => {
-                let report = MouseReport {
-                    buttons: 0,
-                    x,
-                    y,
-                    wheel,
-                    pan,
-                };
+        let report = MouseReport {
+            buttons: 0,
+            x,
+            y,
+            wheel,
+            pan,
+        };
 
-                let _ = writer.write_serialize(&report).await;
-            }
-        }
+        let _ = mouse_writer.write_serialize(&report).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn keyboard_writer(mut keyboard_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
+    loop {
+        let report = KEYBOARD_REPORTS.recv().await;
+        let _ = keyboard_writer.write(&report.pack().unwrap()).await;
     }
 }
 
@@ -47,14 +60,15 @@ async fn interboard_receiver() {
     let mut sub = COMMANDS_FROM_OTHER_SIDE.subscriber().unwrap();
 
     loop {
-        let DeviceToDevice::ForwardedToHostHid(report) = sub.next_message_pure().await else { continue; };
+        let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else { continue; };
 
-        publish_report(report).await;
+        publish_mouse_report(report).await;
     }
 }
 
 pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, USB>>) {
     let mouse_state = utils::singleton!(embassy_usb::class::hid::State::new());
+    let keyboard_state = utils::singleton!(embassy_usb::class::hid::State::new());
 
     let mouse_hid_writer = HidWriter::new(
         builder,
@@ -67,18 +81,27 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
         },
     );
 
-    spawner.must_spawn(hid_writer(mouse_hid_writer));
+    let keyboard_hid_writer = HidWriter::new(
+        builder,
+        keyboard_state,
+        embassy_usb::class::hid::Config {
+            report_descriptor: NKRO_BOOT_KEYBOARD_REPORT_DESCRIPTOR,
+            request_handler: None,
+            poll_ms: 1,
+            max_packet_size: 64,
+        },
+    );
 
-    if side::this_side_has_usb() {
-        spawner.must_spawn(interboard_receiver());
-    }
+    spawner.must_spawn(mouse_writer(mouse_hid_writer));
+    spawner.must_spawn(keyboard_writer(keyboard_hid_writer));
+    spawner.must_spawn(interboard_receiver());
 }
 
-pub async fn send_hid_to_host(report: HidReport) {
+pub async fn send_mouse_hid_to_host(report: shared::hid::MouseReport) {
     if side::this_side_has_usb() {
-        publish_report(report).await;
+        publish_mouse_report(report).await;
     } else {
-        let msg = DeviceToDevice::ForwardedToHostHid(report);
+        let msg = DeviceToDevice::ForwardedToHostMouse(report);
         let msg = low_latency_msg(msg);
         interboard::send_msg(msg).await;
     }
