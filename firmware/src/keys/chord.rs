@@ -27,6 +27,12 @@ impl Chord {
             None
         }
     }
+
+    fn clear_if_inactive(&mut self) {
+        if !self.is_active {
+            self.key_states.fill(false);
+        }
+    }
 }
 
 pub struct Chorder {
@@ -67,6 +73,10 @@ impl ChordingEngine {
                         chord.process(keyberon::layout::Event::Release(x, y));
                     }
                 }
+            }
+
+            for chord in &mut *self.chorder.chords {
+                chord.clear_if_inactive();
             }
 
             return core::mem::replace(&mut self.held_keys, heapless::Vec::new());

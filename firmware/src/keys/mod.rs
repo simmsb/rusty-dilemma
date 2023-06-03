@@ -1,4 +1,5 @@
 use embassy_executor::Spawner;
+use embassy_futures::select::select;
 use embassy_rp::{
     gpio::{Input, Output},
     peripherals::{PIN_26, PIN_27, PIN_28, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9},
@@ -131,13 +132,14 @@ async fn key_event_processor() {
     let mut sub = KEY_EVENTS.subscriber().unwrap();
     let mut layout = keyberon::layout::Layout::new(&LAYERS);
     let mut state = heapless::Vec::<KeyCode, 24>::new();
+    let mut ticker = Ticker::every(Duration::from_hz(1000));
 
     loop {
-        match with_timeout(Duration::from_hz(1000), sub.next_message_pure()).await {
-            Ok(evt) => {
+        match select(ticker.next(), sub.next_message_pure()).await {
+            embassy_futures::select::Either::Second(evt) => {
                 layout.event(evt);
             }
-            Err(_) => {
+            embassy_futures::select::Either::First(_) => {
                 let _ = layout.tick();
             }
         }

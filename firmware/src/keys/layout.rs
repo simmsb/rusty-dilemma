@@ -12,59 +12,61 @@ pub type CustomEvent = core::convert::Infallible;
 pub type Layers = keyberon::layout::Layers<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 pub type Layout = keyberon::layout::Layout<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 
+const HOLD_TIMEOUT: u16 = 400;
+
 const ALT_TAB: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: k(KeyCode::LAlt),
     tap: k(KeyCode::Tab),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const L1_SP: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: l(1),
     tap: k(KeyCode::Space),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const L2_SP: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: l(2),
     tap: k(KeyCode::Space),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const CTRL_Z: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: k(KeyCode::LCtrl),
     tap: k(KeyCode::Z),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const SHIFT_A: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: k(KeyCode::LShift),
     tap: k(KeyCode::A),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const CTRL_SLASH: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: k(KeyCode::RCtrl),
     tap: k(KeyCode::Slash),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
 const SHIFT_SCOL: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: 200,
+    timeout: HOLD_TIMEOUT,
     hold: k(KeyCode::RShift),
     tap: k(KeyCode::SColon),
-    config: keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
 });
 
