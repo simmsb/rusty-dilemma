@@ -37,7 +37,11 @@ impl Animation for Purple {
 
         let brightness = brightness.int().saturating_to_num::<i16>();
 
-        let mut c = ColorRGB::Amethyst;
+        let mut c = ColorRGB {
+            r: 141,
+            g: 70,
+            b: 210,
+        };
         c.fade_to_black_by(brightness as u8);
         c
     }

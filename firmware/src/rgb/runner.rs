@@ -1,5 +1,11 @@
+use core::array;
+
 use cichlid::ColorRGB;
+use embassy_futures::select::select;
 use embassy_rp::peripherals::PIO1;
+use embassy_time::{Duration, Timer};
+use fixed::types::U16F16;
+use fixed_macro::fixed;
 
 use crate::{side::get_side, utils::Ticker};
 
@@ -10,12 +16,12 @@ use super::{
     layout::{self, NUM_LEDS},
 };
 
-const MAX_LEVEL: u8 = 200;
+const MAX_LEVEL: u8 = 180;
 const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
 
 #[embassy_executor::task]
 pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize }>) {
-    let mut buf = [ColorRGB::Black; NUM_LEDS as usize];
+    let mut colours = [ColorRGB::Black; NUM_LEDS as usize];
 
     let mut animation = animations::purple::Purple::default();
     let mut ticker = Ticker::every(animation.tick_rate());
@@ -29,7 +35,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
     loop {
         animation.tick();
 
-        for (dest, light) in buf.iter_mut().zip(lights) {
+        for (dest, light) in colours.iter_mut().zip(lights) {
             let mut color = animation.render(light);
             color.scale(MAX_LEVEL);
 
@@ -37,30 +43,312 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
                 color.scale_from_other(COLOUR_CORRECTION);
             }
 
-            *dest = gamma(color);
+            *dest = color;
         }
 
-        driver.write(&buf).await;
+        let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
 
-        ticker.next().await;
+        loop {
+            match select(ticker.next(), Timer::after(Duration::from_hz(1000))).await {
+                embassy_futures::select::Either::First(_) => {
+                    break;
+                }
+                embassy_futures::select::Either::Second(_) => {
+                    let corrected_colours = array::from_fn::<_, { NUM_LEDS as usize }, _>(|i| {
+                        errors[i].process(colours[i])
+                    });
+
+                    driver.write(&corrected_colours).await;
+                }
+            }
+        }
     }
 }
 
-fn gamma(mut color: ColorRGB) -> ColorRGB {
-    color.modify_all(|n| GAMMA8[n as usize]);
-    color
+#[derive(Default, Clone, Copy)]
+struct GammaErrorTracker {
+    r: U16F16,
+    g: U16F16,
+    b: U16F16,
 }
 
-const GAMMA8: [u8; 256] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5,
-    5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 12, 12, 13, 13, 13, 14,
-    14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 24, 24, 25, 25, 26, 27,
-    27, 28, 29, 29, 30, 31, 32, 32, 33, 34, 35, 35, 36, 37, 38, 39, 39, 40, 41, 42, 43, 44, 45, 46,
-    47, 48, 49, 50, 50, 51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68, 69, 70, 72,
-    73, 74, 75, 77, 78, 79, 81, 82, 83, 85, 86, 87, 89, 90, 92, 93, 95, 96, 98, 99, 101, 102, 104,
-    105, 107, 109, 110, 112, 114, 115, 117, 119, 120, 122, 124, 126, 127, 129, 131, 133, 135, 137,
-    138, 140, 142, 144, 146, 148, 150, 152, 154, 156, 158, 160, 162, 164, 167, 169, 171, 173, 175,
-    177, 180, 182, 184, 186, 189, 191, 193, 196, 198, 200, 203, 205, 208, 210, 213, 215, 218, 220,
-    223, 225, 228, 231, 233, 236, 239, 241, 244, 247, 249, 252, 255,
+impl GammaErrorTracker {
+    fn process(&mut self, color: ColorRGB) -> ColorRGB {
+        // color.modify_all(|i| GAMMA[i as usize].int().saturating_to_num());
+        // return color;
+
+        let r = GAMMA[color.r as usize] + self.r;
+        self.r = r.frac();
+        let r = r.int().saturating_to_num();
+
+        let g = GAMMA[color.g as usize] + self.g;
+        self.g = g.frac();
+        let g = g.int().saturating_to_num();
+
+        let b = GAMMA[color.b as usize] + self.b;
+        self.b = b.frac();
+        let b = b.int().saturating_to_num();
+
+        ColorRGB { r, g, b }
+    }
+}
+
+//  ",".join([f"fixed!({255 * ((n / 255) ** 1.9):#.3}: U16F16)" for n in range(256)])
+const GAMMA: [U16F16; 256] = [
+    fixed!(0.00: U16F16),
+    fixed!(0.00683: U16F16),
+    fixed!(0.0255: U16F16),
+    fixed!(0.0550: U16F16),
+    fixed!(0.0951: U16F16),
+    fixed!(0.145: U16F16),
+    fixed!(0.205: U16F16),
+    fixed!(0.275: U16F16),
+    fixed!(0.355: U16F16),
+    fixed!(0.444: U16F16),
+    fixed!(0.542: U16F16),
+    fixed!(0.650: U16F16),
+    fixed!(0.767: U16F16),
+    fixed!(0.892: U16F16),
+    fixed!(1.03: U16F16),
+    fixed!(1.17: U16F16),
+    fixed!(1.32: U16F16),
+    fixed!(1.49: U16F16),
+    fixed!(1.66: U16F16),
+    fixed!(1.84: U16F16),
+    fixed!(2.02: U16F16),
+    fixed!(2.22: U16F16),
+    fixed!(2.43: U16F16),
+    fixed!(2.64: U16F16),
+    fixed!(2.86: U16F16),
+    fixed!(3.09: U16F16),
+    fixed!(3.33: U16F16),
+    fixed!(3.58: U16F16),
+    fixed!(3.83: U16F16),
+    fixed!(4.10: U16F16),
+    fixed!(4.37: U16F16),
+    fixed!(4.65: U16F16),
+    fixed!(4.94: U16F16),
+    fixed!(5.24: U16F16),
+    fixed!(5.55: U16F16),
+    fixed!(5.86: U16F16),
+    fixed!(6.18: U16F16),
+    fixed!(6.51: U16F16),
+    fixed!(6.85: U16F16),
+    fixed!(7.20: U16F16),
+    fixed!(7.55: U16F16),
+    fixed!(7.91: U16F16),
+    fixed!(8.28: U16F16),
+    fixed!(8.66: U16F16),
+    fixed!(9.05: U16F16),
+    fixed!(9.45: U16F16),
+    fixed!(9.85: U16F16),
+    fixed!(10.3: U16F16),
+    fixed!(10.7: U16F16),
+    fixed!(11.1: U16F16),
+    fixed!(11.5: U16F16),
+    fixed!(12.0: U16F16),
+    fixed!(12.4: U16F16),
+    fixed!(12.9: U16F16),
+    fixed!(13.4: U16F16),
+    fixed!(13.8: U16F16),
+    fixed!(14.3: U16F16),
+    fixed!(14.8: U16F16),
+    fixed!(15.3: U16F16),
+    fixed!(15.8: U16F16),
+    fixed!(16.3: U16F16),
+    fixed!(16.8: U16F16),
+    fixed!(17.4: U16F16),
+    fixed!(17.9: U16F16),
+    fixed!(18.4: U16F16),
+    fixed!(19.0: U16F16),
+    fixed!(19.6: U16F16),
+    fixed!(20.1: U16F16),
+    fixed!(20.7: U16F16),
+    fixed!(21.3: U16F16),
+    fixed!(21.9: U16F16),
+    fixed!(22.5: U16F16),
+    fixed!(23.1: U16F16),
+    fixed!(23.7: U16F16),
+    fixed!(24.3: U16F16),
+    fixed!(24.9: U16F16),
+    fixed!(25.6: U16F16),
+    fixed!(26.2: U16F16),
+    fixed!(26.9: U16F16),
+    fixed!(27.5: U16F16),
+    fixed!(28.2: U16F16),
+    fixed!(28.9: U16F16),
+    fixed!(29.5: U16F16),
+    fixed!(30.2: U16F16),
+    fixed!(30.9: U16F16),
+    fixed!(31.6: U16F16),
+    fixed!(32.3: U16F16),
+    fixed!(33.1: U16F16),
+    fixed!(33.8: U16F16),
+    fixed!(34.5: U16F16),
+    fixed!(35.3: U16F16),
+    fixed!(36.0: U16F16),
+    fixed!(36.8: U16F16),
+    fixed!(37.5: U16F16),
+    fixed!(38.3: U16F16),
+    fixed!(39.1: U16F16),
+    fixed!(39.9: U16F16),
+    fixed!(40.6: U16F16),
+    fixed!(41.4: U16F16),
+    fixed!(42.2: U16F16),
+    fixed!(43.1: U16F16),
+    fixed!(43.9: U16F16),
+    fixed!(44.7: U16F16),
+    fixed!(45.6: U16F16),
+    fixed!(46.4: U16F16),
+    fixed!(47.2: U16F16),
+    fixed!(48.1: U16F16),
+    fixed!(49.0: U16F16),
+    fixed!(49.8: U16F16),
+    fixed!(50.7: U16F16),
+    fixed!(51.6: U16F16),
+    fixed!(52.5: U16F16),
+    fixed!(53.4: U16F16),
+    fixed!(54.3: U16F16),
+    fixed!(55.2: U16F16),
+    fixed!(56.2: U16F16),
+    fixed!(57.1: U16F16),
+    fixed!(58.0: U16F16),
+    fixed!(59.0: U16F16),
+    fixed!(59.9: U16F16),
+    fixed!(60.9: U16F16),
+    fixed!(61.9: U16F16),
+    fixed!(62.8: U16F16),
+    fixed!(63.8: U16F16),
+    fixed!(64.8: U16F16),
+    fixed!(65.8: U16F16),
+    fixed!(66.8: U16F16),
+    fixed!(67.8: U16F16),
+    fixed!(68.8: U16F16),
+    fixed!(69.9: U16F16),
+    fixed!(70.9: U16F16),
+    fixed!(71.9: U16F16),
+    fixed!(73.0: U16F16),
+    fixed!(74.0: U16F16),
+    fixed!(75.1: U16F16),
+    fixed!(76.2: U16F16),
+    fixed!(77.2: U16F16),
+    fixed!(78.3: U16F16),
+    fixed!(79.4: U16F16),
+    fixed!(80.5: U16F16),
+    fixed!(81.6: U16F16),
+    fixed!(82.7: U16F16),
+    fixed!(83.8: U16F16),
+    fixed!(85.0: U16F16),
+    fixed!(86.1: U16F16),
+    fixed!(87.2: U16F16),
+    fixed!(88.4: U16F16),
+    fixed!(89.5: U16F16),
+    fixed!(90.7: U16F16),
+    fixed!(91.9: U16F16),
+    fixed!(93.0: U16F16),
+    fixed!(94.2: U16F16),
+    fixed!(95.4: U16F16),
+    fixed!(96.6: U16F16),
+    fixed!(97.8: U16F16),
+    fixed!(99.0: U16F16),
+    fixed!(1.00e+02: U16F16),
+    fixed!(1.01e+02: U16F16),
+    fixed!(1.03e+02: U16F16),
+    fixed!(1.04e+02: U16F16),
+    fixed!(1.05e+02: U16F16),
+    fixed!(1.06e+02: U16F16),
+    fixed!(1.08e+02: U16F16),
+    fixed!(1.09e+02: U16F16),
+    fixed!(1.10e+02: U16F16),
+    fixed!(1.12e+02: U16F16),
+    fixed!(1.13e+02: U16F16),
+    fixed!(1.14e+02: U16F16),
+    fixed!(1.15e+02: U16F16),
+    fixed!(1.17e+02: U16F16),
+    fixed!(1.18e+02: U16F16),
+    fixed!(1.19e+02: U16F16),
+    fixed!(1.21e+02: U16F16),
+    fixed!(1.22e+02: U16F16),
+    fixed!(1.23e+02: U16F16),
+    fixed!(1.25e+02: U16F16),
+    fixed!(1.26e+02: U16F16),
+    fixed!(1.27e+02: U16F16),
+    fixed!(1.29e+02: U16F16),
+    fixed!(1.30e+02: U16F16),
+    fixed!(1.32e+02: U16F16),
+    fixed!(1.33e+02: U16F16),
+    fixed!(1.34e+02: U16F16),
+    fixed!(1.36e+02: U16F16),
+    fixed!(1.37e+02: U16F16),
+    fixed!(1.39e+02: U16F16),
+    fixed!(1.40e+02: U16F16),
+    fixed!(1.41e+02: U16F16),
+    fixed!(1.43e+02: U16F16),
+    fixed!(1.44e+02: U16F16),
+    fixed!(1.46e+02: U16F16),
+    fixed!(1.47e+02: U16F16),
+    fixed!(1.49e+02: U16F16),
+    fixed!(1.50e+02: U16F16),
+    fixed!(1.52e+02: U16F16),
+    fixed!(1.53e+02: U16F16),
+    fixed!(1.55e+02: U16F16),
+    fixed!(1.56e+02: U16F16),
+    fixed!(1.58e+02: U16F16),
+    fixed!(1.59e+02: U16F16),
+    fixed!(1.61e+02: U16F16),
+    fixed!(1.62e+02: U16F16),
+    fixed!(1.64e+02: U16F16),
+    fixed!(1.65e+02: U16F16),
+    fixed!(1.67e+02: U16F16),
+    fixed!(1.68e+02: U16F16),
+    fixed!(1.70e+02: U16F16),
+    fixed!(1.72e+02: U16F16),
+    fixed!(1.73e+02: U16F16),
+    fixed!(1.75e+02: U16F16),
+    fixed!(1.76e+02: U16F16),
+    fixed!(1.78e+02: U16F16),
+    fixed!(1.80e+02: U16F16),
+    fixed!(1.81e+02: U16F16),
+    fixed!(1.83e+02: U16F16),
+    fixed!(1.84e+02: U16F16),
+    fixed!(1.86e+02: U16F16),
+    fixed!(1.88e+02: U16F16),
+    fixed!(1.89e+02: U16F16),
+    fixed!(1.91e+02: U16F16),
+    fixed!(1.93e+02: U16F16),
+    fixed!(1.94e+02: U16F16),
+    fixed!(1.96e+02: U16F16),
+    fixed!(1.98e+02: U16F16),
+    fixed!(1.99e+02: U16F16),
+    fixed!(2.01e+02: U16F16),
+    fixed!(2.03e+02: U16F16),
+    fixed!(2.04e+02: U16F16),
+    fixed!(2.06e+02: U16F16),
+    fixed!(2.08e+02: U16F16),
+    fixed!(2.10e+02: U16F16),
+    fixed!(2.11e+02: U16F16),
+    fixed!(2.13e+02: U16F16),
+    fixed!(2.15e+02: U16F16),
+    fixed!(2.17e+02: U16F16),
+    fixed!(2.18e+02: U16F16),
+    fixed!(2.20e+02: U16F16),
+    fixed!(2.22e+02: U16F16),
+    fixed!(2.24e+02: U16F16),
+    fixed!(2.25e+02: U16F16),
+    fixed!(2.27e+02: U16F16),
+    fixed!(2.29e+02: U16F16),
+    fixed!(2.31e+02: U16F16),
+    fixed!(2.33e+02: U16F16),
+    fixed!(2.35e+02: U16F16),
+    fixed!(2.36e+02: U16F16),
+    fixed!(2.38e+02: U16F16),
+    fixed!(2.40e+02: U16F16),
+    fixed!(2.42e+02: U16F16),
+    fixed!(2.44e+02: U16F16),
+    fixed!(2.46e+02: U16F16),
+    fixed!(2.47e+02: U16F16),
+    fixed!(2.49e+02: U16F16),
+    fixed!(2.51e+02: U16F16),
+    fixed!(2.53e+02: U16F16),
+    fixed!(2.55e+02: U16F16),
 ];

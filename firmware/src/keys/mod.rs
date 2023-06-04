@@ -5,14 +5,14 @@ use embassy_rp::{
     peripherals::{PIN_26, PIN_27, PIN_28, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9},
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pubsub::PubSubChannel};
-use embassy_time::{Duration};
+use embassy_time::Duration;
 use keyberon::{key_code::KeyCode, layout::Event};
 use packed_struct::PrimitiveEnum;
 use shared::device_to_device::DeviceToDevice;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard, messages::{reliable_msg}, side, usb::hid::publish_keyboard_report, utils::Ticker,
+    interboard, messages::reliable_msg, side, usb::hid::publish_keyboard_report, utils::Ticker,
 };
 
 use self::{chord::ChordingEngine, layout::LAYERS};
