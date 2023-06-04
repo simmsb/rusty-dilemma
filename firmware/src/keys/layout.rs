@@ -107,7 +107,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [Q W E R T Y U I O P],
         [{SHIFT_A} S D F G H J K L {SHIFT_SCOL}],
         [{CTRL_Z} X C V B N M , . {CTRL_SLASH}],
-        [{WIN_TAB} {L1_SP} LAlt n n n n BSpace {L2_SP} Enter],
+        [{WIN_TAB} {L1_SP} LAlt n n n n RAlt {L2_SP} Enter],
         [Escape {m!(KeyCode::LAlt, KeyCode::X)} {m!(KeyCode::Space, KeyCode::Grave)} Delete < {m!(KeyCode::LShift, KeyCode::SColon)} > / '\\' '"'],
         [BSpace '\'' '_' n    n  n n   n      n n],
     }
