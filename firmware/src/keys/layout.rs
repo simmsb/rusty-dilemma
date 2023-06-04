@@ -14,9 +14,9 @@ pub type Layout = keyberon::layout::Layout<COLS, { ROWS + 1 }, N_LAYERS, CustomE
 
 const HOLD_TIMEOUT: u16 = 400;
 
-const ALT_TAB: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
+const WIN_TAB: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
     timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::LAlt),
+    hold: k(KeyCode::LGui),
     tap: k(KeyCode::Tab),
     config: keyberon::action::HoldTapConfig::PermissiveHold,
     tap_hold_interval: 0,
@@ -107,7 +107,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [Q W E R T Y U I O P],
         [{SHIFT_A} S D F G H J K L {SHIFT_SCOL}],
         [{CTRL_Z} X C V B N M , . {CTRL_SLASH}],
-        [{ALT_TAB} {L1_SP} LGui n n n n BSpace {L2_SP} Enter],
+        [{WIN_TAB} {L1_SP} LAlt n n n n BSpace {L2_SP} Enter],
         [Escape {m!(KeyCode::LAlt, KeyCode::X)} {m!(KeyCode::Space, KeyCode::Grave)} Delete < {m!(KeyCode::LShift, KeyCode::SColon)} > / '\\' '"'],
         [BSpace '\'' '_' n    n  n n   n      n n],
     }
