@@ -18,7 +18,7 @@ pub fn init() {
     let logger = logger as &dyn log_log::Log;
     unsafe {
         let _ = log_log::set_logger_racy(logger)
-            .map(|()| log_log::set_max_level(log_log::LevelFilter::Info));
+            .map(|()| log_log::set_max_level_racy(log_log::LevelFilter::Info));
     }
 }
 

@@ -1,3 +1,5 @@
+use core::num::Wrapping;
+
 use cichlid::ColorRGB;
 use embassy_time::Duration;
 use fixed::types::{I16F16, U0F16, U16F16};
@@ -70,18 +72,20 @@ impl PerlinNoise2D {
     }
 
     fn noise(x: i16, y: i16) -> u32 {
-        let mut x = x as u32;
-        let mut y = y as u32;
-        x = ((x >> 16) ^ x) * 0x45d9f3b;
-        x = ((x >> 16) ^ x) * 0x45d9f3b;
-        x = (x >> 16) ^ x;
-        y = ((y >> 16) ^ y) * 0x45d9f3b;
-        y = ((y >> 16) ^ y) * 0x45d9f3b;
-        y = (y >> 16) ^ y;
+        let mut x = Wrapping(x as u32);
+        let mut y = Wrapping(y as u32);
+        let shift = 16usize;
+        let prime = Wrapping(0x45d9f3bu32);
+        x = ((x >> shift) ^ x) * prime;
+        x = ((x >> shift) ^ x) * prime;
+        x = (x >> shift) ^ x;
+        y = ((y >> shift) ^ y) * prime;
+        y = ((y >> shift) ^ y) * prime;
+        y = (y >> shift) ^ y;
 
-        x ^= y + 0x9e3779b9 + (x << 6) + (y >> 2);
+        x ^= y + Wrapping(0x9e3779b9u32) + (x << 6) + (y >> 2);
 
-        x
+        x.0
     }
 
     fn grad(x: I16F16, y: I16F16, dx: i16, dy: i16) -> I16F16 {

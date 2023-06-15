@@ -125,13 +125,16 @@ pub async fn main(spawner: Spawner) {
         log::info!("No usb connected");
     }
 
+    #[cfg(not(feature = "probe"))]
     logger::init();
+
     messages::init(&spawner);
     #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
     let mut pio0 = Pio::new(p.PIO0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
+
     let mut pio1 = Pio::new(p.PIO1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
 
@@ -150,6 +153,7 @@ pub async fn main(spawner: Spawner) {
             Output::new(p.PIN_28, Level::Low),
         ),
     );
+
     keys::init(&spawner, scanner);
 
     if side::get_side().is_right() {

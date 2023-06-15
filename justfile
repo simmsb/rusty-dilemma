@@ -10,7 +10,7 @@ flash-bl:
   picotool reboot
 
 dbg-left:
-  cargo objcopy --no-default-features -- target/binary.elf
+  cargo objcopy --no-default-features --features probe -- target/binary.elf
   probe-rs-cli run --probe cafe:4005:6E16C4033956C9E2 --chip RP2040 target/binary.elf --speed 400
 
 dbg-right:
