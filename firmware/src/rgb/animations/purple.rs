@@ -22,7 +22,11 @@ impl Default for Purple {
 }
 
 impl Animation for Purple {
-    const TICK_RATE: Duration = Duration::from_hz(60);
+    type SyncMessage = I16F16;
+
+    fn tick_rate(&self) -> Duration {
+        Duration::from_hz(60)
+    }
 
     fn tick(&mut self) {
         self.tick += fixed!(0.01: I16F16);

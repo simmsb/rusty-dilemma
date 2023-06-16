@@ -23,7 +23,7 @@ const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
 pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize }>) {
     let mut colours = [ColorRGB::Black; NUM_LEDS as usize];
 
-    let mut animation = animations::purple::Purple::default();
+    let mut animation = animations::DynAnimation::random();
     let mut ticker = Ticker::every(animation.tick_rate());
 
     let lights = if get_side().is_left() {

@@ -696,6 +696,7 @@ dependencies = [
  "az",
  "bytemuck",
  "half",
+ "serde",
  "typenum",
 ]
 
@@ -1643,6 +1644,7 @@ dependencies = [
  "pio",
  "pio-proc",
  "postcard",
+ "rand",
  "serde",
  "shared",
  "static_cell",
