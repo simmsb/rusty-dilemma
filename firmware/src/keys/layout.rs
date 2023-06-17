@@ -14,13 +14,47 @@ pub type Layout = keyberon::layout::Layout<COLS, { ROWS + 1 }, N_LAYERS, CustomE
 
 const HOLD_TIMEOUT: u16 = 400;
 
-const WIN_TAB: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::LGui),
-    tap: k(KeyCode::Tab),
-    config: keyberon::action::HoldTapConfig::PermissiveHold,
-    tap_hold_interval: 0,
-});
+macro_rules! hold_tap {
+    ($hold:expr, $tap:expr) => {
+        Action::HoldTap(&HoldTapAction {
+            timeout: HOLD_TIMEOUT,
+            hold: k($hold),
+            tap: $tap,
+            config: keyberon::action::HoldTapConfig::PermissiveHold,
+            tap_hold_interval: 0,
+        })
+    };
+}
+
+macro_rules! h_win {
+    ($tap:expr) => {
+        hold_tap!(KeyCode::LGui, $tap)
+    };
+}
+
+macro_rules! h_lctrl {
+    ($tap:expr) => {
+        hold_tap!(KeyCode::LCtrl, $tap)
+    };
+}
+
+macro_rules! h_rctrl {
+    ($tap:expr) => {
+        hold_tap!(KeyCode::RCtrl, $tap)
+    };
+}
+
+macro_rules! h_lshift {
+    ($tap:expr) => {
+        hold_tap!(KeyCode::LShift, $tap)
+    };
+}
+
+macro_rules! h_rshift {
+    ($tap:expr) => {
+        hold_tap!(KeyCode::RShift, $tap)
+    };
+}
 
 const L1_SP: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
     timeout: HOLD_TIMEOUT,
@@ -38,37 +72,7 @@ const L2_SP: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
     tap_hold_interval: 0,
 });
 
-const CTRL_Z: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::LCtrl),
-    tap: k(KeyCode::Z),
-    config: keyberon::action::HoldTapConfig::PermissiveHold,
-    tap_hold_interval: 0,
-});
-
-const SHIFT_A: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::LShift),
-    tap: k(KeyCode::A),
-    config: keyberon::action::HoldTapConfig::PermissiveHold,
-    tap_hold_interval: 0,
-});
-
-const CTRL_SLASH: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::RCtrl),
-    tap: k(KeyCode::Slash),
-    config: keyberon::action::HoldTapConfig::PermissiveHold,
-    tap_hold_interval: 0,
-});
-
-const SHIFT_SCOL: Action<CustomEvent> = Action::HoldTap(&HoldTapAction {
-    timeout: HOLD_TIMEOUT,
-    hold: k(KeyCode::RShift),
-    tap: k(KeyCode::SColon),
-    config: keyberon::action::HoldTapConfig::PermissiveHold,
-    tap_hold_interval: 0,
-});
+type A = Action<CustomEvent>;
 
 pub fn chorder() -> Chorder {
     dilemma_macros::chords!(
@@ -97,6 +101,41 @@ macro_rules! m {
     };
 }
 
+const WIN_TAB: A = h_win!(k(KeyCode::Tab));
+
+const SHIFT_A: A = h_lshift!(k(KeyCode::A));
+const CTRL_Z: A = h_lctrl!(k(KeyCode::Z));
+const SHIFT_SCOL: A = h_rshift!(k(KeyCode::SColon));
+const CTRL_SLASH: A = h_rctrl!(k(KeyCode::Slash));
+
+const SHIFT_HASH: A = h_lshift!(keyberon::action::Action::MultipleKeyCodes(
+    &[
+        keyberon::key_code::KeyCode::LShift,
+        keyberon::key_code::KeyCode::Kb3
+    ]
+    .as_slice()
+));
+const CTRL_PCT: A = h_lctrl!(keyberon::action::Action::MultipleKeyCodes(
+    &[
+        keyberon::key_code::KeyCode::LShift,
+        keyberon::key_code::KeyCode::Kb5
+    ]
+    .as_slice()
+));
+const SHIFT_QUOT: A = h_rshift!(k(KeyCode::Quote));
+const CTRL_UNDER: A = h_rctrl!(keyberon::action::Action::MultipleKeyCodes(
+    &[
+        keyberon::key_code::KeyCode::LShift,
+        keyberon::key_code::KeyCode::Minus
+    ]
+    .as_slice()
+));
+
+const SHIFT_F1: A = h_lshift!(k(KeyCode::F1));
+const CTRL_F6: A = h_lctrl!(k(KeyCode::F6));
+const SHIFT_VOLUP: A = h_rshift!(k(KeyCode::VolUp));
+const CTRL_VOLDOWN: A = h_rctrl!(k(KeyCode::VolDown));
+
 // row 4 is weird
 //
 // x x 2 0 1  -  8 9 7 x x
@@ -113,16 +152,16 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
     }
     {
         [! @ '{' '}' | '`' ~ '\\' n '"' ],
-        [# $ '(' ')' n  +  -  /   * '\''],
-        [% ^ '[' ']' n  &  =  ,   . '_' ],
+        [{SHIFT_HASH} $ '(' ')' n  +  -  /   * {SHIFT_QUOT}],
+        [{CTRL_PCT} ^ '[' ']' n  &  =  ,   . {CTRL_UNDER}],
         [LAlt Space n n  n  n n n = n],
         [n n n n n n n  n  n n],
         [n n n n n n n  n  n n],
     }
     {
         [Kb1 Kb2 Kb3 Kb4 Kb5 Kb6 Kb7 Kb8 Kb9 Kb0],
-        [F1  F2  F3  F4  F5  Left Down Up Right VolUp],
-        [F6  F7  F8  F9  F10 PgDown {m!(KeyCode::LCtrl, KeyCode::Down)} {m!(KeyCode::LCtrl, KeyCode::Up)} PgUp VolDown],
+        [{SHIFT_F1}  F2  F3  F4  F5  Left Down Up Right {SHIFT_VOLUP}],
+        [{CTRL_F6}  F7  F8  F9  F10 PgDown {m!(KeyCode::LCtrl, KeyCode::Down)} {m!(KeyCode::LCtrl, KeyCode::Up)} PgUp {CTRL_VOLDOWN}],
         [F12 n F11   n t t n End Space n],
         [n = n   n   n n n    n   n n],
         [n n n   n   n n n    n   n n],
