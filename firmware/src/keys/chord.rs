@@ -59,27 +59,31 @@ impl ChordingEngine {
         }
     }
 
+    pub fn purge(&mut self) -> heapless::Vec<Key, 16> {
+        for &(x, y) in &self.held_keys {
+            if let Some(appropriate_chords) = self.chorder.key_chord_map.get(&[x, y]) {
+                for &chord_idx in appropriate_chords.iter() {
+                    let chord = &mut self.chorder.chords[chord_idx];
+
+                    chord.process(keyberon::layout::Event::Release(x, y));
+                }
+            }
+        }
+
+        for chord in &mut *self.chorder.chords {
+            chord.clear_if_inactive();
+        }
+
+        return core::mem::replace(&mut self.held_keys, heapless::Vec::new());
+    }
+
     pub fn tick(&mut self) -> heapless::Vec<Key, 16> {
         let now = Instant::now();
 
         if now.duration_since(self.last_press) > CHORD_TIMEOUT {
             // ran out of time, release all the currently pressed keys
 
-            for &(x, y) in &self.held_keys {
-                if let Some(appropriate_chords) = self.chorder.key_chord_map.get(&[x, y]) {
-                    for &chord_idx in appropriate_chords.iter() {
-                        let chord = &mut self.chorder.chords[chord_idx];
-
-                        chord.process(keyberon::layout::Event::Release(x, y));
-                    }
-                }
-            }
-
-            for chord in &mut *self.chorder.chords {
-                chord.clear_if_inactive();
-            }
-
-            return core::mem::replace(&mut self.held_keys, heapless::Vec::new());
+            return self.purge();
         }
 
         heapless::Vec::new()
@@ -176,7 +180,11 @@ impl ChordingEngine {
         } else {
             // event applies to no chords, just emit it as is
 
-            heapless::Vec::from_iter(core::iter::once(event))
+            self.purge()
+                .into_iter()
+                .map(|(x, y)| keyberon::layout::Event::Release(x, y))
+                .chain(core::iter::once(event))
+                .collect()
         }
     }
 }
