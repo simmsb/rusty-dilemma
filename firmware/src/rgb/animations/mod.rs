@@ -1,8 +1,9 @@
 use cichlid::ColorRGB;
-use embassy_rp::clocks::RoscRng;
 use embassy_time::Duration;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
+
+use crate::rng::MyRng;
 
 use super::{animation::Animation, layout::Light};
 
@@ -17,7 +18,7 @@ pub enum DynAnimation {
 impl DynAnimation {
     pub fn random() -> Self {
         const OPTS: &[fn() -> DynAnimation] = &[|| DynAnimation::Perlin(perlin::Perlin::default())];
-        OPTS.choose(&mut RoscRng).unwrap()()
+        OPTS.choose(&mut MyRng).unwrap()()
     }
 }
 

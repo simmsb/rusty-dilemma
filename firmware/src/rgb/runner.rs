@@ -22,7 +22,7 @@ use super::{
 
 const MAX_LEVEL: u8 = 180;
 const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
-const FADE_DURATION: Duration = Duration::from_secs(5);
+const FADE_DURATION: Duration = Duration::from_secs(3);
 
 fn ease_fade(pct: U0F16) -> u8 {
     let mix = if pct < fixed!(0.5: U0F16) {

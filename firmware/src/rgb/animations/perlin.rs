@@ -1,13 +1,12 @@
 use core::num::Wrapping;
 
 use cichlid::ColorRGB;
-use embassy_rp::clocks::RoscRng;
 use embassy_time::Duration;
 use fixed::types::{I16F16, U0F16, U16F16};
 use fixed_macro::fixed;
 use rand::Rng;
 
-use crate::rgb::animation::Animation;
+use crate::{rgb::animation::Animation, rng::MyRng};
 
 pub struct Perlin {
     tick: I16F16,
@@ -20,7 +19,7 @@ impl Default for Perlin {
         Self {
             tick: Default::default(),
             noise: PerlinNoise2D::new(fixed!(255.0: U16F16), 0),
-            colour: cichlid::HSV::new(RoscRng.gen(), 255, 255).to_rgb_rainbow(),
+            colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
         }
     }
 }

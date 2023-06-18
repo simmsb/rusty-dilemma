@@ -48,6 +48,7 @@ pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
+pub mod rng;
 
 pub fn set_status_led(value: Level) {
     unsafe { ManuallyDrop::new(Output::new(PIN_17::steal(), value)).set_level(value) };
@@ -124,6 +125,8 @@ pub async fn main(spawner: Spawner) {
     } else {
         log::info!("No usb connected");
     }
+
+    rng::init();
 
     #[cfg(not(feature = "probe"))]
     logger::init();
