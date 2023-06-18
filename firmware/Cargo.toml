@@ -81,6 +81,7 @@ fixed = { version = "1.23.1", features = ["serde"] }
 cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", default-features = false, features = [
     "nightly",
     "no-std",
+    "serde",
 ] }
 cordic = "0.1.5"
 crc32fast = { version = "1.3.2", default-features = false }

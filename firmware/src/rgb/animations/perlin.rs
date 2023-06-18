@@ -1,28 +1,32 @@
 use core::num::Wrapping;
 
 use cichlid::ColorRGB;
+use embassy_rp::clocks::RoscRng;
 use embassy_time::Duration;
 use fixed::types::{I16F16, U0F16, U16F16};
 use fixed_macro::fixed;
+use rand::Rng;
 
 use crate::rgb::animation::Animation;
 
-pub struct Purple {
+pub struct Perlin {
     tick: I16F16,
     noise: PerlinNoise2D,
+    colour: ColorRGB,
 }
 
-impl Default for Purple {
+impl Default for Perlin {
     fn default() -> Self {
         Self {
             tick: Default::default(),
             noise: PerlinNoise2D::new(fixed!(255.0: U16F16), 0),
+            colour: cichlid::HSV::new(RoscRng.gen(), 255, 255).to_rgb_rainbow(),
         }
     }
 }
 
-impl Animation for Purple {
-    type SyncMessage = I16F16;
+impl Animation for Perlin {
+    type SyncMessage = (I16F16, ColorRGB);
 
     fn tick_rate(&self) -> Duration {
         Duration::from_hz(60)
@@ -43,17 +47,14 @@ impl Animation for Purple {
 
         let brightness = brightness.int().saturating_to_num::<i16>();
 
-        let mut c = ColorRGB {
-            r: 141,
-            g: 70,
-            b: 210,
-        };
+        let mut c = self.colour;
         c.fade_to_black_by(brightness as u8);
         c
     }
 
     fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
-        self.tick = sync;
+        self.tick = sync.0;
+        self.colour = sync.1;
     }
 
     fn new_from_sync(sync: Self::SyncMessage) -> Self {

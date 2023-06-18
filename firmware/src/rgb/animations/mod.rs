@@ -7,16 +7,16 @@ use serde::{Deserialize, Serialize};
 use super::{animation::Animation, layout::Light};
 
 pub mod null;
-pub mod purple;
+pub mod perlin;
 
 pub enum DynAnimation {
-    Purple(purple::Purple),
+    Perlin(perlin::Perlin),
     Null(null::Null),
 }
 
 impl DynAnimation {
     pub fn random() -> Self {
-        const OPTS: &[fn() -> DynAnimation] = &[|| DynAnimation::Purple(purple::Purple::default())];
+        const OPTS: &[fn() -> DynAnimation] = &[|| DynAnimation::Perlin(perlin::Perlin::default())];
         OPTS.choose(&mut RoscRng).unwrap()()
     }
 }
@@ -81,11 +81,11 @@ macro_rules! dyn_impl {
     };
 }
 
-dyn_impl!([Purple, purple::Purple], [Null, null::Null]);
+dyn_impl!([Perlin, perlin::Perlin], [Null, null::Null]);
 
 #[derive(Serialize, Deserialize)]
 pub enum AnimationSync {
-    Purple(<purple::Purple as Animation>::SyncMessage),
+    Perlin(<perlin::Perlin as Animation>::SyncMessage),
     Null(<null::Null as Animation>::SyncMessage),
 }
 
@@ -103,5 +103,5 @@ macro_rules! wrap_sync {
     };
 }
 
-wrap_sync!(purple::Purple, AnimationSync::Purple);
+wrap_sync!(perlin::Perlin, AnimationSync::Perlin);
 wrap_sync!(null::Null, AnimationSync::Null);

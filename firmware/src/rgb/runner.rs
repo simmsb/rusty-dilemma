@@ -22,7 +22,7 @@ use super::{
 
 const MAX_LEVEL: u8 = 180;
 const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
-const FADE_DURATION: Duration = Duration::from_secs(2);
+const FADE_DURATION: Duration = Duration::from_secs(5);
 
 fn ease_fade(pct: U0F16) -> u8 {
     let mix = if pct < fixed!(0.5: U0F16) {
@@ -44,8 +44,8 @@ fn ease_fade_on_time(duration: Duration) -> u8 {
     if duration > FADE_DURATION {
         255
     } else {
-        let n = U32F32::saturating_from_num(FADE_DURATION.as_ticks() as u32);
-        let d = U32F32::saturating_from_num(duration.as_ticks() as u32);
+        let n = U32F32::saturating_from_num(duration.as_ticks() as u32);
+        let d = U32F32::saturating_from_num(FADE_DURATION.as_ticks() as u32);
         ease_fade((n / d).saturating_to_num())
     }
 }
@@ -65,17 +65,21 @@ impl<'a, T: Animation> PerformingAnimation<'a, T> {
     ) -> Self {
         let ticker = Ticker::every(animation.tick_rate());
 
-        Self {
+        let mut performing_animation = Self {
             animation,
             ticker,
             colours,
             lights,
-        }
+        };
+        performing_animation.render();
+        performing_animation
     }
 
     fn reconstruct_from(&mut self, other: PerformingAnimation<T>) {
         self.animation = other.animation;
         self.ticker = other.ticker;
+
+        self.render();
     }
 
     async fn step(&mut self) {
@@ -112,13 +116,19 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
     };
 
     let mut current = PerformingAnimation::new(
-        animations::DynAnimation::random(),
+        animations::DynAnimation::Null(animations::null::Null),
         &mut current_colours,
         lights,
     );
-    current.render();
 
-    let mut next: Option<(Instant, PerformingAnimation<'_, animations::DynAnimation>)> = None;
+    let mut next: Option<(Instant, PerformingAnimation<'_, animations::DynAnimation>)> = Some((
+        Instant::now(),
+        PerformingAnimation::new(
+            animations::DynAnimation::random(),
+            &mut next_colours,
+            lights,
+        ),
+    ));
 
     loop {
         let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
