@@ -59,7 +59,7 @@ async fn command_listener() {
 #[embassy_executor::task]
 async fn animation_randomizer() {
     loop {
-        Timer::after(Duration::from_secs(60 * 30)).await;
+        Timer::after(Duration::from_secs(60 * 5)).await;
 
         let anim = DynAnimation::random();
         let sync = anim.construct_sync();
