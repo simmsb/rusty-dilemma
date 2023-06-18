@@ -81,6 +81,10 @@ impl<'a, T: Animation> PerformingAnimation<'a, T> {
     async fn step(&mut self) {
         self.ticker.next().await;
 
+        self.render();
+    }
+
+    fn render(&mut self) {
         self.animation.tick();
 
         for (dest, light) in self.colours.iter_mut().zip(self.lights) {
@@ -112,6 +116,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
         &mut current_colours,
         lights,
     );
+    current.render();
 
     let mut next: Option<(Instant, PerformingAnimation<'_, animations::DynAnimation>)> = None;
 

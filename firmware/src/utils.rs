@@ -51,12 +51,12 @@ impl Ticker {
     pub async fn next(&mut self) {
         let now = Instant::now();
 
-        let mut next_tick = self.last_tick + self.duration;
-
-        // skip ticks until we're within one duration of now
-        while next_tick + self.duration < now {
-            next_tick += self.duration;
+        if now.saturating_duration_since(self.last_tick) > self.duration {
+            self.last_tick = now;
+            return;
         }
+
+        let next_tick = self.last_tick + self.duration;
 
         Timer::at(next_tick).await;
 
