@@ -6,8 +6,15 @@ use embassy_rp::{
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
+use embassy_time::{Duration, Timer};
 
-use crate::{interboard::COMMANDS_FROM_OTHER_SIDE, messages::device_to_device::DeviceToDevice};
+use crate::{
+    interboard::{self, COMMANDS_FROM_OTHER_SIDE},
+    messages::{device_to_device::DeviceToDevice, reliable_msg},
+    side,
+};
+
+use self::{animation::Animation, animations::DynAnimation};
 
 pub mod animation;
 pub mod animations;
@@ -28,6 +35,10 @@ pub fn init(
 
     spawner.must_spawn(runner::rgb_runner(d));
     spawner.must_spawn(command_listener());
+
+    if side::this_side_has_usb() {
+        spawner.must_spawn(animation_randomizer());
+    }
 }
 
 #[embassy_executor::task]
@@ -42,6 +53,19 @@ async fn command_listener() {
         };
 
         send_cmd(cmd).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn animation_randomizer() {
+    loop {
+        Timer::after(Duration::from_secs(60 * 30)).await;
+
+        let anim = DynAnimation::random();
+        let sync = anim.construct_sync();
+
+        send_cmd(Command::SetNextAnimation(sync.clone())).await;
+        interboard::send_msg(reliable_msg(DeviceToDevice::SetAnimation(sync))).await;
     }
 }
 
