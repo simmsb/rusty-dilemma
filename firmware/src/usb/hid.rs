@@ -4,7 +4,6 @@ use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
 use packed_struct::PackedStruct;
-use shared::device_to_device::DeviceToDevice;
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
 use usbd_human_interface_device::device::keyboard::{
     NKROBootKeyboardReport, NKRO_BOOT_KEYBOARD_REPORT_DESCRIPTOR,
@@ -12,7 +11,7 @@ use usbd_human_interface_device::device::keyboard::{
 
 use crate::{
     interboard::{self, COMMANDS_FROM_OTHER_SIDE},
-    messages::low_latency_msg,
+    messages::{device_to_device::DeviceToDevice, low_latency_msg},
     side, utils,
 };
 

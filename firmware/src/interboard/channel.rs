@@ -1,8 +1,8 @@
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use embassy_sync::channel::Channel;
 use embassy_sync::pubsub::PubSubChannel;
-use shared::device_to_device::DeviceToDevice;
 
+use crate::messages::device_to_device::DeviceToDevice;
 use crate::messages::transmissions;
 use crate::messages::TransmittedMessage;
 

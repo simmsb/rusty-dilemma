@@ -27,7 +27,7 @@ macro_rules! dyn_impl {
         impl Animation for DynAnimation {
             type SyncMessage = AnimationSync;
 
-            fn construct_sync(&self) -> Option<Self::SyncMessage> {
+            fn construct_sync(&self) -> Self::SyncMessage {
                 match self {
                     $(
                         Self::$variant(x) => x.wrap_sync()
@@ -84,21 +84,21 @@ macro_rules! dyn_impl {
 
 dyn_impl!([Perlin, perlin::Perlin], [Null, null::Null]);
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
 pub enum AnimationSync {
     Perlin(<perlin::Perlin as Animation>::SyncMessage),
     Null(<null::Null as Animation>::SyncMessage),
 }
 
 trait WrapAnimationSync {
-    fn wrap_sync(&self) -> Option<AnimationSync>;
+    fn wrap_sync(&self) -> AnimationSync;
 }
 
 macro_rules! wrap_sync {
     ($anim:ty, $variant:expr) => {
         impl WrapAnimationSync for $anim {
-            fn wrap_sync(&self) -> Option<AnimationSync> {
-                self.construct_sync().map($variant)
+            fn wrap_sync(&self) -> AnimationSync {
+                $variant(self.construct_sync())
             }
         }
     };

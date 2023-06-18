@@ -17,6 +17,10 @@ impl Animation for Null {
         cichlid::ColorRGB::Black
     }
 
+    fn construct_sync(&self) -> Self::SyncMessage {
+        ()
+    }
+
     fn restore_from_sync(&mut self, _sync: Self::SyncMessage) {}
 
     fn new_from_sync(_sync: Self::SyncMessage) -> Self {

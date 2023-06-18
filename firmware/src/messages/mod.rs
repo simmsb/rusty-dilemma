@@ -1,6 +1,7 @@
 use embassy_executor::Spawner;
 use embassy_time::Duration;
 
+pub mod device_to_device;
 pub mod distributors;
 pub mod transmissions;
 

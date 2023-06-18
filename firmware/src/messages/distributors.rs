@@ -1,10 +1,10 @@
-use shared::device_to_device::DeviceToDevice;
 use shared::device_to_host::{DeviceToHost, DeviceToHostMsg};
 use shared::host_to_device::HostToDeviceMsg;
 
 use crate::side;
 use crate::{interboard, usb};
 
+use super::device_to_device::DeviceToDevice;
 use super::{reliable_msg, unreliable_msg, TransmittedMessage};
 
 #[embassy_executor::task]

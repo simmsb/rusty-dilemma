@@ -44,11 +44,11 @@ pub mod keys;
 pub mod logger;
 pub mod messages;
 pub mod rgb;
+pub mod rng;
 pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
-pub mod rng;
 
 pub fn set_status_led(value: Level) {
     unsafe { ManuallyDrop::new(Output::new(PIN_17::steal(), value)).set_level(value) };

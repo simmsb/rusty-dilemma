@@ -5,9 +5,8 @@ use embassy_rp::{
     Peripheral,
 };
 use embassy_sync::channel::TrySendError;
-use shared::device_to_device::DeviceToDevice;
 
-use crate::messages::TransmittedMessage;
+use crate::messages::{device_to_device::DeviceToDevice, TransmittedMessage};
 
 pub use self::channel::COMMANDS_FROM_OTHER_SIDE;
 use self::onewire::SM;

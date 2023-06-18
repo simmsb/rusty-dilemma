@@ -8,11 +8,14 @@ use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pubsub::PubSubChanne
 use embassy_time::Duration;
 use keyberon::{key_code::KeyCode, layout::Event};
 use packed_struct::PrimitiveEnum;
-use shared::device_to_device::DeviceToDevice;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard, messages::reliable_msg, side, usb::hid::publish_keyboard_report, utils::Ticker,
+    interboard,
+    messages::{device_to_device::DeviceToDevice, reliable_msg},
+    side,
+    usb::hid::publish_keyboard_report,
+    utils::Ticker,
 };
 
 use self::{chord::ChordingEngine, layout::LAYERS};

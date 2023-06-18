@@ -51,6 +51,10 @@ impl Animation for Perlin {
         c
     }
 
+    fn construct_sync(&self) -> Self::SyncMessage {
+        (self.tick, self.colour)
+    }
+
     fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
         self.tick = sync.0;
         self.colour = sync.1;
