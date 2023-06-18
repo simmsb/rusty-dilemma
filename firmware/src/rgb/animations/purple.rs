@@ -51,6 +51,16 @@ impl Animation for Purple {
         c.fade_to_black_by(brightness as u8);
         c
     }
+
+    fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
+        self.tick = sync;
+    }
+
+    fn new_from_sync(sync: Self::SyncMessage) -> Self {
+        let mut new = Self::default();
+        new.restore_from_sync(sync);
+        new
+    }
 }
 
 #[derive(Copy, Clone)]

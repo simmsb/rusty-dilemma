@@ -14,4 +14,7 @@ pub trait Animation {
     fn construct_sync(&self) -> Option<Self::SyncMessage> {
         None
     }
+
+    fn restore_from_sync(&mut self, sync: Self::SyncMessage);
+    fn new_from_sync(sync: Self::SyncMessage) -> Self;
 }

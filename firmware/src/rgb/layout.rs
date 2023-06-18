@@ -62,7 +62,7 @@ const fn index_lights<const N: usize>(lights: [UnindexedLight; N]) -> [Light; N]
 }
 
 mod left {
-    use super::{index_lights, Light, UnindexedLight};
+    use super::{index_lights, Light, UnindexedLight, NUM_LEDS};
 
     /// the top right switch in the left keyboard is offset in the x axis by this much
     const TOP_RIGHT_LED_OFFSET: i16 = 90;
@@ -78,7 +78,7 @@ mod left {
     // we use the same relative positions as the right side, just flipped and
     // shifted
 
-    pub static LEFT: &[Light] = &index_lights([
+    pub static LEFT: [Light; NUM_LEDS as usize] = index_lights([
         u(0, 70),
         u(25, 75),
         u(60, 80),
@@ -127,7 +127,7 @@ use core::mem::MaybeUninit;
 pub use left::LEFT;
 
 mod right {
-    use super::{index_lights, Light, UnindexedLight};
+    use super::{index_lights, Light, UnindexedLight, NUM_LEDS};
 
     /// the top left switch in the right keyboard is offset in the x axis by this much
     const RIGHT_LED_OFFSET: i16 = 180;
@@ -141,7 +141,7 @@ mod right {
         UnindexedLight::switch((x + RIGHT_LED_OFFSET, y), (mx + RIGHT_MATRIX_OFFSET, my))
     }
 
-    pub static RIGHT: &[Light] = &index_lights([
+    pub static RIGHT: [Light; NUM_LEDS as usize] = index_lights([
         u(0, 70),
         u(25, 75),
         u(60, 80),

@@ -2,14 +2,16 @@ use cichlid::ColorRGB;
 use embassy_rp::clocks::RoscRng;
 use embassy_time::Duration;
 use rand::seq::SliceRandom;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::{animation::Animation, layout::Light};
 
+pub mod null;
 pub mod purple;
 
 pub enum DynAnimation {
     Purple(purple::Purple),
+    Null(null::Null),
 }
 
 impl DynAnimation {
@@ -20,7 +22,7 @@ impl DynAnimation {
 }
 
 macro_rules! dyn_impl {
-    ($($variant:ident),+) => {
+    ($([$variant:ident, $anim:ty]),+) => {
         impl Animation for DynAnimation {
             type SyncMessage = AnimationSync;
 
@@ -55,17 +57,36 @@ macro_rules! dyn_impl {
                     ),+
                 }
             }
+
+            fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
+                #[allow(unreachable_patterns)]
+                match (self, sync) {
+                    $(
+                        (Self::$variant(x), AnimationSync::$variant(s)) => x.restore_from_sync(s)
+                    ),+,
+                    _ => ()
+                }
+            }
+
+            fn new_from_sync(sync: Self::SyncMessage) -> Self {
+                match sync {
+                    $(
+                        AnimationSync::$variant(x) => DynAnimation::$variant(<$anim>::new_from_sync(x))
+                    ),+
+                }
+            }
         }
 
 
     };
 }
 
-dyn_impl!(Purple);
+dyn_impl!([Purple, purple::Purple], [Null, null::Null]);
 
 #[derive(Serialize, Deserialize)]
 pub enum AnimationSync {
     Purple(<purple::Purple as Animation>::SyncMessage),
+    Null(<null::Null as Animation>::SyncMessage),
 }
 
 trait WrapAnimationSync {
@@ -83,3 +104,4 @@ macro_rules! wrap_sync {
 }
 
 wrap_sync!(purple::Purple, AnimationSync::Purple);
+wrap_sync!(null::Null, AnimationSync::Null);

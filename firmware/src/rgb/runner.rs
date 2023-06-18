@@ -1,42 +1,90 @@
 use core::array;
 
 use cichlid::ColorRGB;
-use embassy_futures::select::select;
+use embassy_futures::select::{select, select3};
 use embassy_rp::peripherals::PIO1;
-use embassy_time::{Duration, Timer};
-use fixed::types::U16F16;
+use embassy_time::{Duration, Instant, Timer};
+use fixed::types::{I16F16, U0F16, U16F16, U32F32};
 use fixed_macro::fixed;
 
-use crate::{side::get_side, utils::Ticker};
+use crate::{
+    side::get_side,
+    utils::{TakeIf, Ticker},
+};
 
 use super::{
     animation::Animation,
     animations,
     driver::Ws2812,
-    layout::{self, NUM_LEDS},
+    layout::{self, Light, NUM_LEDS},
+    RGB_CMD_CHANNEL,
 };
 
 const MAX_LEVEL: u8 = 180;
 const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
+const FADE_DURATION: Duration = Duration::from_secs(2);
 
-#[embassy_executor::task]
-pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize }>) {
-    let mut colours = [ColorRGB::Black; NUM_LEDS as usize];
-
-    let mut animation = animations::DynAnimation::random();
-    let mut ticker = Ticker::every(animation.tick_rate());
-
-    let lights = if get_side().is_left() {
-        layout::LEFT
+fn ease_fade(pct: U0F16) -> u8 {
+    let mix = if pct < fixed!(0.5: U0F16) {
+        let pct: I16F16 = pct.to_num();
+        2 * pct * pct
     } else {
-        layout::RIGHT
+        let pct: I16F16 = pct.to_num();
+        let a = fixed!(-2: I16F16) * pct + fixed!(2: I16F16);
+        let b = a * a;
+        fixed!(1: I16F16) - b / 2
     };
 
-    loop {
-        animation.tick();
+    mix.lerp(fixed!(0: I16F16), fixed!(255: I16F16))
+        .int()
+        .saturating_to_num()
+}
 
-        for (dest, light) in colours.iter_mut().zip(lights) {
-            let mut color = animation.render(light);
+fn ease_fade_on_time(duration: Duration) -> u8 {
+    if duration > FADE_DURATION {
+        255
+    } else {
+        let n = U32F32::saturating_from_num(FADE_DURATION.as_ticks() as u32);
+        let d = U32F32::saturating_from_num(duration.as_ticks() as u32);
+        ease_fade((n / d).saturating_to_num())
+    }
+}
+
+struct PerformingAnimation<'a, T> {
+    animation: T,
+    ticker: Ticker,
+    colours: &'a mut [ColorRGB; NUM_LEDS as usize],
+    lights: &'static [Light; NUM_LEDS as usize],
+}
+
+impl<'a, T: Animation> PerformingAnimation<'a, T> {
+    fn new(
+        animation: T,
+        colours: &'a mut [ColorRGB; NUM_LEDS as usize],
+        lights: &'static [Light; NUM_LEDS as usize],
+    ) -> Self {
+        let ticker = Ticker::every(animation.tick_rate());
+
+        Self {
+            animation,
+            ticker,
+            colours,
+            lights,
+        }
+    }
+
+    fn reconstruct_from(&mut self, other: PerformingAnimation<T>) {
+        self.animation = other.animation;
+        self.ticker = other.ticker;
+    }
+
+    async fn step(&mut self) {
+        self.ticker.next().await;
+
+        self.animation.tick();
+
+        for (dest, light) in self.colours.iter_mut().zip(self.lights) {
+            let mut color = self.animation.render(light);
             color.scale(MAX_LEVEL);
 
             if light.kind == layout::Kind::Switch {
@@ -45,20 +93,90 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
 
             *dest = color;
         }
+    }
+}
 
+#[embassy_executor::task]
+pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize }>) {
+    let mut current_colours = [ColorRGB::Black; NUM_LEDS as usize];
+    let mut next_colours = [ColorRGB::Black; NUM_LEDS as usize];
+
+    let lights = if get_side().is_left() {
+        &layout::LEFT
+    } else {
+        &layout::RIGHT
+    };
+
+    let mut current = PerformingAnimation::new(
+        animations::DynAnimation::random(),
+        &mut current_colours,
+        lights,
+    );
+
+    let mut next: Option<(Instant, PerformingAnimation<'_, animations::DynAnimation>)> = None;
+
+    loop {
         let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
 
-        loop {
-            match select(ticker.next(), Timer::after(Duration::from_hz(1000))).await {
-                embassy_futures::select::Either::First(_) => {
-                    break;
-                }
-                embassy_futures::select::Either::Second(_) => {
-                    let corrected_colours = array::from_fn::<_, { NUM_LEDS as usize }, _>(|i| {
-                        errors[i].process(colours[i])
-                    });
+        if let Some((_, next)) = next.take_if(|(f, _)| f.elapsed() > FADE_DURATION) {
+            current.reconstruct_from(next);
+        }
 
-                    driver.write(&corrected_colours).await;
+        if let Ok(cmd) = RGB_CMD_CHANNEL.try_recv() {
+            match cmd {
+                super::Command::SetNextAnimation(a) => {
+                    next = Some((
+                        Instant::now(),
+                        PerformingAnimation::new(
+                            animations::DynAnimation::new_from_sync(a),
+                            &mut next_colours,
+                            lights,
+                        ),
+                    ));
+                }
+            }
+        }
+
+        loop {
+            if let Some((fade_start, next)) = next.as_mut() {
+                match select3(
+                    current.step(),
+                    next.step(),
+                    Timer::after(Duration::from_hz(1000)),
+                )
+                .await
+                {
+                    embassy_futures::select::Either3::First(_) => {
+                        break;
+                    }
+                    embassy_futures::select::Either3::Second(_) => {
+                        break;
+                    }
+                    embassy_futures::select::Either3::Third(_) => {
+                        let corrected_colours =
+                            array::from_fn::<_, { NUM_LEDS as usize }, _>(|i| {
+                                let mut a = current.colours[i];
+                                let b = next.colours[i];
+                                a.blend(b, ease_fade_on_time(fade_start.elapsed()));
+                                errors[i].process(a)
+                            });
+
+                        driver.write(&corrected_colours).await;
+                    }
+                }
+            } else {
+                match select(current.step(), Timer::after(Duration::from_hz(1000))).await {
+                    embassy_futures::select::Either::First(_) => {
+                        break;
+                    }
+                    embassy_futures::select::Either::Second(_) => {
+                        let corrected_colours =
+                            array::from_fn::<_, { NUM_LEDS as usize }, _>(|i| {
+                                errors[i].process(current.colours[i])
+                            });
+
+                        driver.write(&corrected_colours).await;
+                    }
                 }
             }
         }

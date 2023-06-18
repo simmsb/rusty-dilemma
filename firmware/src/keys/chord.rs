@@ -74,7 +74,7 @@ impl ChordingEngine {
             chord.clear_if_inactive();
         }
 
-        return core::mem::replace(&mut self.held_keys, heapless::Vec::new());
+        core::mem::replace(&mut self.held_keys, heapless::Vec::new())
     }
 
     pub fn tick(&mut self) -> heapless::Vec<Key, 16> {

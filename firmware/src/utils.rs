@@ -63,3 +63,26 @@ impl Ticker {
         self.last_tick = next_tick;
     }
 }
+
+// taken from https://github.com/randomPoison/take-if/blob/9d3af9f0be7bbe7814e754c3846ce60b372ca3ae/src/lib.rs
+pub trait TakeIf {
+    /// The type contained in the `Option`.
+    type Inner;
+
+    /// Takes value out of the `Option` if `predicate` returns `true`.
+    ///
+    /// See the [crate-level documentation](./index.html) for more information.
+    fn take_if<F: FnOnce(&Self::Inner) -> bool>(&mut self, predicate: F) -> Option<Self::Inner>;
+}
+
+impl<T> TakeIf for Option<T> {
+    type Inner = T;
+
+    fn take_if<F: FnOnce(&Self::Inner) -> bool>(&mut self, predicate: F) -> Option<Self::Inner> {
+        if self.as_ref().map(predicate).unwrap_or(false) {
+            self.take()
+        } else {
+            None
+        }
+    }
+}
