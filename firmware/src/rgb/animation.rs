@@ -14,6 +14,6 @@ pub trait Animation {
     fn render(&self, light: &Light) -> ColorRGB;
 
     fn construct_sync(&self) -> Self::SyncMessage;
-    fn restore_from_sync(&mut self, sync: Self::SyncMessage);
+    fn sync(&mut self, sync: Self::SyncMessage);
     fn new_from_sync(sync: Self::SyncMessage) -> Self;
 }

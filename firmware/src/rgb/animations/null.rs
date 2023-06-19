@@ -21,7 +21,7 @@ impl Animation for Null {
         ()
     }
 
-    fn restore_from_sync(&mut self, _sync: Self::SyncMessage) {}
+    fn sync(&mut self, _sync: Self::SyncMessage) {}
 
     fn new_from_sync(_sync: Self::SyncMessage) -> Self {
         Null

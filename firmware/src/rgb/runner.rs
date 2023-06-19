@@ -172,7 +172,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
                     ));
                 }
                 super::Command::SyncAnimation(sync) => {
-                    current.animation.restore_from_sync(sync.clone());
+                    current.animation.sync(sync.clone());
                 }
             }
         }

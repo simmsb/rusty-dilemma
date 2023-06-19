@@ -10,6 +10,7 @@ use crate::{rgb::animation::Animation, rng::MyRng};
 
 pub struct Perlin {
     tick: I16F16,
+    tick_rate: I16F16,
     noise: PerlinNoise2D,
     colour: ColorRGB,
 }
@@ -18,10 +19,27 @@ impl Default for Perlin {
     fn default() -> Self {
         Self {
             tick: Default::default(),
+            tick_rate: fixed!(0.01: I16F16),
             noise: PerlinNoise2D::new(fixed!(255.0: U16F16), 0),
             colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
         }
     }
+}
+
+fn wrapping_delta(a: I16F16, b: I16F16, min: I16F16, max: I16F16) -> I16F16 {
+    let half_range = (max - min) / fixed!(2: I16F16);
+
+    let d = b - a;
+
+    if d.abs() <= half_range {
+        d
+    } else {
+        (b - max) + (min - a)
+    }
+}
+
+fn sqr(x: I16F16) -> I16F16 {
+    x * x
 }
 
 impl Animation for Perlin {
@@ -32,7 +50,7 @@ impl Animation for Perlin {
     }
 
     fn tick(&mut self) {
-        self.tick += fixed!(0.01: I16F16);
+        self.tick += self.tick_rate;
         self.tick %= I16F16::PI * 2;
     }
 
@@ -55,14 +73,22 @@ impl Animation for Perlin {
         (self.tick, self.colour)
     }
 
-    fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
-        self.tick = sync.0;
+    fn sync(&mut self, sync: Self::SyncMessage) {
         self.colour = sync.1;
+
+        let delta = wrapping_delta(self.tick, sync.0, I16F16::ZERO, I16F16::PI * 2);
+
+        self.tick_rate = if delta.is_negative() {
+            fixed!(0.01: I16F16) + sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
+        } else {
+            fixed!(0.01: I16F16) - sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
+        };
     }
 
     fn new_from_sync(sync: Self::SyncMessage) -> Self {
         let mut new = Self::default();
-        new.restore_from_sync(sync);
+        new.tick = sync.0;
+        new.colour = sync.1;
         new
     }
 }

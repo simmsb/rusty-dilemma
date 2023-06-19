@@ -59,11 +59,11 @@ macro_rules! dyn_impl {
                 }
             }
 
-            fn restore_from_sync(&mut self, sync: Self::SyncMessage) {
+            fn sync(&mut self, sync: Self::SyncMessage) {
                 #[allow(unreachable_patterns)]
                 match (self, sync) {
                     $(
-                        (Self::$variant(x), AnimationSync::$variant(s)) => x.restore_from_sync(s)
+                        (Self::$variant(x), AnimationSync::$variant(s)) => x.sync(s)
                     ),+,
                     _ => ()
                 }
