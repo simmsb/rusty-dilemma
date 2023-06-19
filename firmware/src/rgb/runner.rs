@@ -9,7 +9,7 @@ use fixed_macro::fixed;
 
 use crate::{
     interboard,
-    messages::{device_to_device::DeviceToDevice, reliable_msg},
+    messages::{device_to_device::DeviceToDevice, reliable_msg, unreliable_msg},
     side::get_side,
     utils::{TakeIf, Ticker},
 };
@@ -140,11 +140,23 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
             None
         };
 
-    loop {
-        let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
+    let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
 
+    let mut last_sync = Instant::now();
+    const SYNC_PERIOD: Duration = Duration::from_secs(10);
+
+    loop {
         if let Some((_, next)) = next.take_if(|(f, _)| f.elapsed() > FADE_DURATION) {
             current.reconstruct_from(next);
+        }
+
+        if crate::side::this_side_has_usb() {
+            if last_sync.elapsed() > SYNC_PERIOD {
+                last_sync = Instant::now();
+
+                let cmd = DeviceToDevice::SyncAnimation(current.animation.construct_sync());
+                interboard::send_msg(unreliable_msg(cmd)).await;
+            }
         }
 
         if let Ok(cmd) = RGB_CMD_CHANNEL.try_recv() {
@@ -161,10 +173,6 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
                 }
                 super::Command::SyncAnimation(sync) => {
                     current.animation.restore_from_sync(sync.clone());
-
-                    if let Some((_, next)) = next.as_mut() {
-                        next.animation.restore_from_sync(sync);
-                    }
                 }
             }
         }
