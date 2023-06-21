@@ -7,10 +7,7 @@ use fixed_macro::fixed;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use crate::{
-    rgb::{
-        animation::Animation,
-        math_utils::{wrapping_delta, wrapping_delta_u},
-    },
+    rgb::{animation::Animation, math_utils::wrapping_delta_u},
     rng::{splitmix64, MyRng},
 };
 
@@ -18,12 +15,13 @@ struct Splash {
     x: I16F16,
     y: I16F16,
     instant: U16F16,
+    colour: ColorRGB,
 }
 
 pub struct Rain {
     tick: U16F16,
     rng: SmallRng,
-    colour: ColorRGB,
+    colour: Option<ColorRGB>,
     splashes: heapless::Deque<Splash, 4>,
 }
 
@@ -34,11 +32,17 @@ impl Default for Rain {
     fn default() -> Self {
         let seed: u8 = MyRng.gen();
 
+        let colour = if MyRng.gen_bool(0.2) {
+            None
+        } else {
+            Some(cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow())
+        };
+
         Self {
             tick: Default::default(),
             rng: SmallRng::seed_from_u64(splitmix64(seed as u64)),
             splashes: Default::default(),
-            colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
+            colour,
         }
     }
 }
@@ -49,7 +53,7 @@ fn tick_delta(a: U16F16, b: U16F16) -> U16F16 {
 
 impl Animation for Rain {
     // just have both halves be separate but sync the colour
-    type SyncMessage = ColorRGB;
+    type SyncMessage = Option<ColorRGB>;
 
     fn tick_rate(&self) -> embassy_time::Duration {
         Duration::from_hz(60)
@@ -75,13 +79,15 @@ impl Animation for Rain {
                 x: I16F16::from_num(x),
                 y: I16F16::from_num(y),
                 instant: self.tick,
+                colour: self.colour.unwrap_or_else(|| {
+                    cichlid::HSV::new(self.rng.gen(), 255, 255).to_rgb_rainbow()
+                }),
             };
             let _ = self.splashes.push_front(splash);
         }
     }
 
     fn render(&self, light: &crate::rgb::layout::Light) -> cichlid::ColorRGB {
-        let mut brightness = I16F16::ZERO;
         let xx = I16F16::from_num(light.location.0);
         let yy = I16F16::from_num(light.location.1);
 
@@ -90,6 +96,8 @@ impl Animation for Rain {
         } else {
             xx
         };
+
+        let mut out = ColorRGB::Black;
 
         for splash in self.splashes.iter() {
             let dx = splash.x.dist(xx);
@@ -117,19 +125,21 @@ impl Animation for Rain {
                 b
             };
 
-            brightness = brightness.saturating_add(b);
+            let level = b
+                .clamp(I16F16::ZERO, I16F16::ONE)
+                .lerp(I16F16::ZERO, fixed!(255: I16F16))
+                .int()
+                .saturating_to_num();
+
+            let mut colour = splash.colour;
+            colour.scale(level);
+
+            out.r = out.r.saturating_add(colour.r);
+            out.g = out.g.saturating_add(colour.g);
+            out.b = out.b.saturating_add(colour.b);
         }
-        // crate::utils::log::info!("brightness: {}", defmt::Display2Format(&brightness));
 
-        let level = brightness
-            .clamp(I16F16::ZERO, I16F16::ONE)
-            .lerp(I16F16::ZERO, fixed!(255: I16F16))
-            .int()
-            .saturating_to_num();
-
-        let mut c = self.colour;
-        c.scale(level);
-        c
+        out
     }
 
     fn construct_sync(&self) -> Self::SyncMessage {
