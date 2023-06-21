@@ -140,12 +140,12 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
             None
         };
 
-    let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
-
     let mut last_sync = Instant::now();
     const SYNC_PERIOD: Duration = Duration::from_secs(10);
 
     loop {
+        let mut errors = [GammaErrorTracker::default(); NUM_LEDS as usize];
+
         if let Some((_, next)) = next.take_if(|(f, _)| f.elapsed() > FADE_DURATION) {
             current.reconstruct_from(next);
         }
