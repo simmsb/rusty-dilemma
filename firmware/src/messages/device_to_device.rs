@@ -5,7 +5,7 @@ use shared::{device_to_host::DeviceToHost, hid::MouseReport, host_to_device::Hos
 use crate::rgb::animations::AnimationSync;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[cfg_attr(feature = "probe", derive(defmt::Format))]
 pub enum DeviceToDevice {
     Ping,
     Pong,

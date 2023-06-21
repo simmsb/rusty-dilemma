@@ -90,8 +90,11 @@ pub fn chorder() -> Chorder {
         [(0, 8), (0, 9)] => [(4, 8)],  // o + p = /
 
         [(2, 5), (2, 6)] => [(4, 9)],  // n + m = "
-        [(2, 6), (2, 7)] => [(5, 1)], // m + , = '
-        [(2, 7), (2, 8)] => [(5, 2)]  // , + . = _
+        [(2, 6), (2, 7)] => [(5, 1)],  // m + , = '
+        [(2, 7), (2, 8)] => [(5, 2)],  // , + . = _
+
+        [(2, 0), (2, 2)] => [(5, 3)],  // ctrl + c = ctrl + c (mod tap thingy)
+        [(2, 0), (2, 3)] => [(5, 4)],  // ctrl + v = ctrl + v (mod tap thingy)
     )
 }
 
@@ -148,7 +151,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [{CTRL_Z} X C V B N M , . {CTRL_SLASH}],
         [{WIN_TAB} {L1_SP} LAlt n n n n RAlt {L2_SP} Enter],
         [Escape {m!(KeyCode::LAlt, KeyCode::X)} {m!(KeyCode::Space, KeyCode::Grave)} Delete < {m!(KeyCode::LShift, KeyCode::SColon)} > / '\\' '"'],
-        [BSpace '\'' '_' n    n  n n   n      n n],
+        [BSpace '\'' '_' {m!(KeyCode::LCtrl, KeyCode::C)} {m!(KeyCode::LCtrl, KeyCode::V)}  n n   n      n n],
     }
     {
         [! @ '{' '}' | '`' ~ '\\' n '"' ],

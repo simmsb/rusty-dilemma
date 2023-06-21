@@ -124,7 +124,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
     );
 
     let mut next: Option<(Instant, PerformingAnimation<'_, animations::DynAnimation>)> =
-        if crate::side::this_side_has_usb() {
+        if crate::side::this_side_has_usb() || cfg!(feature = "probe") {
             let animation = PerformingAnimation::new(
                 animations::DynAnimation::random(),
                 &mut next_colours,

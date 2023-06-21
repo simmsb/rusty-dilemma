@@ -6,7 +6,10 @@ use fixed::types::{I16F16, U0F16, U16F16};
 use fixed_macro::fixed;
 use rand::Rng;
 
-use crate::{rgb::animation::Animation, rng::MyRng};
+use crate::{
+    rgb::{animation::Animation, math_utils},
+    rng::MyRng,
+};
 
 pub struct Perlin {
     tick: I16F16,
@@ -24,22 +27,6 @@ impl Default for Perlin {
             colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
         }
     }
-}
-
-fn wrapping_delta(a: I16F16, b: I16F16, min: I16F16, max: I16F16) -> I16F16 {
-    let half_range = (max - min) / fixed!(2: I16F16);
-
-    let d = b - a;
-
-    if d.abs() <= half_range {
-        d
-    } else {
-        (b - max) + (min - a)
-    }
-}
-
-fn sqr(x: I16F16) -> I16F16 {
-    x * x
 }
 
 impl Animation for Perlin {
@@ -76,12 +63,14 @@ impl Animation for Perlin {
     fn sync(&mut self, sync: Self::SyncMessage) {
         self.colour = sync.1;
 
-        let delta = wrapping_delta(self.tick, sync.0, I16F16::ZERO, I16F16::PI * 2);
+        let delta = math_utils::wrapping_delta(self.tick, sync.0, I16F16::ZERO, I16F16::PI * 2);
 
         self.tick_rate = if delta.is_negative() {
-            fixed!(0.01: I16F16) + sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
+            fixed!(0.01: I16F16)
+                + math_utils::sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
         } else {
-            fixed!(0.01: I16F16) - sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
+            fixed!(0.01: I16F16)
+                - math_utils::sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
         };
     }
 

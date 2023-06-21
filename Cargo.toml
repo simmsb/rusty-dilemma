@@ -8,8 +8,9 @@ codegen-units = 1
 debug = 2
 debug-assertions = true # <-
 incremental = false
-opt-level = 1           # <-
+opt-level = 2           # <-
 overflow-checks = true  # <-
+lto = 'thin'
 
 [profile.release]
 codegen-units = 1

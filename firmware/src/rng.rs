@@ -1,4 +1,4 @@
-use core::cell::RefCell;
+use core::{cell::RefCell, num::Wrapping};
 
 use embassy_sync::blocking_mutex::{raw::ThreadModeRawMutex, Mutex};
 use embassy_time::Instant;
@@ -11,11 +11,12 @@ pub struct MyRng;
 
 const ROSC_SAMPLE_PERIOD_US: u32 = 10;
 
-fn splitmix64(x: u64) -> u64 {
-    let mut z = x + 0x9E3779B97F4A7C15;
-    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9;
-    z = (z ^ (z >> 27)) * 0x94D049BB133111EB;
-    z ^ (z >> 31)
+pub fn splitmix64(x: u64) -> u64 {
+    let mut z = Wrapping(x) + Wrapping(0x9E3779B97F4A7C15);
+    z = (z ^ (z >> 30)) * Wrapping(0xBF58476D1CE4E5B9);
+    z = (z ^ (z >> 27)) * Wrapping(0x94D049BB133111EB);
+    z = z ^ (z >> 31);
+    z.0
 }
 
 fn rosc_samples() -> u64 {

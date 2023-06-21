@@ -9,15 +9,20 @@ use super::{animation::Animation, layout::Light};
 
 pub mod null;
 pub mod perlin;
+pub mod rain;
 
 pub enum DynAnimation {
     Perlin(perlin::Perlin),
+    Rain(rain::Rain),
     Null(null::Null),
 }
 
 impl DynAnimation {
     pub fn random() -> Self {
-        const OPTS: &[fn() -> DynAnimation] = &[|| DynAnimation::Perlin(perlin::Perlin::default())];
+        const OPTS: &[fn() -> DynAnimation] = &[
+            || DynAnimation::Perlin(perlin::Perlin::default()),
+            || DynAnimation::Rain(rain::Rain::default()),
+        ];
         OPTS.choose(&mut MyRng).unwrap()()
     }
 }
@@ -82,12 +87,18 @@ macro_rules! dyn_impl {
     };
 }
 
-dyn_impl!([Perlin, perlin::Perlin], [Null, null::Null]);
+dyn_impl!(
+    [Perlin, perlin::Perlin],
+    [Rain, rain::Rain],
+    [Null, null::Null]
+);
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
+#[cfg_attr(feature = "probe", derive(defmt::Format))]
 pub enum AnimationSync {
-    Perlin(<perlin::Perlin as Animation>::SyncMessage),
-    Null(<null::Null as Animation>::SyncMessage),
+    Perlin(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <perlin::Perlin as Animation>::SyncMessage),
+    Null(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <null::Null as Animation>::SyncMessage),
+    Rain(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <rain::Rain as Animation>::SyncMessage),
 }
 
 trait WrapAnimationSync {
@@ -106,3 +117,4 @@ macro_rules! wrap_sync {
 
 wrap_sync!(perlin::Perlin, AnimationSync::Perlin);
 wrap_sync!(null::Null, AnimationSync::Null);
+wrap_sync!(rain::Rain, AnimationSync::Rain);
