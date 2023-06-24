@@ -168,7 +168,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [{SHIFT_F1}  F2  F3  F4  F5  Left Down Up Right {SHIFT_VOLUP}],
         [{CTRL_F6}  F7  F8  F9  F10 PgDown {m!(KeyCode::LCtrl, KeyCode::Down)} {m!(KeyCode::LCtrl, KeyCode::Up)} PgUp {CTRL_VOLDOWN}],
         [F12 n F11   n t t n End Space n],
-        [n = n   n   n n n    n   n n],
-        [n n n   n   n n n    n   n n],
+        [n = n   {Action::Custom(MouseButton::RightClick)}   n n n    n   n n],
+        [{Action::Custom(MouseButton::LeftClick)} n n n n n n  n  n n],
     }
 };

@@ -96,7 +96,7 @@ async fn ad_hoc_key_handler() {
         let evt = sub.next_message_pure().await;
 
         match evt.coord() {
-            (3, 8) => {
+            (3, 9) => {
                 SCROLLING.store(evt.is_press(), atomic_polyfill::Ordering::SeqCst);
             }
             _ => {}
