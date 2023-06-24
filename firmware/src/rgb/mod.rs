@@ -9,7 +9,7 @@ use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
 use embassy_time::{Duration, Timer};
 
 use crate::{
-    interboard::{self, COMMANDS_FROM_OTHER_SIDE},
+    interboard::{self, THIS_SIDE_MESSAGE_BUS},
     messages::{device_to_device::DeviceToDevice, reliable_msg},
     side,
 };
@@ -44,7 +44,7 @@ pub fn init(
 
 #[embassy_executor::task]
 async fn command_listener() {
-    let mut sub = COMMANDS_FROM_OTHER_SIDE.subscriber().unwrap();
+    let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
 
     loop {
         let cmd = match sub.next_message_pure().await {

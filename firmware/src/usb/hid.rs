@@ -1,3 +1,4 @@
+use atomic_polyfill::AtomicU8;
 use embassy_executor::Spawner;
 use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
@@ -10,7 +11,7 @@ use usbd_human_interface_device::device::keyboard::{
 };
 
 use crate::{
-    interboard::{self, COMMANDS_FROM_OTHER_SIDE},
+    interboard::{self, THIS_SIDE_MESSAGE_BUS},
     messages::{device_to_device::DeviceToDevice, low_latency_msg},
     side, utils,
 };
@@ -29,13 +30,34 @@ pub async fn publish_keyboard_report(report: NKROBootKeyboardReport) {
     KEYBOARD_REPORTS.send(report).await;
 }
 
+static MOUSE_BUTTON_STATE: AtomicU8 = AtomicU8::new(0);
+
+#[embassy_executor::task]
+async fn handle_mouse_clicks() {
+    let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
+
+    loop {
+        match sub.next_message_pure().await {
+            DeviceToDevice::MousebuttonPress(b) => {
+                MOUSE_BUTTON_STATE.fetch_or(b.bit(), atomic_polyfill::Ordering::SeqCst);
+                MOUSE_REPORTS.send(shared::hid::MouseReport::default()).await;
+            }
+            DeviceToDevice::MousebuttonRelease(b) => {
+                MOUSE_BUTTON_STATE.fetch_and(!b.bit(), atomic_polyfill::Ordering::SeqCst);
+                MOUSE_REPORTS.send(shared::hid::MouseReport::default()).await;
+            }
+            _ => {}
+        }
+    }
+}
+
 #[embassy_executor::task]
 async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
         let shared::hid::MouseReport { x, y, wheel, pan } = MOUSE_REPORTS.recv().await;
 
         let report = MouseReport {
-            buttons: 0,
+            buttons: MOUSE_BUTTON_STATE.load(atomic_polyfill::Ordering::Relaxed),
             x,
             y,
             wheel,
@@ -56,7 +78,7 @@ async fn keyboard_writer(mut keyboard_writer: HidWriter<'static, Driver<'static,
 
 #[embassy_executor::task]
 async fn interboard_receiver() {
-    let mut sub = COMMANDS_FROM_OTHER_SIDE.subscriber().unwrap();
+    let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
 
     loop {
         let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else { continue; };
@@ -94,6 +116,7 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
     spawner.must_spawn(mouse_writer(mouse_hid_writer));
     spawner.must_spawn(keyboard_writer(keyboard_hid_writer));
     spawner.must_spawn(interboard_receiver());
+    spawner.must_spawn(handle_mouse_clicks());
 }
 
 pub async fn send_mouse_hid_to_host(report: shared::hid::MouseReport) {

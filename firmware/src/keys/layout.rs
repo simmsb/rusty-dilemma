@@ -1,6 +1,8 @@
 use keyberon::action::{k, l, Action, HoldTapAction};
 use keyberon::key_code::KeyCode;
 
+use crate::messages::device_to_device::MouseButton;
+
 use super::chord::Chorder;
 
 pub const COLS_PER_SIDE: usize = 5;
@@ -8,7 +10,7 @@ pub const COLS: usize = COLS_PER_SIDE * 2;
 pub const ROWS: usize = 5;
 pub const N_LAYERS: usize = 3;
 
-pub type CustomEvent = core::convert::Infallible;
+pub type CustomEvent = MouseButton;
 pub type Layers = keyberon::layout::Layers<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 pub type Layout = keyberon::layout::Layout<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 
@@ -158,8 +160,8 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [{SHIFT_HASH} $ '(' ')' n  +  -  /   * {SHIFT_QUOT}],
         [{CTRL_PCT} ^ '[' ']' n  &  =  ,   . {CTRL_UNDER}],
         [LAlt Space n n  n  n n n = n],
-        [n n n n n n n  n  n n],
-        [n n n n n n n  n  n n],
+        [n n n {Action::Custom(MouseButton::RightClick)} n n n  n  n n],
+        [{Action::Custom(MouseButton::LeftClick)} n n n n n n  n  n n],
     }
     {
         [Kb1 Kb2 Kb3 Kb4 Kb5 Kb6 Kb7 Kb8 Kb9 Kb0],

@@ -8,7 +8,7 @@ use crate::messages::TransmittedMessage;
 
 use super::onewire;
 
-pub static COMMANDS_FROM_OTHER_SIDE: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 4, 4, 1> =
+pub static THIS_SIDE_MESSAGE_BUS: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 4, 6, 6> =
     PubSubChannel::new();
 pub static COMMANDS_TO_OTHER_SIDE: Channel<
     ThreadModeRawMutex,
@@ -18,7 +18,7 @@ pub static COMMANDS_TO_OTHER_SIDE: Channel<
 
 #[embassy_executor::task]
 pub async fn eventer_task() {
-    let msg_pub = COMMANDS_FROM_OTHER_SIDE.publisher().unwrap();
+    let msg_pub = THIS_SIDE_MESSAGE_BUS.publisher().unwrap();
     let rx_fn = || async { COMMANDS_TO_OTHER_SIDE.recv().await };
     let tx_fn = |e| async {
         msg_pub.publish(e).await;

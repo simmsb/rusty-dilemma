@@ -4,14 +4,16 @@ use embassy_rp::{
     gpio::{Input, Output},
     peripherals::{PIN_26, PIN_27, PIN_28, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9},
 };
-use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pubsub::PubSubChannel};
+use embassy_sync::{
+    blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, pubsub::PubSubChannel,
+};
 use embassy_time::Duration;
 use keyberon::{key_code::KeyCode, layout::Event};
 use packed_struct::PrimitiveEnum;
 use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
-    interboard,
+    interboard::{self, THIS_SIDE_MESSAGE_BUS},
     messages::{device_to_device::DeviceToDevice, reliable_msg},
     side,
     usb::hid::publish_keyboard_report,
@@ -31,6 +33,8 @@ pub static MATRIX_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Ev
 /// Chord-processed events
 pub static KEY_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Event, 4, 4, 2> =
     PubSubChannel::new();
+
+static KEYS_TO_OTHER_SIDE: Channel<ThreadModeRawMutex, keyberon::layout::Event, 4> = Channel::new();
 
 pub type ScannerInstance<'a> = scan::Scanner<
     (
@@ -84,14 +88,15 @@ async fn matrix_processor() {
                 let evts = chorder.process(evt);
                 for evt in evts {
                     key_events.publish(evt).await;
+                    KEYS_TO_OTHER_SIDE.send(evt).await;
                 }
             }
             embassy_futures::select::Either::First(_) => {
                 let keys = chorder.tick();
                 for (x, y) in keys {
-                    key_events
-                        .publish(keyberon::layout::Event::Press(x, y))
-                        .await;
+                    let evt = keyberon::layout::Event::Press(x, y);
+                    key_events.publish(evt).await;
+                    KEYS_TO_OTHER_SIDE.send(evt).await;
                 }
             }
         }
@@ -99,11 +104,9 @@ async fn matrix_processor() {
 }
 
 #[embassy_executor::task]
-async fn send_events_to_side_with_usb() {
-    let mut sub = KEY_EVENTS.subscriber().unwrap();
-
+async fn send_events_to_other_side() {
     loop {
-        let evt = sub.next_message_pure().await;
+        let evt = KEYS_TO_OTHER_SIDE.recv().await;
         let evt = match evt {
             Event::Press(x, y) => DeviceToDevice::KeyPress(x, y),
             Event::Release(x, y) => DeviceToDevice::KeyRelease(x, y),
@@ -114,7 +117,7 @@ async fn send_events_to_side_with_usb() {
 
 #[embassy_executor::task]
 async fn receive_events_from_other_side() {
-    let mut sub = crate::interboard::COMMANDS_FROM_OTHER_SIDE
+    let mut sub = crate::interboard::THIS_SIDE_MESSAGE_BUS
         .subscriber()
         .unwrap();
     let key_events = KEY_EVENTS.publisher().unwrap();
@@ -134,6 +137,7 @@ async fn receive_events_from_other_side() {
 
 #[embassy_executor::task]
 async fn key_event_processor() {
+    let msg_bus_pub = THIS_SIDE_MESSAGE_BUS.publisher().unwrap();
     let mut sub = KEY_EVENTS.subscriber().unwrap();
     let mut layout = keyberon::layout::Layout::new(&LAYERS);
     let mut state = heapless::Vec::<KeyCode, 24>::new();
@@ -147,7 +151,20 @@ async fn key_event_processor() {
                 layout.event(evt);
             }
             embassy_futures::select::Either::First(_) => {
-                let _ = layout.tick();
+                let cevent = layout.tick();
+                let evt = match cevent {
+                    keyberon::layout::CustomEvent::NoEvent => None,
+                    keyberon::layout::CustomEvent::Press(m) => {
+                        Some(DeviceToDevice::MousebuttonPress(*m))
+                    }
+                    keyberon::layout::CustomEvent::Release(m) => {
+                        Some(DeviceToDevice::MousebuttonRelease(*m))
+                    }
+                };
+                if let Some(evt) = evt {
+                    interboard::send_msg(reliable_msg(evt.clone())).await;
+                    msg_bus_pub.publish(evt).await;
+                }
             }
         }
 
@@ -167,10 +184,9 @@ async fn key_event_processor() {
 pub fn init(spawner: &Spawner, scanner: ScannerInstance<'static>) {
     spawner.must_spawn(matrix_processor());
     spawner.must_spawn(matrix_scanner(scanner));
+    spawner.must_spawn(send_events_to_other_side());
     if side::this_side_has_usb() {
         spawner.must_spawn(receive_events_from_other_side());
         spawner.must_spawn(key_event_processor());
-    } else {
-        spawner.must_spawn(send_events_to_side_with_usb());
     }
 }

@@ -34,7 +34,7 @@ async fn handle_from_host(msg: HostToDeviceMsg) {
 
 #[embassy_executor::task]
 pub async fn from_other_side_distributor() {
-    let mut sub = crate::interboard::COMMANDS_FROM_OTHER_SIDE
+    let mut sub = crate::interboard::THIS_SIDE_MESSAGE_BUS
         .subscriber()
         .unwrap();
 

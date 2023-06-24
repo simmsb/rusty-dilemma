@@ -8,7 +8,7 @@ use embassy_sync::channel::TrySendError;
 
 use crate::messages::{device_to_device::DeviceToDevice, TransmittedMessage};
 
-pub use self::channel::COMMANDS_FROM_OTHER_SIDE;
+pub use self::channel::THIS_SIDE_MESSAGE_BUS;
 use self::onewire::SM;
 pub mod channel;
 pub mod onewire;
