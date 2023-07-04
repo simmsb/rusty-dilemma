@@ -5,6 +5,4 @@ use serde::{Deserialize, Serialize};
 pub struct MouseReport {
     pub x: i8,
     pub y: i8,
-    pub wheel: i8,
-    pub pan: i8,
 }

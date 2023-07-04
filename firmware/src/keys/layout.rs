@@ -1,8 +1,6 @@
 use keyberon::action::{k, l, Action, HoldTapAction};
 use keyberon::key_code::KeyCode;
 
-use crate::messages::device_to_device::MouseButton;
-
 use super::chord::Chorder;
 
 pub const COLS_PER_SIDE: usize = 5;
@@ -10,7 +8,13 @@ pub const COLS: usize = COLS_PER_SIDE * 2;
 pub const ROWS: usize = 5;
 pub const N_LAYERS: usize = 3;
 
-pub type CustomEvent = MouseButton;
+#[derive(Clone, Copy)]
+pub enum CustomEvent {
+    MouseLeft,
+    MouseRight,
+    MouseScroll,
+}
+
 pub type Layers = keyberon::layout::Layers<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 pub type Layout = keyberon::layout::Layout<COLS, { ROWS + 1 }, N_LAYERS, CustomEvent>;
 
@@ -23,7 +27,7 @@ macro_rules! hold_tap {
             hold: k($hold),
             tap: $tap,
             config: keyberon::action::HoldTapConfig::PermissiveHold,
-            tap_hold_interval: 0,
+            tap_hold_interval: 200,
         })
     };
 }
@@ -140,6 +144,13 @@ const SHIFT_F1: A = h_lshift!(k(KeyCode::F1));
 const CTRL_F6: A = h_lctrl!(k(KeyCode::F6));
 const SHIFT_VOLUP: A = h_rshift!(k(KeyCode::VolUp));
 const CTRL_VOLDOWN: A = h_rctrl!(k(KeyCode::VolDown));
+const ENTER_AND_SCROLL: A = Action::HoldTap(&HoldTapAction {
+    timeout: HOLD_TIMEOUT,
+    hold: keyberon::action::Action::Custom(CustomEvent::MouseScroll),
+    tap: keyberon::action::Action::KeyCode(KeyCode::Enter),
+    config: keyberon::action::HoldTapConfig::PermissiveHold,
+    tap_hold_interval: 200,
+});
 
 // row 4 is weird
 //
@@ -151,7 +162,7 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [Q W E R T Y U I O P],
         [{SHIFT_A} S D F G H J K L {SHIFT_SCOL}],
         [{CTRL_Z} X C V B N M , . {CTRL_SLASH}],
-        [{WIN_TAB} {L1_SP} LAlt n n n n RAlt {L2_SP} Enter],
+        [{WIN_TAB} {L1_SP} LAlt n n n n RAlt {L2_SP} {ENTER_AND_SCROLL}],
         [Escape {m!(KeyCode::LAlt, KeyCode::X)} {m!(KeyCode::Space, KeyCode::Grave)} Delete < {m!(KeyCode::LShift, KeyCode::SColon)} > / '\\' '"'],
         [BSpace '\'' '_' {m!(KeyCode::LCtrl, KeyCode::C)} {m!(KeyCode::LCtrl, KeyCode::V)}  n n   n      n n],
     }
@@ -160,15 +171,15 @@ pub static LAYERS: Layers  = keyberon::layout::layout! {
         [{SHIFT_HASH} $ '(' ')' n  +  -  /   * {SHIFT_QUOT}],
         [{CTRL_PCT} ^ '[' ']' n  &  =  ,   . {CTRL_UNDER}],
         [LAlt Space n n  n  n n n = n],
-        [n n n {Action::Custom(MouseButton::RightClick)} n n n  n  n n],
-        [{Action::Custom(MouseButton::LeftClick)} n n n n n n  n  n n],
+        [n n n {Action::Custom(CustomEvent::MouseRight)} n n n  n  n n],
+        [{Action::Custom(CustomEvent::MouseRight)} n n n n n n  n  n n],
     }
     {
         [Kb1 Kb2 Kb3 Kb4 Kb5 Kb6 Kb7 Kb8 Kb9 Kb0],
         [{SHIFT_F1}  F2  F3  F4  F5  Left Down Up Right {SHIFT_VOLUP}],
         [{CTRL_F6}  F7  F8  F9  F10 PgDown {m!(KeyCode::LCtrl, KeyCode::Down)} {m!(KeyCode::LCtrl, KeyCode::Up)} PgUp {CTRL_VOLDOWN}],
         [F12 n F11   n t t n End Space n],
-        [n = n   {Action::Custom(MouseButton::RightClick)}   n n n    n   n n],
-        [{Action::Custom(MouseButton::LeftClick)} n n n n n n  n  n n],
+        [n = n   {Action::Custom(CustomEvent::MouseRight)}   n n n    n   n n],
+        [{Action::Custom(CustomEvent::MouseLeft)} n n n n n n  n  n n],
     }
 };

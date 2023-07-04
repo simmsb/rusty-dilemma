@@ -1,4 +1,4 @@
-use atomic_polyfill::AtomicU8;
+use atomic_polyfill::{AtomicBool, AtomicU8};
 use embassy_executor::Spawner;
 use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
@@ -31,6 +31,7 @@ pub async fn publish_keyboard_report(report: NKROBootKeyboardReport) {
 }
 
 static MOUSE_BUTTON_STATE: AtomicU8 = AtomicU8::new(0);
+static IS_SCROLLING: AtomicBool = AtomicBool::new(false);
 
 #[embassy_executor::task]
 async fn handle_mouse_clicks() {
@@ -38,13 +39,19 @@ async fn handle_mouse_clicks() {
 
     loop {
         match sub.next_message_pure().await {
-            DeviceToDevice::MousebuttonPress(b) => {
-                MOUSE_BUTTON_STATE.fetch_or(b.bit(), atomic_polyfill::Ordering::SeqCst);
-                MOUSE_REPORTS.send(shared::hid::MouseReport::default()).await;
-            }
-            DeviceToDevice::MousebuttonRelease(b) => {
-                MOUSE_BUTTON_STATE.fetch_and(!b.bit(), atomic_polyfill::Ordering::SeqCst);
-                MOUSE_REPORTS.send(shared::hid::MouseReport::default()).await;
+            DeviceToDevice::SyncMouseState(b) => {
+                let buttons: u8 = [
+                    if b.left() { 0b01 } else { 0 },
+                    if b.right() { 0b10 } else { 0 },
+                ]
+                .into_iter()
+                .sum();
+
+                MOUSE_BUTTON_STATE.store(buttons, atomic_polyfill::Ordering::SeqCst);
+                IS_SCROLLING.store(b.scrolling(), atomic_polyfill::Ordering::SeqCst);
+                MOUSE_REPORTS
+                    .send(shared::hid::MouseReport::default())
+                    .await;
             }
             _ => {}
         }
@@ -54,7 +61,13 @@ async fn handle_mouse_clicks() {
 #[embassy_executor::task]
 async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
-        let shared::hid::MouseReport { x, y, wheel, pan } = MOUSE_REPORTS.recv().await;
+        let shared::hid::MouseReport { x, y } = MOUSE_REPORTS.recv().await;
+
+        let (x, y, wheel, pan) = if IS_SCROLLING.load(atomic_polyfill::Ordering::Relaxed) {
+            (0, 0, y, x)
+        } else {
+            (x, y, 0, 0)
+        };
 
         let report = MouseReport {
             buttons: MOUSE_BUTTON_STATE.load(atomic_polyfill::Ordering::Relaxed),

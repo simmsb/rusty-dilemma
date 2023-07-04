@@ -14,13 +14,19 @@ use usbd_human_interface_device::device::keyboard::NKROBootKeyboardReport;
 
 use crate::{
     interboard::{self, THIS_SIDE_MESSAGE_BUS},
-    messages::{device_to_device::DeviceToDevice, reliable_msg},
+    messages::{
+        device_to_device::{DeviceToDevice, MouseState},
+        reliable_msg,
+    },
     side,
     usb::hid::publish_keyboard_report,
     utils::Ticker,
 };
 
-use self::{chord::ChordingEngine, layout::LAYERS};
+use self::{
+    chord::ChordingEngine,
+    layout::{CustomEvent, LAYERS},
+};
 
 pub mod chord;
 pub mod layout;
@@ -142,6 +148,7 @@ async fn key_event_processor() {
     let mut layout = keyberon::layout::Layout::new(&LAYERS);
     let mut state = heapless::Vec::<KeyCode, 24>::new();
     let mut ticker = Ticker::every(Duration::from_hz(1000));
+    let mut mouse_state = MouseState::new();
 
     loop {
         match select(ticker.next(), sub.next_message_pure()).await {
@@ -152,16 +159,19 @@ async fn key_event_processor() {
             }
             embassy_futures::select::Either::First(_) => {
                 let cevent = layout.tick();
-                let evt = match cevent {
+                if let Some((evt, is_press)) = match cevent {
                     keyberon::layout::CustomEvent::NoEvent => None,
-                    keyberon::layout::CustomEvent::Press(m) => {
-                        Some(DeviceToDevice::MousebuttonPress(*m))
+                    keyberon::layout::CustomEvent::Press(m) => Some((*m, true)),
+                    keyberon::layout::CustomEvent::Release(m) => Some((*m, false)),
+                } {
+                    match evt {
+                        CustomEvent::MouseLeft => mouse_state.set_left(is_press),
+                        CustomEvent::MouseRight => mouse_state.set_right(is_press),
+                        CustomEvent::MouseScroll => mouse_state.set_scrolling(is_press),
                     }
-                    keyberon::layout::CustomEvent::Release(m) => {
-                        Some(DeviceToDevice::MousebuttonRelease(*m))
-                    }
-                };
-                if let Some(evt) = evt {
+
+                    let evt = DeviceToDevice::SyncMouseState(mouse_state);
+
                     interboard::send_msg(reliable_msg(evt.clone())).await;
                     msg_bus_pub.publish(evt).await;
                 }
