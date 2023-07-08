@@ -151,8 +151,9 @@ impl Animation for Rain {
     }
 
     fn new_from_sync(sync: Self::SyncMessage) -> Self {
-        let mut this = Self::default();
-        this.colour = sync;
-        this
+        Self {
+            colour: sync,
+            ..Self::default()
+        }
     }
 }

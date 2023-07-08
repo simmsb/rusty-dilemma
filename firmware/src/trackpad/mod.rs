@@ -15,7 +15,8 @@ pub mod driver;
 mod glide;
 pub mod regs;
 
-type TrackpadSpi = ExclusiveDevice<Spi<'static, SPI0, Async>, Output<'static, PIN_21>>;
+type TrackpadSpi =
+    ExclusiveDevice<Spi<'static, SPI0, Async>, Output<'static, PIN_21>, embassy_time::Delay>;
 
 #[allow(clippy::too_many_arguments)]
 pub fn init(
@@ -31,7 +32,7 @@ pub fn init(
     let mut config = spi::Config::default();
     config.phase = spi::Phase::CaptureOnSecondTransition;
     let spi = Spi::new(spi, clk, mosi, miso, tx_dma, rx_dma, config);
-    let spi = ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::Low));
+    let spi = ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::Low), embassy_time::Delay);
 
     spawner.must_spawn(trackpad_task(spi));
 }

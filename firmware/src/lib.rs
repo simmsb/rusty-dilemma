@@ -135,10 +135,18 @@ pub async fn main(spawner: Spawner) {
     #[cfg(feature = "bootloader")]
     fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
-    let mut pio0 = Pio::new(p.PIO0);
+    bind_interrupts!(struct PioIrq0 {
+        PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO0>;
+    });
+
+    bind_interrupts!(struct PioIrq1 {
+        PIO1_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO1>;
+    });
+
+    let mut pio0 = Pio::new(p.PIO0, PioIrq0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
 
-    let mut pio1 = Pio::new(p.PIO1);
+    let mut pio1 = Pio::new(p.PIO1, PioIrq1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
 
     let scanner = ScannerInstance::new(

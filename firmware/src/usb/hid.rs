@@ -38,22 +38,19 @@ async fn handle_mouse_clicks() {
     let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
 
     loop {
-        match sub.next_message_pure().await {
-            DeviceToDevice::SyncMouseState(b) => {
-                let buttons: u8 = [
-                    if b.left() { 0b01 } else { 0 },
-                    if b.right() { 0b10 } else { 0 },
-                ]
-                .into_iter()
-                .sum();
+        if let DeviceToDevice::SyncMouseState(b) = sub.next_message_pure().await {
+            let buttons: u8 = [
+                if b.left() { 0b01 } else { 0 },
+                if b.right() { 0b10 } else { 0 },
+            ]
+            .into_iter()
+            .sum();
 
-                MOUSE_BUTTON_STATE.store(buttons, atomic_polyfill::Ordering::SeqCst);
-                IS_SCROLLING.store(b.scrolling(), atomic_polyfill::Ordering::SeqCst);
-                MOUSE_REPORTS
-                    .send(shared::hid::MouseReport::default())
-                    .await;
-            }
-            _ => {}
+            MOUSE_BUTTON_STATE.store(buttons, atomic_polyfill::Ordering::SeqCst);
+            IS_SCROLLING.store(b.scrolling(), atomic_polyfill::Ordering::SeqCst);
+            MOUSE_REPORTS
+                .send(shared::hid::MouseReport::default())
+                .await;
         }
     }
 }

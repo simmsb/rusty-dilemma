@@ -528,6 +528,11 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
     async fn rap_write(&mut self, address: u8, buf: &[u8]) -> Result<(), SPI::Error> {
         let cmd = address | WRITE_MASK;
-        self.spi.write_transaction(&[&[cmd], buf]).await
+        self.spi
+            .transaction(&mut [
+                embedded_hal_async::spi::Operation::Write(&[cmd]),
+                embedded_hal_async::spi::Operation::Write(buf),
+            ])
+            .await
     }
 }

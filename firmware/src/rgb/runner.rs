@@ -150,13 +150,11 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
             current.reconstruct_from(next);
         }
 
-        if crate::side::this_side_has_usb() {
-            if last_sync.elapsed() > SYNC_PERIOD {
-                last_sync = Instant::now();
+        if crate::side::this_side_has_usb() && last_sync.elapsed() > SYNC_PERIOD {
+            last_sync = Instant::now();
 
-                let cmd = DeviceToDevice::SyncAnimation(current.animation.construct_sync());
-                interboard::send_msg(unreliable_msg(cmd)).await;
-            }
+            let cmd = DeviceToDevice::SyncAnimation(current.animation.construct_sync());
+            interboard::send_msg(unreliable_msg(cmd)).await;
         }
 
         if let Ok(cmd) = RGB_CMD_CHANNEL.try_recv() {

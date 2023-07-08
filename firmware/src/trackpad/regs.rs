@@ -485,6 +485,21 @@ pub enum AdcAttenuation {
     X4 = 3,
 }
 
+impl AdcAttenuation {
+    const fn into_bits(self) -> u8 {
+        self as _
+    }
+
+    const fn from_bits(value: u8) -> Self {
+        match value {
+            0 => Self::X1,
+            1 => Self::X2,
+            2 => Self::X3,
+            _ => Self::X4,
+        }
+    }
+}
+
 /*--------------------------------------------------------------------------*\
                         Tune Edge Sensitivity
 \*--------------------------------------------------------------------------*/

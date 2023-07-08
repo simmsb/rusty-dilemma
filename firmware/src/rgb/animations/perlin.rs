@@ -75,10 +75,11 @@ impl Animation for Perlin {
     }
 
     fn new_from_sync(sync: Self::SyncMessage) -> Self {
-        let mut new = Self::default();
-        new.tick = sync.0;
-        new.colour = sync.1;
-        new
+        Self {
+            tick: sync.0,
+            colour: sync.1,
+            ..Self::default()
+        }
     }
 }
 
