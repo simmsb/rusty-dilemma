@@ -20,7 +20,7 @@ use crate::utils::log;
 pub static OTHER_SIDE_TX: Pipe<ThreadModeRawMutex, 32> = Pipe::new();
 pub static OTHER_SIDE_RX: Pipe<ThreadModeRawMutex, 32> = Pipe::new();
 
-pub const USART_SPEED: u64 = 115200;
+pub const USART_SPEED: u64 = 460800;
 
 pub fn init(
     spawner: &Spawner,
