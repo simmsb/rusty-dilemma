@@ -8,10 +8,19 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "defmt")]
 use defmt::debug;
 
+#[cfg_attr(feature = "probe", derive(defmt::Format))]
+#[bitfield_struct::bitfield(u8)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Hash)]
+pub struct CommandSeq {
+    pub reliable: bool,
+    #[bits(7)]
+    pub id: u8,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Command<T> {
-    pub reliable: bool,
+    pub command_seq: CommandSeq,
     pub cmd: T,
     pub csum: u16,
 }
@@ -33,19 +42,19 @@ pub fn calc_csum<T: Hash>(v: T) -> u16 {
 }
 
 impl<T: Hash> Command<T> {
-    pub fn new_reliable(cmd: T) -> Self {
+    pub fn new_reliable(cmd: T, id: u8) -> Self {
         let csum = calc_csum(&cmd);
         Self {
-            reliable: true,
+            command_seq: CommandSeq::new().with_id(id).with_reliable(true),
             cmd,
             csum,
         }
     }
 
-    pub fn new_unreliable(cmd: T) -> Self {
+    pub fn new_unreliable(cmd: T, id: u8) -> Self {
         let csum = calc_csum(&cmd);
         Self {
-            reliable: false,
+            command_seq: CommandSeq::new().with_id(id).with_reliable(false),
             cmd,
             csum,
         }

@@ -19,17 +19,17 @@ struct EventSenderImpl<'e, T> {
 }
 
 pub trait EventSender<T> {
-    async fn send(&self, cmd: TransmittedMessage<T>) {
+    async fn send(&self, cmd: TransmittedMessage<T>, id: u8) {
         let TransmittedMessage { msg, timeout } = cmd;
         if let Some(timeout) = timeout {
-            let _ = self.send_reliable(msg, timeout).await;
+            let _ = self.send_reliable(msg, timeout, id).await;
         } else {
-            let _ = self.send_unreliable(msg).await;
+            let _ = self.send_unreliable(msg, id).await;
         }
     }
 
-    async fn send_unreliable(&self, cmd: T);
-    async fn send_reliable(&self, cmd: T, timeout: Duration);
+    async fn send_unreliable(&self, cmd: T, id: u8);
+    async fn send_reliable(&self, cmd: T, timeout: Duration, id: u8);
 }
 
 struct EventOutProcessor<'e, Sent, TX> {
@@ -57,6 +57,7 @@ where
         FnTx: Fn(Received) -> FnTxFut,
     {
         let mut accumulator = CobsAccumulator::<BUF_SIZE>::new();
+        let mut last_seen_id = None;
 
         loop {
             let mut buf = [0u8; BUF_SIZE];
@@ -87,10 +88,13 @@ where
                             CmdOrAck::Cmd(c) => {
                                 if c.validate() {
                                     // log::info!("Hi I got a command: {}", c);
-                                    if c.reliable {
+                                    if c.command_seq.reliable() {
                                         self.mix_chan.send(CmdOrAck::Ack).await;
                                     }
-                                    (self.out_cb)(c.cmd).await;
+                                    if Some(c.command_seq.id()) != last_seen_id {
+                                        (self.out_cb)(c.cmd).await;
+                                        last_seen_id = Some(c.command_seq.id());
+                                    }
                                 } else {
                                     // log::debug!("Corrupted parsed command: {:?}", c);
                                 }
@@ -141,14 +145,14 @@ where
 }
 
 impl<'a, T: Hash + Clone> EventSender<T> for EventSenderImpl<'a, T> {
-    async fn send_unreliable(&self, cmd: T) {
-        let cmd = Command::new_unreliable(cmd.clone());
+    async fn send_unreliable(&self, cmd: T, id: u8) {
+        let cmd = Command::new_unreliable(cmd.clone(), id);
         self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
     }
 
-    async fn send_reliable(&self, cmd: T, mut timeout: Duration) {
+    async fn send_reliable(&self, cmd: T, mut timeout: Duration, id: u8) {
         loop {
-            let cmd = Command::new_reliable(cmd.clone());
+            let cmd = Command::new_reliable(cmd.clone(), id);
             self.mix_chan.send(CmdOrAck::Cmd(cmd)).await;
 
             self.ack_signal.reset();
@@ -201,13 +205,16 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     };
 
     let sender_proc = async {
+        let mut id: u8 = 0;
         loop {
             let TransmittedMessage { msg, timeout } = fn_rx().await;
             if let Some(timeout) = timeout {
-                let _ = sender.send_reliable(msg, timeout).await;
+                let _ = sender.send_reliable(msg, timeout, id).await;
             } else {
-                let _ = sender.send_unreliable(msg).await;
+                let _ = sender.send_unreliable(msg, id).await;
             }
+            id += 1;
+            id &= 0b1111111;
         }
     };
 
