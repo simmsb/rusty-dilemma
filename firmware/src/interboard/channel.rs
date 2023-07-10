@@ -8,7 +8,7 @@ use crate::messages::TransmittedMessage;
 
 use super::onewire;
 
-pub static THIS_SIDE_MESSAGE_BUS: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 4, 6, 6> =
+pub static THIS_SIDE_MESSAGE_BUS: PubSubChannel<ThreadModeRawMutex, DeviceToDevice, 16, 6, 6> =
     PubSubChannel::new();
 pub static COMMANDS_TO_OTHER_SIDE: Channel<
     ThreadModeRawMutex,

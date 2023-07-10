@@ -4,6 +4,7 @@ use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
+use num::Integer;
 use packed_struct::PackedStruct;
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
 use usbd_human_interface_device::device::keyboard::{
@@ -55,19 +56,76 @@ async fn handle_mouse_clicks() {
     }
 }
 
+const SCROLL_PERIOD: u8 = 12;
+
+#[derive(Default)]
+struct ScrollDivider {
+    fwd: u8,
+    bwd: u8,
+}
+
+impl ScrollDivider {
+    fn update(&mut self, diff: i8) -> i8 {
+        self.fwd = self.fwd.saturating_add_signed(diff);
+        self.bwd = self.bwd.saturating_add_signed(-diff);
+
+        let out_fwd;
+        (out_fwd, self.fwd) = self.fwd.div_mod_floor(&SCROLL_PERIOD);
+        let out_bwd;
+        (out_bwd, self.bwd) = self.bwd.div_mod_floor(&SCROLL_PERIOD);
+
+        0i8.saturating_add_unsigned(out_fwd)
+           .saturating_sub_unsigned(out_bwd)
+    }
+}
+
+#[derive(Default)]
+struct MovementCoalescer {
+    next: i8,
+    current: i8,
+}
+
+impl MovementCoalescer {
+    fn update(&mut self, value: i8) -> bool {
+        if let Some(current) = self.current.checked_add(value) {
+            self.current = current;
+            true
+        } else {
+            self.next = value;
+            false
+        }
+    }
+
+    fn take(&mut self) -> i8 {
+        core::mem::swap(&mut self.current, &mut self.next);
+        core::mem::take(&mut self.next)
+    }
+}
+
 #[embassy_executor::task]
 async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
-    loop {
-        let shared::hid::MouseReport { x, y } = MOUSE_REPORTS.recv().await;
+    let mut vertical_scroll_state = ScrollDivider::default();
+    let mut horizontal_scroll_state = ScrollDivider::default();
+    let mut x_coalescer = MovementCoalescer::default();
+    let mut y_coalescer = MovementCoalescer::default();
 
-        let (x, y, wheel, pan) = if IS_SCROLLING.load(atomic_polyfill::Ordering::Relaxed) {
+    loop {
+        let shared::hid::MouseReport { mut x, mut y } = MOUSE_REPORTS.recv().await;
+        while x_coalescer.update(x) && y_coalescer.update(y) {
+            let Some(shared::hid::MouseReport { x: x_, y: y_ }) = MOUSE_REPORTS.try_recv().ok() else { break; };
+            (x, y) = (x_, y_);
+        }
+
+        let (x, y, wheel, pan) = if IS_SCROLLING.load(atomic_polyfill::Ordering::SeqCst) {
+            let y = vertical_scroll_state.update(y_coalescer.take());
+            let x = horizontal_scroll_state.update(x_coalescer.take());
             (0, 0, y, x)
         } else {
             (x, y, 0, 0)
         };
 
         let report = MouseReport {
-            buttons: MOUSE_BUTTON_STATE.load(atomic_polyfill::Ordering::Relaxed),
+            buttons: MOUSE_BUTTON_STATE.load(atomic_polyfill::Ordering::SeqCst),
             x,
             y,
             wheel,
