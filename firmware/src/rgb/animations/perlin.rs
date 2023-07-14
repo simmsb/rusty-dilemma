@@ -16,21 +16,24 @@ pub struct Perlin {
     tick_rate: I16F16,
     noise: PerlinNoise2D,
     colour: ColorRGB,
+    seed: u8,
 }
 
 impl Default for Perlin {
     fn default() -> Self {
+        let seed: u8 = MyRng.gen();
         Self {
             tick: Default::default(),
             tick_rate: fixed!(0.01: I16F16),
-            noise: PerlinNoise2D::new(fixed!(255.0: U16F16), 0),
+            noise: PerlinNoise2D::new(fixed!(255.0: U16F16), seed as i32),
             colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
+            seed,
         }
     }
 }
 
 impl Animation for Perlin {
-    type SyncMessage = (I16F16, ColorRGB);
+    type SyncMessage = (I16F16, ColorRGB, u8);
 
     fn tick_rate(&self) -> Duration {
         Duration::from_hz(60)
@@ -57,7 +60,7 @@ impl Animation for Perlin {
     }
 
     fn construct_sync(&self) -> Self::SyncMessage {
-        (self.tick, self.colour)
+        (self.tick, self.colour, self.seed)
     }
 
     fn sync(&mut self, sync: Self::SyncMessage) {
@@ -78,6 +81,7 @@ impl Animation for Perlin {
         Self {
             tick: sync.0,
             colour: sync.1,
+            noise: PerlinNoise2D::new(fixed!(255.0: U16F16), sync.2 as i32),
             ..Self::default()
         }
     }
