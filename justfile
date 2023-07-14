@@ -1,6 +1,6 @@
 flash:
   cargo objcopy --release --no-default-features -- target/binary.elf
-  picotool load -f ./target/binary.elf
+  picotool load -f ./target/binary.elf || picotool load -f ./target/binary.elf
   picotool reboot
 
 flash-bl:
