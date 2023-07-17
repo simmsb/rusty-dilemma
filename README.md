@@ -2,6 +2,10 @@
 
 https://github.com/simmsb/rusty-dilemma/assets/5330444/2e6345b6-a52b-436a-b9c9-535a1fc93490
 
+## Layout
+
+![Default Layout](layouts/rusty-dilemma.png)
+
 ## Features
 
 - Normal keypresses, mod taps, layers, chords, mouse keys
