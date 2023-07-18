@@ -1,0 +1,11 @@
+{
+  "rust-analyzer.cargo.features": [
+    "binaryinfo"
+	],
+  "rust-analyzer.check.features": [
+    "binaryinfo"
+	],
+  "rust-analyzer.cargo.target": "thumbv6m-none-eabi",
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.check.targets": ["thumbv6m-none-eabi"]
+}

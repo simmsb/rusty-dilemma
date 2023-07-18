@@ -1,3 +1,6 @@
+#![feature(concat_bytes)]
+
+use chrono::Local;
 use std::env;
 use std::fs::File;
 use std::io::Write;
@@ -10,6 +13,12 @@ fn main() {
         include_bytes!("memory.bootloader.x").as_slice()
     } else if env::var("CARGO_FEATURE_M2").is_ok() {
         include_bytes!("memory.2m.x").as_slice()
+    } else if env::var("CARGO_FEATURE_BINARYINFO").is_ok() {
+        concat_bytes!(
+            include_bytes!("memory.16m.x"),
+            include_bytes!("memory.binaryinfo.x")
+        )
+        .as_slice()
     } else {
         include_bytes!("memory.16m.x").as_slice()
     };
@@ -19,6 +28,13 @@ fn main() {
         .unwrap()
         .write_all(memory_x)
         .unwrap();
+    let mut build_date = File::create(out.join("build_date.txt")).unwrap();
+    write!(build_date, r#""{}""#, Local::now().date_naive()).ok();
+    File::create(out.join("build_attribute.txt"))
+        .unwrap()
+        .write_all(env::var("PROFILE").unwrap().as_bytes())
+        .unwrap();
+
     println!("cargo:rustc-link-search={}", out.display());
 
     // By default, Cargo will re-run a build script whenever
