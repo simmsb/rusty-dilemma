@@ -36,6 +36,8 @@ use utils::log;
 
 use crate::keys::ScannerInstance;
 
+#[cfg(feature = "binaryinfo")]
+pub mod binary_info;
 pub mod event;
 #[cfg(feature = "bootloader")]
 pub mod fw_update;

@@ -3,6 +3,8 @@ name = "rusty-dilemma"
 version = "0.1.0"
 edition = "2021"
 resolver = "2"
+repository = "https://github.com/simmsb/rusty-dilemma"
+description = "Firmware for the Dilemma v2 keyboard written in Rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -89,11 +91,16 @@ keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
 phf = { version = "0.11.2", default-features = false }
 packed_struct = { version = "0.10.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", commit = "141069dd1685885d35ce2eaa3b345b19288f56e4", optional = true}
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]
 bootloader = ["embassy-boot-rp"]
+binaryinfo = ["rp-binary-info"]
 
 m2 = []
 
 default = []
+
+[build-dependencies]
+chrono = "0.4.19"
