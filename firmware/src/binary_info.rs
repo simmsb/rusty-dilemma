@@ -77,7 +77,7 @@ static PROGRAM_BUILD_ATTRIBUTE: IdAndString = custom_string(
     TAG_RASPBERRY_PI,
     ID_RP_PROGRAM_BUILD_ATTRIBUTE,
     concat!(
-        include!(concat!(env!("OUT_DIR"), "/build_attribute.txt")),
+        include_str!(concat!(env!("OUT_DIR"), "/build_attribute.txt")),
         "\0"
     ),
 );
