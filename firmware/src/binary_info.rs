@@ -52,7 +52,7 @@ pub static PICOTOOL_ENTRIES: [Addr; 8] = [
 static PROGRAM_NAME: IdAndString = program_name(concat!(env!("CARGO_PKG_NAME"), "\0"));
 static PROGRAM_VERSION: IdAndString = version(concat!("v", env!("CARGO_PKG_VERSION"), "\0"));
 static PROGRAM_BUILD_DATE: IdAndString = build_date(concat!(
-    include!(concat!(env!("OUT_DIR"), "/build_date.txt")),
+    include_str!(concat!(env!("OUT_DIR"), "/build_date.txt")),
     "\0"
 ));
 static PROGRAM_URL: IdAndString = custom_string(

@@ -28,8 +28,10 @@ fn main() {
         .unwrap()
         .write_all(memory_x)
         .unwrap();
-    let mut build_date = File::create(out.join("build_date.txt")).unwrap();
-    write!(build_date, r#""{}""#, Local::now().date_naive()).ok();
+    File::create(out.join("build_date.txt"))
+        .unwrap()
+        .write_all(Local::now().date_naive().to_string().as_bytes())
+        .unwrap();
     File::create(out.join("build_attribute.txt"))
         .unwrap()
         .write_all(env::var("PROFILE").unwrap().as_bytes())
