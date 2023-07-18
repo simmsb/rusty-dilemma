@@ -100,7 +100,7 @@ binaryinfo = ["rp-binary-info"]
 
 m2 = []
 
-default = []
+default = ["binaryinfo"]
 
 [build-dependencies]
 chrono = "0.4.19"
