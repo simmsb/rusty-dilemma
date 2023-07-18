@@ -91,7 +91,7 @@ keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
 phf = { version = "0.11.2", default-features = false }
 packed_struct = { version = "0.10.1", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
-rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", commit = "141069dd1685885d35ce2eaa3b345b19288f56e4", optional = true}
+rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", optional = true}
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]
