@@ -30,8 +30,10 @@ fn main() {
         .unwrap();
     let mut build_date = File::create(out.join("build_date.txt")).unwrap();
     write!(build_date, r#""{}""#, Local::now().date_naive()).ok();
-    let mut build_attribute = File::create(out.join("build_attribute.txt")).unwrap();
-    write!(build_attribute, r#""{}""#, env::var("PROFILE").unwrap()).ok();
+    File::create(out.join("build_attribute.txt"))
+        .unwrap()
+        .write_all(env::var("PROFILE").unwrap().as_bytes())
+        .unwrap();
 
     println!("cargo:rustc-link-search={}", out.display());
 
