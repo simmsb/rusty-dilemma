@@ -25,8 +25,15 @@ use crate::{
 
 use self::{
     chord::ChordingEngine,
-    layout::{CustomEvent, LAYERS},
+    layout::LAYERS,
 };
+
+#[derive(Clone, Copy)]
+pub enum CustomEvent {
+    MouseLeft,
+    MouseRight,
+    MouseScroll,
+}
 
 pub mod chord;
 pub mod layout;

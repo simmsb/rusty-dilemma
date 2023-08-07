@@ -6,7 +6,6 @@ use embassy_futures::{
 use embassy_rp::{
     peripherals::PIO0,
     pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
-    relocate::RelocatedProgram,
     Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
@@ -111,7 +110,6 @@ pub fn half_duplex_task_tx(
     pin: &mut Pin<'static, PIO0>,
 ) -> SM<0> {
     let tx_prog = pio_proc::pio_asm!(
-        ".origin 0",
         ".wrap_target",
         "set   pindirs 0",
         "pull  block [6]",
@@ -124,9 +122,8 @@ pub fn half_duplex_task_tx(
         ".wrap"
     );
 
-    let relocated = RelocatedProgram::new(&tx_prog.program);
     let mut cfg = embassy_rp::pio::Config::default();
-    cfg.use_program(&common.load_program(&relocated), &[]);
+    cfg.use_program(&common.load_program(&tx_prog.program), &[]);
     cfg.clock_divider = pio_freq();
     cfg.set_out_pins(&[pin]);
     cfg.set_set_pins(&[pin]);
@@ -148,7 +145,6 @@ pub fn half_duplex_task_rx(
     pin: &Pin<'static, PIO0>,
 ) -> SM<1> {
     let rx_prog = pio_proc::pio_asm!(
-        ".origin 12",
         ".wrap_target",
         "start:",
         "wait  0 pin, 0",
@@ -164,9 +160,8 @@ pub fn half_duplex_task_rx(
         ".wrap"
     );
 
-    let relocated = RelocatedProgram::new(&rx_prog.program);
     let mut cfg = embassy_rp::pio::Config::default();
-    cfg.use_program(&common.load_program(&relocated), &[]);
+    cfg.use_program(&common.load_program(&rx_prog.program), &[]);
     cfg.clock_divider = pio_freq();
     cfg.set_in_pins(&[pin]);
     cfg.set_jmp_pin(pin);
