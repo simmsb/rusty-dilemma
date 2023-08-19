@@ -49,7 +49,7 @@ key metax {
 
 key toad_linux {
   out keyberon: "::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(\"𓆏\", super::UnicodeMode::Linux))";
-  out keymap_drawer: "𓆏";
+  out keymap_drawer: "𓆏 ";
 }
 
 layer base {

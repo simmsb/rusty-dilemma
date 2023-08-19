@@ -63,7 +63,7 @@ layers:
     - tap: '$ '
     - tap: '( '
     - tap: ') '
-    - {}
+    - tap: '𓆏 '
     - tap: '+ '
     - tap: '- '
     - tap: '/ '

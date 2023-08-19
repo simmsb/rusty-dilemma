@@ -241,6 +241,7 @@ path.combo {
 <rect rx="6.0" ry="6.0" x="200.0" y="451.6530669589464" width="52.0" height="52.0" class="key"/>
 <text x="226.0" y="477.6530669589464" class="tap">)</text>
 <rect rx="6.0" ry="6.0" x="256.0" y="458.6530669589464" width="52.0" height="52.0" class="key"/>
+<text x="282.0" y="484.6530669589464" class="tap">𓆏</text>
 <rect rx="6.0" ry="6.0" x="480.0" y="458.6530669589464" width="52.0" height="52.0" class="key"/>
 <text x="506.0" y="484.6530669589464" class="tap">+</text>
 <rect rx="6.0" ry="6.0" x="536.0" y="451.6530669589464" width="52.0" height="52.0" class="key"/>
