@@ -46,11 +46,11 @@ struct EventInProcessor<'e, Sent, RX, FnTx> {
 
 impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
 where
-    RX: embedded_io::asynch::Read,
+    RX: embedded_io_async::Read,
 {
     async fn recv_task_inner<Received, FnTxFut>(
         &mut self,
-    ) -> Result<(), <RX as embedded_io::Io>::Error>
+    ) -> Result<(), <RX as embedded_io_async::ErrorType>::Error>
     where
         Received: DeserializeOwned + Hash + Clone + WhichDebug,
         FnTxFut: Future,
@@ -116,7 +116,7 @@ where
         Received: DeserializeOwned + Hash + Clone + WhichDebug,
         FnTxFut: Future,
         FnTx: Fn(Received) -> FnTxFut,
-        <RX as embedded_io::Io>::Error: WhichDebug,
+        <RX as embedded_io_async::ErrorType>::Error: WhichDebug,
     {
         loop {
             let _r = self.recv_task_inner().await;
@@ -128,8 +128,8 @@ where
 impl<'e, T, TX> EventOutProcessor<'e, T, TX>
 where
     T: Serialize + WhichDebug,
-    TX: embedded_io::asynch::Write,
-    <TX as embedded_io::Io>::Error: WhichDebug,
+    TX: embedded_io_async::Write,
+    <TX as embedded_io_async::ErrorType>::Error: WhichDebug,
 {
     async fn task(&mut self) {
         loop {
@@ -175,10 +175,10 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
 ) where
     Sent: Hash + Clone + Serialize + WhichDebug,
     Received: Hash + Clone + DeserializeOwned + WhichDebug,
-    TX: embedded_io::asynch::Write,
-    RX: embedded_io::asynch::Read,
-    <RX as embedded_io::Io>::Error: WhichDebug,
-    <TX as embedded_io::Io>::Error: WhichDebug,
+    TX: embedded_io_async::Write,
+    RX: embedded_io_async::Read,
+    <RX as embedded_io_async::ErrorType>::Error: WhichDebug,
+    <TX as embedded_io_async::ErrorType>::Error: WhichDebug,
     FnRx: Fn() -> FnRxFut,
     FnTx: Fn(Received) -> FnTxFut,
     FnRxFut: Future<Output = TransmittedMessage<Sent>>,

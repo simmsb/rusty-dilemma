@@ -6,7 +6,7 @@ use embassy_rp::{
     spi::{self, Async, Spi},
 };
 use embassy_time::Duration;
-use embedded_hal_async::spi::ExclusiveDevice;
+use embedded_hal_bus::spi::ExclusiveDevice;
 use shared::hid::MouseReport;
 
 use crate::utils::Ticker;
