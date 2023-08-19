@@ -43,8 +43,13 @@ key ctrlup {
 }
 
 key metax {
-  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LGui, ::keyberon::key_code::KeyCode::X].as_slice())";
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LAlt, ::keyberon::key_code::KeyCode::X].as_slice())";
   out keymap_drawer: "M-x";
+}
+
+key toad_linux {
+  out keyberon: "::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(\"𓆏\", super::UnicodeMode::Linux))";
+  out keymap_drawer: "𓆏";
 }
 
 layer base {
@@ -56,7 +61,7 @@ layer base {
 
 layer sym {
   '!'              '@'         '{'       '}'       '|'          '`'         >ml<     '~'          >mr<  '\'          n           '"';
-  '#'@lshift       '$'         '('       ')'       n            '+'                  '-'                '/'          '*'         '''@rshift;
+  '#'@lshift       '$'         '('       ')'       toad_linux   '+'                  '-'                '/'          '*'         '''@rshift;
   '%'@lctrl        '^'         '['       ']'       n            '&'                  '='                ','          '.'         '_'@rctrl;
                                n         lalt      space        '='                  n                  n;
 }

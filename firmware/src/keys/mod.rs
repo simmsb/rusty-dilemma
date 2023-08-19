@@ -26,15 +26,23 @@ use crate::{
 use self::{chord::ChordingEngine, layout::LAYERS};
 
 #[derive(Clone, Copy)]
+pub enum UnicodeMode {
+    Linux,
+    Mac,
+}
+
+#[derive(Clone, Copy)]
 pub enum CustomEvent {
     MouseLeft,
     MouseRight,
     MouseScroll,
+    TypeUnicode(&'static str, UnicodeMode),
 }
 
 pub mod chord;
 pub mod layout;
 pub mod scan;
+mod unicode;
 
 /// Raw matrix presses and releases
 pub static MATRIX_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Event, 4, 4, 1> =
@@ -172,6 +180,11 @@ async fn key_event_processor() {
                         CustomEvent::MouseLeft => mouse_state.set_left(is_press),
                         CustomEvent::MouseRight => mouse_state.set_right(is_press),
                         CustomEvent::MouseScroll => mouse_state.set_scrolling(is_press),
+                        CustomEvent::TypeUnicode(msg, mode) => {
+                            if !is_press {
+                                unicode::send_unicode(msg, mode).await;
+                            }
+                        }
                     }
 
                     let evt = DeviceToDevice::SyncMouseState(mouse_state);
@@ -202,5 +215,6 @@ pub fn init(spawner: &Spawner, scanner: ScannerInstance<'static>) {
     if side::this_side_has_usb() {
         spawner.must_spawn(receive_events_from_other_side());
         spawner.must_spawn(key_event_processor());
+        spawner.must_spawn(unicode::unicode_task());
     }
 }

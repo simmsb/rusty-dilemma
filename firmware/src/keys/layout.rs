@@ -1,18 +1,18 @@
 pub fn chorder() -> super::chord::Chorder {
     dilemma_macros::chords!(
-        [(2, 7), (2, 8)] => [(5, 2)],
-        [(2, 2), (2, 3)] => [(4, 9)],
-        [(0, 8), (0, 9)] => [(4, 4)],
-        [(2, 6), (2, 7)] => [(5, 1)],
+        [(0, 0), (0, 1)] => [(4, 0)],
         [(0, 5), (0, 6)] => [(4, 1)],
         [(0, 6), (0, 7)] => [(4, 2)],
-        [(0, 0), (0, 1)] => [(4, 0)],
-        [(1, 5), (1, 6)] => [(4, 5)],
-        [(1, 6), (1, 7)] => [(4, 6)],
-        [(2, 1), (2, 2)] => [(4, 8)],
-        [(2, 5), (2, 6)] => [(5, 0)],
-        [(1, 7), (1, 8)] => [(4, 7)],
         [(0, 7), (0, 8)] => [(4, 3)],
+        [(0, 8), (0, 9)] => [(4, 4)],
+        [(1, 5), (1, 6)] => [(4, 5)],
+        [(1, 7), (1, 8)] => [(4, 7)],
+        [(2, 1), (2, 2)] => [(4, 8)],
+        [(2, 2), (2, 3)] => [(4, 9)],
+        [(2, 5), (2, 6)] => [(5, 0)],
+        [(2, 6), (2, 7)] => [(5, 1)],
+        [(2, 7), (2, 8)] => [(5, 2)],
+        [(1, 6), (1, 7)] => [(4, 6)],
     )
 }
 pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
@@ -142,7 +142,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
             ),
             ::keyberon::action::Action::MultipleKeyCodes(
                 &[
-                    ::keyberon::key_code::KeyCode::LGui,
+                    ::keyberon::key_code::KeyCode::LAlt,
                     ::keyberon::key_code::KeyCode::X,
                 ]
                 .as_slice(),
@@ -264,7 +264,10 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 ]
                 .as_slice(),
             ),
-            ::keyberon::action::Action::NoOp,
+            ::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(
+                "𓆏",
+                super::UnicodeMode::Linux,
+            )),
             ::keyberon::action::Action::MultipleKeyCodes(
                 &[
                     ::keyberon::key_code::KeyCode::LShift,
