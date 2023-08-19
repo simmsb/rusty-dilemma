@@ -4,7 +4,7 @@ https://github.com/simmsb/rusty-dilemma/assets/5330444/2e6345b6-a52b-436a-b9c9-5
 
 ## Layout
 
-![Default Layout](layouts/rusty-dilemma.png)
+![Default Layout](layouts/rusty-dilemma.svg)
 
 ## Features
 
@@ -23,3 +23,9 @@ https://github.com/simmsb/rusty-dilemma/assets/5330444/2e6345b6-a52b-436a-b9c9-5
 - `picotool reboot`
 
 (You can use either the nix flake or install picotool and cargo-binutils)
+
+
+## Keymaps
+
+You can use https://github.com/simmsb/keylayout to generate key layouts (and
+also generate previes of them), check out the [one I use](layouts/rusty-dilemma.kl)

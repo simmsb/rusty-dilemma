@@ -1,0 +1,251 @@
+layout:
+  qmk_keyboard: corne_rotated
+  qmk_layout: LAYOUT_split_3x5_3
+layers:
+  base:
+  - - tap: 'q '
+    - tap: 'w '
+    - tap: 'e '
+    - tap: 'r '
+    - tap: 't '
+    - tap: 'y '
+    - tap: 'u '
+    - tap: 'i '
+    - tap: 'o '
+    - tap: 'p '
+  - - tap: 'a '
+      hold: LShift
+    - tap: 's '
+    - tap: 'd '
+    - tap: 'f '
+    - tap: 'g '
+    - tap: 'h '
+    - tap: 'j '
+    - tap: 'k '
+    - tap: 'l '
+    - tap: '; '
+      hold: RShift
+  - - tap: 'z '
+      hold: LCtrl
+    - tap: 'x '
+    - tap: 'c '
+    - tap: 'v '
+    - tap: 'b '
+    - tap: 'n '
+    - tap: 'm '
+    - tap: ', '
+    - tap: '. '
+    - tap: '/ '
+      hold: RCtrl
+  - - tap: LAlt
+    - tap: Tab
+      hold: LGui
+    - tap: Space
+      hold: sym
+    - tap: Space
+      hold: num
+    - tap: Enter
+      hold: Scroll
+    - tap: RAlt
+  sym:
+  - - tap: '! '
+    - tap: '@ '
+    - tap: '{ '
+    - tap: '} '
+    - tap: '| '
+    - tap: '` '
+    - tap: '~ '
+    - tap: '\ '
+    - {}
+    - tap: '" '
+  - - tap: '# '
+      hold: LShift
+    - tap: '$ '
+    - tap: '( '
+    - tap: ') '
+    - {}
+    - tap: '+ '
+    - tap: '- '
+    - tap: '/ '
+    - tap: '* '
+    - tap: ''' '
+      hold: RShift
+  - - tap: '% '
+      hold: LCtrl
+    - tap: '^ '
+    - tap: '[ '
+    - tap: '] '
+    - {}
+    - tap: '& '
+    - tap: '= '
+    - tap: ', '
+    - tap: '. '
+    - tap: '_ '
+      hold: RCtrl
+  - - {}
+    - tap: LAlt
+    - tap: Space
+    - tap: '= '
+    - {}
+    - {}
+  num:
+  - - tap: '1 '
+    - tap: '2 '
+    - tap: '3 '
+    - tap: '4 '
+    - tap: '5 '
+    - tap: '6 '
+    - tap: '7 '
+    - tap: '8 '
+    - tap: '9 '
+    - tap: '0 '
+  - - tap: F1
+      hold: LShift
+    - tap: F2
+    - tap: F3
+    - tap: F4
+    - tap: F5
+    - tap: Left
+    - tap: Down
+    - tap: Up
+    - tap: Right
+    - tap: VolUp
+      hold: RShift
+  - - tap: F6
+      hold: LCtrl
+    - tap: F7
+    - tap: F8
+    - tap: F9
+    - tap: F10
+    - tap: PgDown
+    - tap: Ctrl+Down
+    - tap: Ctrl+Up
+    - tap: PgUp
+    - tap: VolDown
+      hold: RCtrl
+  - - {}
+    - {}
+    - tap: '= '
+    - {}
+    - {}
+    - tap: End
+combos:
+- key_positions:
+  - 0
+  - 1
+  key:
+    tap: Escape
+  layers:
+  - base
+- key_positions:
+  - 5
+  - 6
+  key:
+    tap: BSpace
+  layers:
+  - base
+- key_positions:
+  - 6
+  - 7
+  key:
+    tap: Delete
+  layers:
+  - base
+- key_positions:
+  - 7
+  - 8
+  key:
+    tap: '/ '
+  layers:
+  - base
+- key_positions:
+  - 8
+  - 9
+  key:
+    tap: '\ '
+  layers:
+  - base
+- key_positions:
+  - 15
+  - 16
+  key:
+    tap: '< '
+  layers:
+  - base
+- key_positions:
+  - 16
+  - 17
+  key:
+    tap: ': '
+  layers:
+  - base
+- key_positions:
+  - 17
+  - 18
+  key:
+    tap: '> '
+  layers:
+  - base
+- key_positions:
+  - 21
+  - 22
+  key:
+    tap: M-x
+  layers:
+  - base
+- key_positions:
+  - 22
+  - 23
+  key:
+    tap: F6
+  layers:
+  - base
+- key_positions:
+  - 25
+  - 26
+  key:
+    tap: '" '
+  layers:
+  - base
+- key_positions:
+  - 26
+  - 27
+  key:
+    tap: ''' '
+  layers:
+  - base
+- key_positions:
+  - 27
+  - 28
+  key:
+    tap: '_ '
+  layers:
+  - base
+- key_positions:
+  - 5
+  - 6
+  key:
+    tap: Mouse Left
+  layers:
+  - sym
+- key_positions:
+  - 6
+  - 7
+  key:
+    tap: Mouse Right
+  layers:
+  - sym
+- key_positions:
+  - 5
+  - 6
+  key:
+    tap: Mouse Left
+  layers:
+  - num
+- key_positions:
+  - 6
+  - 7
+  key:
+    tap: Mouse Right
+  layers:
+  - num
