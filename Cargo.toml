@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["shared", "firmware"]
-exclude = ["bootloader", "macros"]
+exclude = ["macros"]
 
 [profile.dev]
 codegen-units = 1

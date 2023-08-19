@@ -151,15 +151,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "block-buffer"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -315,16 +306,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
-name = "crypto-common"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
-dependencies = [
- "generic-array",
- "typenum",
-]
-
-[[package]]
 name = "darling"
 version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -414,16 +395,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56254986775e3233ffa9c4d7d3faaf6d36a2c09d30b20687e9f88bc8bafc16c8"
 
 [[package]]
-name = "digest"
-version = "0.10.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
-dependencies = [
- "block-buffer",
- "crypto-common",
-]
-
-[[package]]
 name = "dilemma_macros"
 version = "0.1.0"
 dependencies = [
@@ -460,35 +431,6 @@ name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
-
-[[package]]
-name = "embassy-boot"
-version = "0.1.1"
-source = "git+https://github.com/embassy-rs/embassy#77844e2055319e1af7dd50fdb2e39ef88c6a5010"
-dependencies = [
- "digest",
- "embassy-embedded-hal",
- "embassy-sync",
- "embedded-storage",
- "embedded-storage-async",
- "signature",
-]
-
-[[package]]
-name = "embassy-boot-rp"
-version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#77844e2055319e1af7dd50fdb2e39ef88c6a5010"
-dependencies = [
- "cfg-if",
- "cortex-m",
- "cortex-m-rt",
- "embassy-boot",
- "embassy-rp",
- "embassy-sync",
- "embassy-time",
- "embedded-storage",
- "embedded-storage-async",
-]
 
 [[package]]
 name = "embassy-embedded-hal"
@@ -941,16 +883,6 @@ name = "gcd"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d758ba1b47b00caf47f24925c0074ecb20d6dfcffe7f6d53395c0465674841a"
-
-[[package]]
-name = "generic-array"
-version = "0.14.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
-dependencies = [
- "typenum",
- "version_check",
-]
 
 [[package]]
 name = "getrandom"
@@ -1732,7 +1664,6 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "dilemma_macros",
- "embassy-boot-rp",
  "embassy-embedded-hal",
  "embassy-executor",
  "embassy-futures",
@@ -1828,12 +1759,6 @@ dependencies = [
  "log",
  "serde",
 ]
-
-[[package]]
-name = "signature"
-version = "1.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74233d3b3b2f6d4b006dc19dee745e73e2a6bfb6f93607cd3b02bd5b00797d7c"
 
 [[package]]
 name = "siphasher"

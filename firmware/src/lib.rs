@@ -39,8 +39,6 @@ use crate::keys::ScannerInstance;
 #[cfg(feature = "binaryinfo")]
 pub mod binary_info;
 pub mod event;
-#[cfg(feature = "bootloader")]
-pub mod fw_update;
 pub mod interboard;
 pub mod keys;
 pub mod logger;
@@ -134,8 +132,6 @@ pub async fn main(spawner: Spawner) {
     logger::init();
 
     messages::init(&spawner);
-    #[cfg(feature = "bootloader")]
-    fw_update::init(&spawner, p.WATCHDOG, p.FLASH);
 
     bind_interrupts!(struct PioIrq0 {
         PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO0>;

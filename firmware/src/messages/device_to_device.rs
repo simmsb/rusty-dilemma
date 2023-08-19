@@ -4,7 +4,6 @@ use shared::{device_to_host::DeviceToHost, hid::MouseReport, host_to_device::Hos
 
 use crate::rgb::animations::AnimationSync;
 
-
 #[cfg_attr(feature = "probe", derive(defmt::Format))]
 #[bitfield_struct::bitfield(u8)]
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash)]

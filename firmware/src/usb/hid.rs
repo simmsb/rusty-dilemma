@@ -75,7 +75,7 @@ impl ScrollDivider {
         (out_bwd, self.bwd) = self.bwd.div_mod_floor(&SCROLL_PERIOD);
 
         0i8.saturating_add_unsigned(out_fwd)
-           .saturating_sub_unsigned(out_bwd)
+            .saturating_sub_unsigned(out_bwd)
     }
 }
 

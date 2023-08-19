@@ -23,10 +23,7 @@ use crate::{
     utils::Ticker,
 };
 
-use self::{
-    chord::ChordingEngine,
-    layout::LAYERS,
-};
+use self::{chord::ChordingEngine, layout::LAYERS};
 
 #[derive(Clone, Copy)]
 pub enum CustomEvent {

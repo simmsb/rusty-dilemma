@@ -15,6 +15,7 @@ pub async fn from_usb_distributor() {
         let msg = sub.next_message_pure().await;
 
         if msg.targets_side(side::get_side()) {
+            #[allow(unreachable_code)]
             handle_from_host(msg.msg.clone()).await;
         }
         if msg.targets_side(side::get_other_side()) {
@@ -24,12 +25,7 @@ pub async fn from_usb_distributor() {
 }
 
 async fn handle_from_host(msg: HostToDeviceMsg) {
-    match msg {
-        HostToDeviceMsg::FWCmd(_cmd) => {
-            #[cfg(feature = "bootloader")]
-            crate::fw_update::FW_CMD_CHANNEL.send(_cmd).await;
-        }
-    }
+    match msg {}
 }
 
 #[embassy_executor::task]

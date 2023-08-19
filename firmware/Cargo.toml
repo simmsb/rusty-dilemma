@@ -41,9 +41,6 @@ embassy-time = { git = "https://github.com/embassy-rs/embassy", features = [
 embassy-usb = { git = "https://github.com/embassy-rs/embassy", features = [
     "max-interface-count-6",
 ] }
-embassy-boot-rp = { git = "https://github.com/embassy-rs/embassy", optional = true, features = [
-    "nightly",
-] }
 
 cortex-m = { version = "0.7.7", features = ["inline-asm"] }
 cortex-m-rt = "0.7.3"
@@ -95,7 +92,6 @@ rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", optional
 
 [features]
 probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]
-bootloader = ["embassy-boot-rp"]
 binaryinfo = ["rp-binary-info"]
 
 m2 = []

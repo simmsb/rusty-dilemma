@@ -20,8 +20,8 @@ pub mod animation;
 pub mod animations;
 mod driver;
 pub mod layout;
-mod runner;
 pub mod math_utils;
+mod runner;
 
 pub(super) static RGB_CMD_CHANNEL: Channel<ThreadModeRawMutex, Command, 1> = Channel::new();
 

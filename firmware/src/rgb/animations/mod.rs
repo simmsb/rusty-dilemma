@@ -96,9 +96,16 @@ dyn_impl!(
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
 #[cfg_attr(feature = "probe", derive(defmt::Format))]
 pub enum AnimationSync {
-    Perlin(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <perlin::Perlin as Animation>::SyncMessage),
-    Null(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <null::Null as Animation>::SyncMessage),
-    Rain(#[cfg_attr(feature = "probe", defmt(Debug2Format))] <rain::Rain as Animation>::SyncMessage),
+    Perlin(
+        #[cfg_attr(feature = "probe", defmt(Debug2Format))]
+        <perlin::Perlin as Animation>::SyncMessage,
+    ),
+    Null(
+        #[cfg_attr(feature = "probe", defmt(Debug2Format))] <null::Null as Animation>::SyncMessage,
+    ),
+    Rain(
+        #[cfg_attr(feature = "probe", defmt(Debug2Format))] <rain::Rain as Animation>::SyncMessage,
+    ),
 }
 
 trait WrapAnimationSync {
