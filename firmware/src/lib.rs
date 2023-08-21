@@ -52,6 +52,7 @@ pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
+mod metrics;
 
 pub fn set_status_led(value: Level) {
     unsafe { ManuallyDrop::new(Output::new(PIN_17::steal(), value)).set_level(value) };
@@ -183,6 +184,8 @@ pub async fn main(spawner: Spawner) {
     }
 
     flash::init(p.FLASH, p.DMA_CH3.degrade()).await;
+
+    metrics::init(&spawner).await;
 
     log::info!("All set up, have fun :)");
 

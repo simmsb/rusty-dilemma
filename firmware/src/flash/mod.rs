@@ -26,16 +26,14 @@ pub async fn init(flash: embassy_rp::peripherals::FLASH, dma: embassy_rp::dma::A
     cfg.random_seed = MyRng.gen();
     let db = Database::new(flash, cfg);
 
-    if db.mount().await.is_err() {
-        if db.format().await.is_err() {
-            return;
-        }
+    if db.mount().await.is_err() && db.format().await.is_err() {
+        return;
     }
 
     DB.set(db).ok().unwrap();
 }
 
-async fn set<T: core::any::Any + serde::Serialize>(value: &T) -> Option<()> {
+pub async fn set<T: core::any::Any + serde::Serialize>(value: &T) -> Option<()> {
     let mut buf = [0u8; ekv::config::MAX_VALUE_SIZE];
     let buf = postcard::to_slice(value, &mut buf).ok()?;
     let mut tx = DB.get().unwrap().write_transaction().await;
@@ -51,7 +49,7 @@ async fn set<T: core::any::Any + serde::Serialize>(value: &T) -> Option<()> {
     Some(())
 }
 
-async fn get<T: core::any::Any + serde::de::DeserializeOwned>() -> Option<T> {
+pub async fn get<T: core::any::Any + serde::de::DeserializeOwned>() -> Option<T> {
     let mut buf = [0u8; ekv::config::MAX_VALUE_SIZE];
 
     let mut tx = DB.get().unwrap().read_transaction().await;
