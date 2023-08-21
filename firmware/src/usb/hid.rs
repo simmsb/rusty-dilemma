@@ -112,7 +112,10 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
     loop {
         let shared::hid::MouseReport { mut x, mut y } = MOUSE_REPORTS.recv().await;
         while x_coalescer.update(x) && y_coalescer.update(y) {
-            let Some(shared::hid::MouseReport { x: x_, y: y_ }) = MOUSE_REPORTS.try_recv().ok() else { break; };
+            let Some(shared::hid::MouseReport { x: x_, y: y_ }) = MOUSE_REPORTS.try_recv().ok()
+            else {
+                break;
+            };
             (x, y) = (x_, y_);
         }
 
@@ -149,7 +152,9 @@ async fn interboard_receiver() {
     let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
 
     loop {
-        let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else { continue; };
+        let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else {
+            continue;
+        };
 
         publish_mouse_report(report).await;
     }

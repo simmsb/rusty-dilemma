@@ -229,6 +229,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "const_format"
+version = "0.2.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c990efc7a285731f9a4378d81aff2f0e85a2c8781a05ef0f8baa8dac54d0ff48"
+dependencies = [
+ "const_format_proc_macros",
+]
+
+[[package]]
+name = "const_format_proc_macros"
+version = "0.2.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e026b6ce194a874cb9cf32cd5772d1ef9767cc8fcb5765948d74f37a9d8b2bf6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-xid",
+]
+
+[[package]]
 name = "cordic"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -433,6 +453,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a26ae43d7bcc3b814de94796a5e736d4029efb0ee900c12e2d54c993ad1a1e07"
 
 [[package]]
+name = "ekv"
+version = "0.1.0"
+source = "git+https://github.com/embassy-rs/ekv#ba7e1040a7e17719f36c681fa5b2703de9dcd7ed"
+dependencies = [
+ "embassy-sync",
+ "heapless",
+]
+
+[[package]]
 name = "embassy-embedded-hal"
 version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
@@ -452,7 +481,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor"
 version = "0.2.1"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#26870082427b64d3ca42691c55a2cded5eadc548"
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cortex-m",
@@ -483,7 +512,7 @@ dependencies = [
 [[package]]
 name = "embassy-macros"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#26870082427b64d3ca42691c55a2cded5eadc548"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -1479,9 +1508,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c9ee729232311d3cd113749948b689627618133b1c5012b77342c1950b25eaeb"
 dependencies = [
  "cobs",
+ "const_format",
  "defmt",
  "heapless",
+ "postcard-derive",
  "serde",
+]
+
+[[package]]
+name = "postcard-derive"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc4b01218787dd4420daf63875163a787a78294ad48a24e9f6fa8c6507759a79"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -1705,6 +1747,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "dilemma_macros",
+ "ekv",
  "embassy-embedded-hal",
  "embassy-executor",
  "embassy-futures",
@@ -1717,6 +1760,8 @@ dependencies = [
  "embedded-hal-async",
  "embedded-hal-bus",
  "embedded-io-async",
+ "embedded-storage",
+ "embedded-storage-async",
  "fixed",
  "fixed-macro",
  "futures",

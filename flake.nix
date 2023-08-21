@@ -33,7 +33,7 @@
         let
           arm-toolchain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
-            sha256 = "sha256-mUmzGUCkNc7nT0Xa6JdP9I3HkDBEdms808myagKP8fs=";
+            sha256 = "sha256-SNA+Wwlw49SYWcfMF7S4QrJba7xonK9Z/SIZV8E4M9c=";
           };
           native-toolchain = fenix.packages.${system}.complete.withComponents [
             "cargo"

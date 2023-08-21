@@ -173,7 +173,9 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
         let glide_report = self.glide.as_mut().and_then(|g| g.check());
 
-        let Some(reading) = reading else { return Ok(None); };
+        let Some(reading) = reading else {
+            return Ok(None);
+        };
 
         let reading = self.scale_reading(reading);
 
@@ -395,7 +397,9 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
         let _ = with_timeout(Duration::from_millis(200), async {
             loop {
-                let Ok(v) = self.rap_read_reg::<regs::CalConfig>().await else { continue; };
+                let Ok(v) = self.rap_read_reg::<regs::CalConfig>().await else {
+                    continue;
+                };
                 if !v.calibrate() {
                     break;
                 }
@@ -445,7 +449,9 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
             let _ = with_timeout(Duration::from_millis(20), async {
                 loop {
-                    let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else { continue; };
+                    let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else {
+                        continue;
+                    };
                     if u8::from(v) == 0 {
                         break;
                     }
@@ -475,7 +481,9 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
 
         let _ = with_timeout(Duration::from_millis(20), async {
             loop {
-                let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else { continue; };
+                let Ok(v) = self.rap_read_reg::<regs::AXSCtrl>().await else {
+                    continue;
+                };
                 if u8::from(v) == 0 {
                     break;
                 }

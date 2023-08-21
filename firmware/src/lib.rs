@@ -9,7 +9,9 @@
     maybe_uninit_array_assume_init,
     const_maybe_uninit_array_assume_init,
     const_mut_refs,
-    const_maybe_uninit_write
+    const_maybe_uninit_write,
+    option_take_if,
+    // generic_const_exprs: would be nice but breaks things
 )]
 
 use core::mem::ManuallyDrop;
@@ -39,6 +41,7 @@ use crate::keys::ScannerInstance;
 #[cfg(feature = "binaryinfo")]
 pub mod binary_info;
 pub mod event;
+mod flash;
 pub mod interboard;
 pub mod keys;
 pub mod logger;
@@ -96,6 +99,18 @@ unsafe fn check_bootloader() {
     reset_to_usb_boot(1 << 17, 0);
 }
 
+bind_interrupts!(struct PioIrq0 {
+    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO0>;
+});
+
+bind_interrupts!(struct PioIrq1 {
+    PIO1_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO1>;
+});
+
+bind_interrupts!(struct UsbIrqs {
+    USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
+});
+
 pub async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
     unsafe {
@@ -115,11 +130,7 @@ pub async fn main(spawner: Spawner) {
 
     if side::this_side_has_usb() {
         log::info!("usb connected");
-        bind_interrupts!(struct Irqs {
-            USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
-        });
-
-        let usb_driver = Driver::new(p.USB, Irqs);
+        let usb_driver = Driver::new(p.USB, UsbIrqs);
 
         usb::init(&spawner, usb_driver);
     } else {
@@ -132,14 +143,6 @@ pub async fn main(spawner: Spawner) {
     logger::init();
 
     messages::init(&spawner);
-
-    bind_interrupts!(struct PioIrq0 {
-        PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO0>;
-    });
-
-    bind_interrupts!(struct PioIrq1 {
-        PIO1_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO1>;
-    });
 
     let mut pio0 = Pio::new(p.PIO0, PioIrq0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
@@ -179,12 +182,14 @@ pub async fn main(spawner: Spawner) {
         );
     }
 
-    let mut counter = 0u8;
-    loop {
-        counter = counter.wrapping_add(1);
+    flash::init(p.FLASH, p.DMA_CH3.degrade()).await;
 
-        Timer::after(Duration::from_secs(1)).await;
+    log::info!("All set up, have fun :)");
 
-        log::info!("tick");
-    }
+    // allowing the main task to exit somehow causes the LED task to break?
+    //
+    // everything else still works though which is pretty weird
+    //
+    // anyway, just pend the task forever so it isn't dropped
+    core::future::pending::<()>().await;
 }

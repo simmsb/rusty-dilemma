@@ -58,6 +58,8 @@ const fn index_lights<const N: usize>(lights: [UnindexedLight; N]) -> [Light; N]
         i += 1;
     }
 
+    // gets spooked otherwise
+    core::mem::forget(lights);
     unsafe { MaybeUninit::array_assume_init(out) }
 }
 

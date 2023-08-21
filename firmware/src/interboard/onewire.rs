@@ -90,7 +90,9 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
                 OTHER_SIDE_RX.write(&[x]).await;
 
                 while !OTHER_SIDE_RX.is_full() {
-                    let Some(x) = rx_sm.rx().try_pull() else { break; };
+                    let Some(x) = rx_sm.rx().try_pull() else {
+                        break;
+                    };
                     let x = x.to_be_bytes()[0];
                     OTHER_SIDE_RX.write(&[x]).await;
                 }

@@ -11,7 +11,7 @@ use crate::{
     interboard,
     messages::{device_to_device::DeviceToDevice, reliable_msg, unreliable_msg},
     side::get_side,
-    utils::{TakeIf, Ticker},
+    utils::Ticker,
 };
 
 use super::{
