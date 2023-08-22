@@ -1,6 +1,6 @@
 flash:
   cargo objcopy --release -- target/binary.elf
-  until picotool load -f ./target/binary.elf; do echo "trying again"; done
+  until picotool load -f ./target/binary.elf; do echo "trying again"; sleep 1; done
   picotool reboot
 
 flash-bl:

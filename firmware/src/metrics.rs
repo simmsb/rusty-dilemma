@@ -14,7 +14,7 @@ pub static METRIC_UPDATES: PubSubChannel<ThreadModeRawMutex, Metrics, 1, 4, 1> =
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct Metrics {
-    keys_pressed: Wrapping<usize>,
+    pub keys_pressed: Wrapping<usize>,
 }
 
 impl Metrics {
@@ -27,7 +27,9 @@ impl Metrics {
 
 pub async fn init(spawner: &Spawner) {
     if let Some(m) = flash::get::<Metrics>().await {
-        *CURRENT_METRICS.lock().await = m;
+        utils::log::info!("Loaded up metrics with: {:?}", m);
+        *CURRENT_METRICS.lock().await = m.clone();
+        push_update(m);
     }
 
     spawner.must_spawn(metrics_syncer());
@@ -37,6 +39,10 @@ pub async fn init(spawner: &Spawner) {
 fn push_update(m: Metrics) {
     let p = METRIC_UPDATES.immediate_publisher();
     p.publish_immediate(m);
+}
+
+pub async fn request_sync() {
+    push_update(CURRENT_METRICS.lock().await.clone());
 }
 
 #[embassy_executor::task]

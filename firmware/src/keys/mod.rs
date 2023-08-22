@@ -212,8 +212,8 @@ pub fn init(spawner: &Spawner, scanner: ScannerInstance<'static>) {
     spawner.must_spawn(matrix_processor());
     spawner.must_spawn(matrix_scanner(scanner));
     spawner.must_spawn(send_events_to_other_side());
+    spawner.must_spawn(receive_events_from_other_side());
     if side::this_side_has_usb() {
-        spawner.must_spawn(receive_events_from_other_side());
         spawner.must_spawn(key_event_processor());
         spawner.must_spawn(unicode::unicode_task());
     }

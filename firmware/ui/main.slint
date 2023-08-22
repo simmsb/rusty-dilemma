@@ -1,11 +1,108 @@
-export component MainWindow inherits Window {
-    width: 240px;
-    height: 240px;
-    title: "Slint printer demo";
+global Palette  {
+    out property <color> window-background: #1C1B1F;
+    out property <color> widget-background: #4F378B;
+    out property <color> label-color: #E6E1E5;
+    out property <color> value-color: #E6E1E5;
+}
+
+struct Font {
+    size: length,
+    weight: float,
+}
+
+global Theme {
+    out property <Font> label: {
+        size: 12px,
+        weight: 500
+    };
+    out property <Font> value: {
+        size: 26px,
+        weight: 500
+    };
+}
+
+component ValueDelegate {
+    in property <string> title <=> i-title.text;
+    in property <string> value <=> i-value.text;
+
+    HorizontalLayout {
+        spacing: 15px;
+
+        VerticalLayout {
+            alignment: center;
+            horizontal-stretch: 1;
+
+            i-title := Text {
+                color: Palette.label-color;
+                font-size: Theme.label.size;
+                font-weight: Theme.label.weight;
+            }
+
+            HorizontalLayout {
+                alignment: start;
+                spacing: 5px;
+
+                i-value := Text {
+                    color: Palette.value-color;
+                    font-size: Theme.value.size;
+                    font-weight: Theme.value.weight;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}
+
+
+component Value {
+    in property <string> title <=> i-delegate.title;
+    in property <string> value <=> i-delegate.value;
 
     Rectangle {
-        width: 20px;
-        height: 20px;
-        background: green;
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background: Palette.widget-background;
+    }
+
+    i-value := HorizontalLayout {
+        x: 15px;
+        width: parent.width - 30px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+
+        i-delegate := ValueDelegate {
+            width: parent.width;
+            horizontal-stretch: 1;
+        }
+    }
+
+}
+
+export component MainWindow inherits Window {
+    in property <int> keypresses;
+
+    width: 240px;
+    height: 240px;
+    background: Palette.window-background;
+
+    // Text {
+    //     color: Palette.value-color;
+    //     font-size: Theme.value.size;
+    //     font-weight: Theme.value.weight;
+    //     text: keypresses;
+    // }
+    // //default-font-family: "Noto Sans";
+
+    VerticalLayout { 
+        padding: 20px;
+        y: 0;
+        height: 70px;
+        
+        Value {
+            height: 100%;
+            title: "Keystrokes";
+            value: keypresses;
+        }
     }
 }

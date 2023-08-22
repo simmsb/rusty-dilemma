@@ -148,15 +148,17 @@ pub async fn main(spawner: Spawner) {
         log::info!("No usb connected");
     }
 
-    rng::init();
+    messages::init(&spawner);
 
     #[cfg(not(feature = "probe"))]
     logger::init();
 
-    messages::init(&spawner);
+    rng::init();
 
     let mut pio0 = Pio::new(p.PIO0, PioIrq0);
     interboard::init(&spawner, &mut pio0.common, pio0.sm0, pio0.sm1, p.PIN_1);
+
+    flash::init(p.FLASH, p.DMA_CH3.degrade()).await;
 
     let mut pio1 = Pio::new(p.PIO1, PioIrq1);
     rgb::init(&spawner, &mut pio1.common, pio1.sm0, p.PIN_10, p.DMA_CH2);
@@ -195,12 +197,10 @@ pub async fn main(spawner: Spawner) {
         #[cfg(feature = "display-slint")]
         {
             display::init(
-                p.CORE1, p.SPI0, p.PIN_22, p.PIN_23, p.PIN_12, p.PIN_11, p.PIN_13,
+                &spawner, p.CORE1, p.SPI0, p.PIN_22, p.PIN_23, p.PIN_12, p.PIN_11, p.PIN_13,
             );
         }
     }
-
-    flash::init(p.FLASH, p.DMA_CH3.degrade()).await;
 
     metrics::init(&spawner).await;
 

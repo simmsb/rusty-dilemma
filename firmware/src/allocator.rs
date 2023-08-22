@@ -1,4 +1,4 @@
-const HEAP_SIZE: usize = 200 * 1024;
+const HEAP_SIZE: usize = 20 * 1024;
 static mut HEAP: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
 #[global_allocator]
