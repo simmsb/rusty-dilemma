@@ -35,6 +35,24 @@ fn main() {
         .write_all(env::var("PROFILE").unwrap().as_bytes())
         .unwrap();
 
+    #[cfg(feature = "display-slint")]
+    {
+        let path: PathBuf = [
+            env!("CARGO_MANIFEST_DIR"),
+            "pico_st7789",
+            "board_config.toml",
+        ]
+        .iter()
+        .collect();
+        println!("cargo:BOARD_CONFIG_PATH={}", path.display());
+        println!("cargo:EMBED_TEXTURES=1");
+
+        let config = slint_build::CompilerConfiguration::new()
+            .embed_resources(slint_build::EmbedResourcesKind::EmbedForSoftwareRenderer);
+        slint_build::compile_with_config("ui/main.slint", config).unwrap();
+        slint_build::print_rustc_flags().unwrap();
+    }
+
     println!("cargo:rustc-link-search={}", out.display());
 
     // By default, Cargo will re-run a build script whenever

@@ -14,6 +14,9 @@
     // generic_const_exprs: would be nice but breaks things
 )]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 use core::mem::ManuallyDrop;
 
 use atomic_polyfill::AtomicU32;
@@ -38,21 +41,25 @@ use utils::log;
 
 use crate::keys::ScannerInstance;
 
+#[cfg(feature = "alloc")]
+mod allocator;
 #[cfg(feature = "binaryinfo")]
 pub mod binary_info;
+#[cfg(feature = "display-slint")]
+mod display;
 pub mod event;
 mod flash;
 pub mod interboard;
 pub mod keys;
 pub mod logger;
 pub mod messages;
+mod metrics;
 pub mod rgb;
 pub mod rng;
 pub mod side;
 pub mod trackpad;
 pub mod usb;
 pub mod utils;
-mod metrics;
 
 pub fn set_status_led(value: Level) {
     unsafe { ManuallyDrop::new(Output::new(PIN_17::steal(), value)).set_level(value) };
@@ -118,6 +125,9 @@ pub async fn main(spawner: Spawner) {
         check_bootloader();
     }
 
+    #[cfg(feature = "alloc")]
+    allocator::init();
+
     log::info!("Just a whisper, I hear it in my ghost.");
 
     // not sure if this makes the usb detection happier
@@ -181,6 +191,13 @@ pub async fn main(spawner: Spawner) {
             p.DMA_CH0.degrade(),
             p.DMA_CH1.degrade(),
         );
+    } else {
+        #[cfg(feature = "display-slint")]
+        {
+            display::init(
+                p.CORE1, p.SPI0, p.PIN_22, p.PIN_23, p.PIN_12, p.PIN_11, p.PIN_13,
+            );
+        }
     }
 
     flash::init(p.FLASH, p.DMA_CH3.degrade()).await;
