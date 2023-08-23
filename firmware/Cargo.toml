@@ -32,7 +32,7 @@ dilemma_macros = { path = "../macros" }
 display-interface = { version = "0.4.1", optional = true }
 ekv = { git = "https://github.com/embassy-rs/ekv", version = "0.1.0", features = [ "crc", "align-4", "page-size-4096" ] }
 embassy-embedded-hal = { version = "0.1.0" }
-embassy-executor = { version = "0.2.1", features = [
+embassy-executor = { version = "0.3.0", features = [
     "nightly",
     "arch-cortex-m",
     "executor-thread",

@@ -110,9 +110,9 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
     let mut y_coalescer = MovementCoalescer::default();
 
     loop {
-        let shared::hid::MouseReport { mut x, mut y } = MOUSE_REPORTS.recv().await;
+        let shared::hid::MouseReport { mut x, mut y } = MOUSE_REPORTS.receive().await;
         while x_coalescer.update(x) && y_coalescer.update(y) {
-            let Some(shared::hid::MouseReport { x: x_, y: y_ }) = MOUSE_REPORTS.try_recv().ok()
+            let Some(shared::hid::MouseReport { x: x_, y: y_ }) = MOUSE_REPORTS.try_receive().ok()
             else {
                 break;
             };
@@ -142,7 +142,7 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
 #[embassy_executor::task]
 async fn keyboard_writer(mut keyboard_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
     loop {
-        let report = KEYBOARD_REPORTS.recv().await;
+        let report = KEYBOARD_REPORTS.receive().await;
         let _ = keyboard_writer.write(&report.pack().unwrap()).await;
     }
 }

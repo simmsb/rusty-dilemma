@@ -15,7 +15,7 @@ pub async fn send_unicode(msg: &'static str, mode: UnicodeMode) {
 #[embassy_executor::task]
 pub async fn unicode_task() {
     loop {
-        let (msg, mode) = UNICODE_MESSAGES.recv().await;
+        let (msg, mode) = UNICODE_MESSAGES.receive().await;
 
         match mode {
             UnicodeMode::Linux => emit_linux(msg).await,

@@ -298,9 +298,9 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "cc"
-version = "1.0.82"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "305fe645edc1442a0fa8b6726ba61d422798d37a52e12eaecf4b022ebbb88f01"
+checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
 dependencies = [
  "jobserver",
  "libc",
@@ -429,7 +429,7 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 [[package]]
 name = "const-field-offset"
 version = "0.1.3"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "const-field-offset-macro",
  "field-offset",
@@ -438,7 +438,7 @@ dependencies = [
 [[package]]
 name = "const-field-offset-macro"
 version = "0.1.3"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -854,7 +854,7 @@ dependencies = [
 [[package]]
 name = "embassy-embedded-hal"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "defmt",
  "embassy-futures",
@@ -870,8 +870,8 @@ dependencies = [
 
 [[package]]
 name = "embassy-executor"
-version = "0.2.1"
-source = "git+https://github.com/embassy-rs/embassy#26870082427b64d3ca42691c55a2cded5eadc548"
+version = "0.3.0"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cortex-m",
@@ -886,12 +886,12 @@ dependencies = [
 [[package]]
 name = "embassy-futures"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 
 [[package]]
 name = "embassy-hal-internal"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "cortex-m",
  "critical-section",
@@ -902,7 +902,7 @@ dependencies = [
 [[package]]
 name = "embassy-macros"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy#26870082427b64d3ca42691c55a2cded5eadc548"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -913,12 +913,12 @@ dependencies = [
 [[package]]
 name = "embassy-net-driver"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 
 [[package]]
 name = "embassy-net-driver-channel"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "embassy-futures",
  "embassy-net-driver",
@@ -928,7 +928,7 @@ dependencies = [
 [[package]]
 name = "embassy-rp"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cfg-if",
@@ -964,7 +964,7 @@ dependencies = [
 [[package]]
 name = "embassy-sync"
 version = "0.2.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "cfg-if",
  "critical-section",
@@ -977,7 +977,7 @@ dependencies = [
 [[package]]
 name = "embassy-time"
 version = "0.1.2"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cfg-if",
@@ -993,7 +993,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "defmt",
  "embassy-futures",
@@ -1008,7 +1008,7 @@ dependencies = [
 [[package]]
 name = "embassy-usb-driver"
 version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy#6babd5752e439b234151104d8d20bae32e41d714"
+source = "git+https://github.com/embassy-rs/embassy#bed1f07c15455f7c88364a06b8c94b3c781c2f68"
 dependencies = [
  "defmt",
 ]
@@ -1602,7 +1602,7 @@ checksum = "443144c8cdadd93ebf52ddb4056d257f5b52c04d3c804e657d19eb73fc33668b"
 [[package]]
 name = "i-slint-backend-selector"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "cfg-if",
  "i-slint-backend-winit",
@@ -1612,7 +1612,7 @@ dependencies = [
 [[package]]
 name = "i-slint-backend-winit"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "cfg-if",
  "cfg_aliases",
@@ -1643,7 +1643,7 @@ dependencies = [
 [[package]]
 name = "i-slint-common"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "cfg-if",
  "derive_more",
@@ -1654,7 +1654,7 @@ dependencies = [
 [[package]]
 name = "i-slint-compiler"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "by_address",
  "codemap",
@@ -1684,7 +1684,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "auto_enums",
  "bytemuck",
@@ -1727,7 +1727,7 @@ dependencies = [
 [[package]]
 name = "i-slint-core-macros"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "quote",
  "syn 2.0.29",
@@ -1802,16 +1802,6 @@ name = "imgref"
 version = "1.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2cf49df1085dcfb171460e4592597b84abe50d900fb83efb6e41b20fefd6c2c"
-
-[[package]]
-name = "indexmap"
-version = "1.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
-dependencies = [
- "autocfg",
- "hashbrown 0.12.3",
-]
 
 [[package]]
 name = "indexmap"
@@ -2560,12 +2550,12 @@ checksum = "9b2a4787296e9989611394c33f193f676704af1686e70b8f8033ab5ba9a35a94"
 
 [[package]]
 name = "petgraph"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dd7d28ee937e54fe3080c91faa1c3a46c06de6252988a7f4592ba2310ef22a4"
+checksum = "e1d3afd2628e69da2be385eb6f2fd57c8ac7977ceeff6dc166ff1657b0e386a9"
 dependencies = [
  "fixedbitset",
- "indexmap 1.9.3",
+ "indexmap",
 ]
 
 [[package]]
@@ -3185,18 +3175,18 @@ checksum = "cd0b0ec5f1c1ca621c432a25813d8d60c88abe6d3e08a3eb9cf37d97a0fe3d73"
 
 [[package]]
 name = "serde"
-version = "1.0.183"
+version = "1.0.185"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32ac8da02677876d532745a130fc9d8e6edfa81a269b107c5b00829b91d8eb3c"
+checksum = "be9b6f69f1dfd54c3b568ffa45c310d6973a5e5148fd40cf515acaf38cf5bc31"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.183"
+version = "1.0.185"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aafe972d60b0b9bee71a91b92fee2d4fb3c9d7e8f6b179aa99f27203d99a4816"
+checksum = "dc59dfdcbad1437773485e0367fea4b090a2e0a16d9ffc46af47764536a298ec"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3233,15 +3223,15 @@ dependencies = [
 
 [[package]]
 name = "siphasher"
-version = "0.3.10"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bd3e3206899af3f8b12af284fafc038cc1dc2b41d1b89dd17297221c5d225de"
+checksum = "38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d"
 
 [[package]]
 name = "slab"
-version = "0.4.8"
+version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6528351c9bc8ab22353f9d776db39a20288e8d6c37ef8cfe3317cf875eecfc2d"
+checksum = "8f92a496fb766b417c996b9c5e57daf2f7ad3b0bebe1ccfca4856390e3d3bb67"
 dependencies = [
  "autocfg",
 ]
@@ -3249,7 +3239,7 @@ dependencies = [
 [[package]]
 name = "slint"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "const-field-offset",
  "i-slint-backend-selector",
@@ -3264,7 +3254,7 @@ dependencies = [
 [[package]]
 name = "slint-build"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "i-slint-compiler",
  "spin_on",
@@ -3275,7 +3265,7 @@ dependencies = [
 [[package]]
 name = "slint-macros"
 version = "1.2.0"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "i-slint-compiler",
  "proc-macro2",
@@ -3603,7 +3593,7 @@ version = "0.19.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8123f27e969974a3dfba720fdb560be359f57b44302d280ba72e76a74480e8a"
 dependencies = [
- "indexmap 2.0.0",
+ "indexmap",
  "toml_datetime",
  "winnow",
 ]
@@ -3865,7 +3855,7 @@ dependencies = [
 [[package]]
 name = "vtable"
 version = "0.1.10"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "const-field-offset",
  "portable-atomic",
@@ -3876,7 +3866,7 @@ dependencies = [
 [[package]]
 name = "vtable-macro"
 version = "0.1.10"
-source = "git+https://github.com/slint-ui/slint#8a124cdcddff574638c967e78f028d28c1b4d089"
+source = "git+https://github.com/slint-ui/slint#21d44e3a31d526570c969a68c440a686da05d95d"
 dependencies = [
  "proc-macro2",
  "quote",

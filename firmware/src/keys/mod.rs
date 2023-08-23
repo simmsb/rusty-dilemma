@@ -124,7 +124,7 @@ async fn matrix_processor() {
 #[embassy_executor::task]
 async fn send_events_to_other_side() {
     loop {
-        let evt = KEYS_TO_OTHER_SIDE.recv().await;
+        let evt = KEYS_TO_OTHER_SIDE.receive().await;
         let evt = match evt {
             Event::Press(x, y) => DeviceToDevice::KeyPress(x, y),
             Event::Release(x, y) => DeviceToDevice::KeyRelease(x, y),

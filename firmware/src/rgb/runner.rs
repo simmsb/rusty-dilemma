@@ -157,7 +157,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
             interboard::send_msg(unreliable_msg(cmd)).await;
         }
 
-        if let Ok(cmd) = RGB_CMD_CHANNEL.try_recv() {
+        if let Ok(cmd) = RGB_CMD_CHANNEL.try_receive() {
             match cmd {
                 super::Command::SetNextAnimation(a) => {
                     next = Some((

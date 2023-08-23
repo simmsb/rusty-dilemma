@@ -19,7 +19,7 @@ pub static COMMANDS_TO_OTHER_SIDE: Channel<
 #[embassy_executor::task]
 pub async fn eventer_task() {
     let msg_pub = THIS_SIDE_MESSAGE_BUS.publisher().unwrap();
-    let rx_fn = || async { COMMANDS_TO_OTHER_SIDE.recv().await };
+    let rx_fn = || async { COMMANDS_TO_OTHER_SIDE.receive().await };
     let tx_fn = |e| async {
         msg_pub.publish(e).await;
     };

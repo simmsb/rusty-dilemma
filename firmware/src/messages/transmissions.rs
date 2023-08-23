@@ -48,7 +48,7 @@ impl<'e, Sent, RX, FnTx> EventInProcessor<'e, Sent, RX, FnTx>
 where
     RX: embedded_io_async::Read,
 {
-    async fn recv_task_inner<Received, FnTxFut>(
+    async fn receive_task_inner<Received, FnTxFut>(
         &mut self,
     ) -> Result<(), <RX as embedded_io_async::ErrorType>::Error>
     where
@@ -119,7 +119,7 @@ where
         <RX as embedded_io_async::ErrorType>::Error: WhichDebug,
     {
         loop {
-            let _r = self.recv_task_inner().await;
+            let _r = self.receive_task_inner().await;
             // log::debug!("Restarting cobs receiver for reason: {}", _r);
         }
     }
@@ -133,7 +133,7 @@ where
 {
     async fn task(&mut self) {
         loop {
-            let val = self.mix_chan.recv().await;
+            let val = self.mix_chan.receive().await;
 
             let mut buf = [0u8; BUF_SIZE];
             if let Ok(buf) = postcard::to_slice_cobs(&val, &mut buf) {
