@@ -67,7 +67,6 @@
               pkgs.libiconv
             ];
           };
-          bootloader = package { path = ./bootloader; };
           firmware = args: package (args // { path = ./.; });
           elf = pkg: name: pkgs.runCommandLocal "mkelf" { } ''
             mkdir -p $out
@@ -88,22 +87,12 @@
               cargo-flash
               probe-rs-cli
               picotool
+              pkgsCross.arm-embedded.buildPackages.binutils
             ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };
-          packages.bl-bin = firmware { args = "--bin binary --features probe,bootloader"; profile = "release"; };
           packages.bin = firmware { args = "--bin binary --no-default-features"; profile = "release"; };
           packages.debug-bin = firmware { args = "--bin binary --features probe,m2"; profile = "dev"; };
-          packages.bootloader = bootloader;
-          packages.bl-binaries = pkgs.symlinkJoin {
-            name = "dilemma-binaries";
-            paths = [
-              (elf packages.bl-bin "binary")
-              (elf packages.bootloader "boot")
-              (binary packages.bl-bin "binary")
-              (binary packages.bootloader "boot")
-            ];
-          };
           packages.binaries = pkgs.symlinkJoin {
             name = "dilemma-binaries";
             paths = [

@@ -1,5 +1,6 @@
 flash:
-  cargo objcopy --release -- target/binary.elf
+  cargo build --release -Zbuild-std=core,alloc,panic_abort -Zbuild-std-features=panic_immediate_abort
+  cp ./target/thumbv6m-none-eabi/release/binary ./target/binary.elf
   until picotool load -f ./target/binary.elf; do echo "trying again"; sleep 1; done
   picotool reboot
 
