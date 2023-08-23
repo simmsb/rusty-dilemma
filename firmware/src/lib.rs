@@ -198,6 +198,7 @@ pub async fn main(spawner: Spawner) {
         {
             display::init(
                 &spawner, p.CORE1, p.SPI0, p.PIN_22, p.PIN_23, p.PIN_12, p.PIN_11, p.PIN_13,
+                p.PWM_CH6,
             );
         }
     }

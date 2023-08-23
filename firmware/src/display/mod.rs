@@ -4,10 +4,10 @@ use alloc::{boxed::Box, rc::Rc};
 use embassy_executor::Spawner;
 use embassy_rp::{
     multicore::{spawn_core1, Stack},
-    peripherals::{CORE1, PIN_11, PIN_12, PIN_13, PIN_22, PIN_23, SPI0},
+    peripherals::{CORE1, PIN_11, PIN_12, PIN_13, PIN_22, PIN_23, PWM_CH6, SPI0},
     spi::Spi,
 };
-use embassy_time::Duration;
+use embassy_time::{Duration, Timer};
 use embedded_hal_bus::spi::ExclusiveDevice;
 use slint::platform::software_renderer::Rgb565Pixel;
 
@@ -76,11 +76,12 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
 static KEYS_PRESSED: AtomicUsize = AtomicUsize::new(0);
 
 #[embassy_executor::task]
-async fn metrics_updater(bl: PIN_13) {
+async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
     let mut sub = METRIC_UPDATES.subscriber().unwrap();
-    let mut bl = embassy_rp::gpio::Output::new(bl, embassy_rp::gpio::Level::Low);
-
-    bl.set_high();
+    let mut pwm_cfg = embassy_rp::pwm::Config::default();
+    pwm_cfg.top = 256;
+    pwm_cfg.compare_b = 256;
+    let mut bl = embassy_rp::pwm::Pwm::new_output_b(pwm, bl, pwm_cfg.clone());
 
     metrics::request_sync().await;
 
@@ -93,11 +94,19 @@ async fn metrics_updater(bl: PIN_13) {
         {
             Ok(m) => m,
             Err(_e) => {
-                bl.set_low();
+                for n in (0..=256).rev() {
+                    pwm_cfg.compare_b = n;
+                    bl.set_config(&pwm_cfg);
+                    Timer::after(Duration::from_hz(256)).await;
+                }
 
                 let r = sub.next_message_pure().await;
 
-                bl.set_high();
+                for n in 0..=256 {
+                    pwm_cfg.compare_b = n;
+                    bl.set_config(&pwm_cfg);
+                    Timer::after(Duration::from_hz(256)).await;
+                }
 
                 r
             }
@@ -118,8 +127,9 @@ pub fn init(
     cs: PIN_12,
     dc: PIN_11,
     bl: PIN_13,
+    pwm: PWM_CH6,
 ) {
-    spawner.must_spawn(metrics_updater(bl));
+    spawner.must_spawn(metrics_updater(bl, pwm));
 
     spawn_core1(core1, unsafe { &mut CORE1_STACK }, move || {
         run(spi, clk, mosi, cs, dc)
