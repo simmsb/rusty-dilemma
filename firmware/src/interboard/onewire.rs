@@ -6,12 +6,11 @@ use embassy_futures::{
 use embassy_rp::{
     peripherals::PIO0,
     pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
-    Peripheral,
+    Peripheral, clocks,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
 use embassy_time::{Duration, Timer};
-use fixed::traits::ToFixed;
-use fixed_macro::types::U56F8;
+use fixed::{traits::ToFixed, types::U56F8};
 
 #[allow(unused_imports)]
 use crate::utils::log;
@@ -43,7 +42,7 @@ pub async fn enter_rx(tx_sm: &mut SM<0>, rx_sm: &mut SM<1>, pin: &mut Pin<'stati
         yield_now().await;
     }
 
-    Timer::after(Duration::from_micros(1000000 * 11 / USART_SPEED)).await;
+    Timer::after(Duration::from_micros(2000000 * 11 / USART_SPEED)).await;
 
     tx_sm.set_enable(false);
     pin.set_drive_strength(embassy_rp::gpio::Drive::_2mA);
@@ -103,7 +102,7 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
 }
 
 fn pio_freq() -> fixed::FixedU32<fixed::types::extra::U8> {
-    (U56F8!(125_000_000) / (8 * USART_SPEED)).to_fixed()
+    (U56F8::from_num(clocks::clk_sys_freq()) / (8 * USART_SPEED)).to_fixed()
 }
 
 pub fn half_duplex_task_tx(

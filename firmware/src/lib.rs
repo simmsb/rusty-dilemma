@@ -120,6 +120,10 @@ bind_interrupts!(struct UsbIrqs {
 });
 
 pub async fn main(spawner: Spawner) {
+    let mut config = embassy_rp::config::Config::default();
+    if let Some(xosc) = config.clocks.xosc.as_mut() {
+        xosc.sys_pll = Some(embassy_rp::clocks::PllConfig { refdiv: 1, fbdiv: 125, post_div1: 3, post_div2: 2 });
+    }
     let p = embassy_rp::init(Default::default());
     unsafe {
         check_bootloader();

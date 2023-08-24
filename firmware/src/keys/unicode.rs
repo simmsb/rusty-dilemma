@@ -28,6 +28,7 @@ async fn press_keys(keys: &[Keyboard]) {
     publish_keyboard_report(NKROBootKeyboardReport::new(keys.iter().copied())).await;
 }
 
+#[allow(unused)]
 async fn tap_keys(keys: &[Keyboard]) {
     press_keys(keys).await;
     publish_keyboard_report(NKROBootKeyboardReport::new([])).await;

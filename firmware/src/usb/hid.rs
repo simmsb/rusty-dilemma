@@ -188,16 +188,18 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
 
     spawner.must_spawn(mouse_writer(mouse_hid_writer));
     spawner.must_spawn(keyboard_writer(keyboard_hid_writer));
-    spawner.must_spawn(interboard_receiver());
     spawner.must_spawn(handle_mouse_clicks());
+
+    if side::this_side_has_usb() && side::is_this_side(shared::side::KeyboardSide::Left) {
+        spawner.must_spawn(interboard_receiver());
+    }
 }
 
 pub async fn send_mouse_hid_to_host(report: shared::hid::MouseReport) {
     if side::this_side_has_usb() {
-        publish_mouse_report(report).await;
-    } else {
-        let msg = DeviceToDevice::ForwardedToHostMouse(report);
-        let msg = low_latency_msg(msg);
-        interboard::send_msg(msg).await;
+        publish_mouse_report(report.clone()).await;
     }
+    let msg = DeviceToDevice::ForwardedToHostMouse(report);
+    let msg = low_latency_msg(msg);
+    interboard::send_msg(msg).await;
 }

@@ -58,18 +58,29 @@ component Value {
 
 export component MainWindow inherits Window {
     in property <int> keypresses;
+    in property <int> trackpad-distance;
 
     width: 240px;
     height: 240px;
     background: Palette.window-background;
 
+    private property <[{title: string, value: string}]> values: [
+        {title: "Keystrokes", value: keypresses},
+        {title: "Trackpad distance", value: trackpad-distance},
+    ];
+
+    private property <length> item-padding: 20px;
+    private property <length> item-height: (self.height - item-padding * (2 + values.length - 1)) / values.length;
+
+
     VerticalLayout { 
-        padding: 20px;
-        
-        i-value := Value {
-            height: 85px;
-            title: "Keystrokes";
-            value: keypresses;
+        padding: item-padding;
+        spacing: item-padding;
+
+        for data in values: Value {
+            height: item-height;
+            title: data.title;
+            value: data.value;
         }
     }
 }

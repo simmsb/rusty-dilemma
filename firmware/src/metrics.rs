@@ -3,9 +3,10 @@ use core::num::Wrapping;
 use embassy_executor::Spawner;
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, mutex::Mutex, pubsub::PubSubChannel};
 use embassy_time::Duration;
+use num::integer::Roots;
 use serde::{Deserialize, Serialize};
 
-use crate::{flash, keys::KEY_EVENTS, utils};
+use crate::{flash, keys::KEY_EVENTS, utils, messages::device_to_device::DeviceToDevice, interboard::THIS_SIDE_MESSAGE_BUS};
 
 static CURRENT_METRICS: Mutex<ThreadModeRawMutex, Metrics> = Mutex::new(Metrics::default());
 
@@ -15,12 +16,14 @@ pub static METRIC_UPDATES: PubSubChannel<ThreadModeRawMutex, Metrics, 1, 4, 1> =
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub struct Metrics {
     pub keys_pressed: Wrapping<usize>,
+    pub trackpad_distance: Wrapping<usize>,
 }
 
 impl Metrics {
     const fn default() -> Self {
         Self {
             keys_pressed: Wrapping(0),
+            trackpad_distance: Wrapping(0),
         }
     }
 }
@@ -34,6 +37,7 @@ pub async fn init(spawner: &Spawner) {
 
     spawner.must_spawn(metrics_syncer());
     spawner.must_spawn(key_counter());
+    spawner.must_spawn(mouse_counter());
 }
 
 fn push_update(m: Metrics) {
@@ -43,6 +47,27 @@ fn push_update(m: Metrics) {
 
 pub async fn request_sync() {
     push_update(CURRENT_METRICS.lock().await.clone());
+}
+
+#[embassy_executor::task]
+async fn mouse_counter() {
+    let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
+
+    loop {
+        let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else {
+            continue;
+        };
+
+        let x = report.x as u16;
+        let y = report.y as u16;
+
+        let distance = (x * x + y * y).sqrt();
+
+        let mut m = CURRENT_METRICS.lock().await;
+        m.trackpad_distance += distance as usize;
+
+        push_update(m.clone());
+    }
 }
 
 #[embassy_executor::task]
