@@ -1,4 +1,4 @@
-use core::sync::atomic::AtomicUsize;
+use core::sync::atomic::{AtomicBool, AtomicUsize};
 
 use alloc::{boxed::Box, rc::Rc};
 use embassy_executor::Spawner;
@@ -23,6 +23,8 @@ slint::include_modules!();
 
 const DISPLAY_SIZE: slint::PhysicalSize = slint::PhysicalSize::new(240, 240);
 pub type TargetPixel = Rgb565Pixel;
+
+static DISPLAY_OFF: AtomicBool = AtomicBool::new(false);
 
 fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
     let mut config = embassy_rp::spi::Config::default();
@@ -52,7 +54,8 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
         buffer: alloc::vec![Rgb565Pixel::default(); DISPLAY_SIZE.width as _].leak(),
     };
 
-    slint::platform::set_platform(Box::new(PicoBackend::new(buffer_provider))).unwrap();
+    slint::platform::set_platform(Box::new(PicoBackend::new(&DISPLAY_OFF, buffer_provider)))
+        .unwrap();
 
     let window = Rc::new(MainWindow::new().unwrap());
 
@@ -64,7 +67,9 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
             let window = Rc::clone(&window);
             move || {
                 window.set_keypresses(KEYS_PRESSED.load(atomic_polyfill::Ordering::Relaxed) as i32);
-                window.set_trackpad_distance(TRACKPAD_DISTANCE.load(atomic_polyfill::Ordering::Relaxed) as i32);
+                window.set_trackpad_distance(
+                    TRACKPAD_DISTANCE.load(atomic_polyfill::Ordering::Relaxed) as i32,
+                );
             }
         },
     );
@@ -88,11 +93,10 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
     metrics::request_sync().await;
 
     loop {
-        let Metrics { keys_pressed, trackpad_distance } = match embassy_time::with_timeout(
-            Duration::from_secs(30),
-            sub.next_message_pure(),
-        )
-        .await
+        let Metrics {
+            keys_pressed,
+            trackpad_distance,
+        } = match embassy_time::with_timeout(Duration::from_secs(30), sub.next_message_pure()).await
         {
             Ok(m) => m,
             Err(_e) => {
@@ -101,8 +105,11 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
                     bl.set_config(&pwm_cfg);
                     Timer::after(Duration::from_hz(256)).await;
                 }
+                DISPLAY_OFF.store(true, atomic_polyfill::Ordering::Relaxed);
 
                 let r = sub.next_message_pure().await;
+
+                DISPLAY_OFF.store(false, atomic_polyfill::Ordering::Relaxed);
 
                 for n in 0..=256 {
                     pwm_cfg.compare_b = n;
