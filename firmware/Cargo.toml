@@ -106,7 +106,7 @@ probe = ["defmt",
 binaryinfo = ["rp-binary-info"]
 alloc = ["embedded-alloc"]
 display-slint = ["slint", "slint/libm", "slint/compat-1-2", "slint/renderer-software", "slint/unsafe-single-threaded", "slint-build", "display-interface", "alloc", "mipidsi", "embedded-graphics"]
-
+bootloader = []
 m2 = []
 
-default = ["binaryinfo", "display-slint"]
+default = ["display-slint", "bootloader"]

@@ -10,22 +10,36 @@ fn main() {
     // Put `memory.x` in our output directory and ensure it's
     // on the linker search path.
     let memory_x = if env::var("CARGO_FEATURE_M2").is_ok() {
-        include_bytes!("memory.2m.x").as_slice()
-    } else if env::var("CARGO_FEATURE_BINARYINFO").is_ok() {
-        concat_bytes!(
-            include_bytes!("memory.16m.x"),
-            include_bytes!("memory.binaryinfo.x")
-        )
-        .as_slice()
+        if env::var("CARGO_FEATURE_BOOTLOADER").is_ok() {
+            include_bytes!("memory.2m.x").as_slice()
+        } else {
+            include_bytes!("memory.2m.nobl.x").as_slice()
+        }
     } else {
-        include_bytes!("memory.16m.x").as_slice()
+        if env::var("CARGO_FEATURE_BOOTLOADER").is_ok() {
+            include_bytes!("memory.16m.x").as_slice()
+        } else {
+            include_bytes!("memory.16m.nobl.x").as_slice()
+        }
+    };
+
+    let memory_x_extra = if env::var("CARGO_FEATURE_BINARYINFO").is_ok() {
+        if env::var("CARGO_FEATURE_BOOTLOADER").is_ok() {
+            panic!("binaryinfo won't be visible if the bootloader is enabled, use the binaryinfo feature of the bootloader")
+        }
+
+        include_bytes!("memory.binaryinfo.x").as_slice()
+    } else {
+        &[]
     };
 
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    File::create(out.join("memory.x"))
-        .unwrap()
-        .write_all(memory_x)
-        .unwrap();
+    {
+        let mut memory_x_f = File::create(out.join("memory.x")).unwrap();
+
+        memory_x_f.write_all(memory_x).unwrap();
+        memory_x_f.write_all(memory_x_extra).unwrap();
+    }
     File::create(out.join("build_date.txt"))
         .unwrap()
         .write_all(Local::now().date_naive().to_string().as_bytes())
@@ -63,7 +77,9 @@ fn main() {
 
     println!("cargo:rustc-link-arg-bins=--nmagic");
     println!("cargo:rustc-link-arg-bins=-Tlink.x");
-    println!("cargo:rustc-link-arg-bins=-Tlink-rp.x");
+    if env::var("CARGO_FEATURE_BOOTLOADER").is_err() {
+        println!("cargo:rustc-link-arg-bins=-Tlink-rp.x");
+    }
     if env::var("CARGO_FEATURE_PROBE").is_ok() {
         println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
     }

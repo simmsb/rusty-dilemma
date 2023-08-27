@@ -19,7 +19,6 @@ extern crate alloc;
 
 use core::mem::ManuallyDrop;
 
-use atomic_polyfill::AtomicU32;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
@@ -27,7 +26,6 @@ use embassy_rp::gpio::Input;
 use embassy_rp::gpio::{Level, Output, Pull};
 use embassy_rp::peripherals::{PIN_17, PIN_19, PIN_29, USB};
 use embassy_rp::pio::Pio;
-use embassy_rp::rom_data::reset_to_usb_boot;
 use embassy_rp::usb::Driver;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
@@ -84,29 +82,6 @@ fn detect_side(pin: Input<'_, PIN_29>) -> KeyboardSide {
     side
 }
 
-#[link_section = ".uninit.bootloader_magic"]
-#[used]
-static BOOTLOADER_MAGIC: AtomicU32 = AtomicU32::new(0);
-
-const MAGIC_TOKEN: u32 = 0xCAFEB0BA;
-
-unsafe fn check_bootloader() {
-    const CYCLES_PER_US: usize = 125;
-    const WAIT_CYCLES: usize = 100 * 1000 * CYCLES_PER_US;
-
-    if BOOTLOADER_MAGIC.load(atomic_polyfill::Ordering::SeqCst) != MAGIC_TOKEN {
-        BOOTLOADER_MAGIC.store(MAGIC_TOKEN, atomic_polyfill::Ordering::SeqCst);
-
-        cortex_m::asm::delay(WAIT_CYCLES as u32);
-        BOOTLOADER_MAGIC.store(0, atomic_polyfill::Ordering::SeqCst);
-        return;
-    }
-
-    BOOTLOADER_MAGIC.store(0, atomic_polyfill::Ordering::SeqCst);
-
-    reset_to_usb_boot(1 << 17, 0);
-}
-
 bind_interrupts!(struct PioIrq0 {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<embassy_rp::peripherals::PIO0>;
 });
@@ -125,17 +100,18 @@ pub async fn main(spawner: Spawner) {
         xosc.sys_pll = Some(embassy_rp::clocks::PllConfig { refdiv: 1, fbdiv: 125, post_div1: 3, post_div2: 2 });
     }
     let p = embassy_rp::init(Default::default());
-    unsafe {
-        check_bootloader();
-    }
+
+    set_status_led(Level::High);
+
+    // not sure if this makes the usb detection happier
+    Timer::after(Duration::from_millis(100)).await;
 
     #[cfg(feature = "alloc")]
     allocator::init();
 
     log::info!("Just a whisper, I hear it in my ghost.");
 
-    // not sure if this makes the usb detection happier
-    Timer::after(Duration::from_micros(100)).await;
+    set_status_led(Level::High);
 
     let s = detect_side(Input::new(p.PIN_29, embassy_rp::gpio::Pull::Down));
     side::init(

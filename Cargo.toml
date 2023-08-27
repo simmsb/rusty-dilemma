@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["firmware", "shared"]
+members = ["firmware", "shared", "bootloader"]
 exclude = ["macros"]
 
 [patch.crates-io]

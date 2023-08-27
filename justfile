@@ -5,10 +5,9 @@ flash:
   picotool reboot
 
 flash-bl:
-  nix build .#bl-binaries
-  picotool load ./result/boot.elf
-  picotool load ./result/binary.elf
-  picotool reboot
+  cargo build --release -Zbuild-std=core,alloc,panic_abort -Zbuild-std-features=panic_immediate_abort
+  cp ./target/thumbv6m-none-eabi/release/boot ./target/boot.elf
+  until picotool load -f ./target/boot.elf; do echo "trying again"; sleep 1; done
 
 dbg-left:
   cargo objcopy --no-default-features --features probe -- target/binary.elf
