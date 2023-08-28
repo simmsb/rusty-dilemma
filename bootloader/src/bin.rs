@@ -4,7 +4,10 @@
 use core::sync::atomic::AtomicU32;
 
 use cortex_m_rt::{entry, exception};
-use embassy_rp::{rom_data::reset_to_usb_boot, gpio::{Level, Output}};
+use embassy_rp::{
+    gpio::{Level, Output},
+    rom_data::reset_to_usb_boot,
+};
 
 #[cfg(feature = "binaryinfo")]
 pub mod binary_info;
@@ -48,7 +51,8 @@ fn main() -> ! {
 
     unsafe {
         let p = cortex_m::Peripherals::steal();
-        let start = embassy_rp::flash::FLASH_BASE as u32 + &__bootloader_application_start as *const u32 as u32;
+        let start = embassy_rp::flash::FLASH_BASE as u32
+            + &__bootloader_application_start as *const u32 as u32;
         s.set_low();
         p.SCB.vtor.write(start);
         cortex_m::asm::bootload(start as *const u32);

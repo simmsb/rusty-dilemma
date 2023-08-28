@@ -4,9 +4,10 @@ use embassy_futures::{
     yield_now,
 };
 use embassy_rp::{
+    clocks,
     peripherals::PIO0,
     pio::{Common, FifoJoin, Pin, PioPin, ShiftDirection, StateMachine},
-    Peripheral, clocks,
+    Peripheral,
 };
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, pipe::Pipe};
 use embassy_time::{Duration, Timer};

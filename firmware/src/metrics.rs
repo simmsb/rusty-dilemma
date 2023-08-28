@@ -6,7 +6,10 @@ use embassy_time::Duration;
 use num::integer::Roots;
 use serde::{Deserialize, Serialize};
 
-use crate::{flash, keys::KEY_EVENTS, utils, messages::device_to_device::DeviceToDevice, interboard::THIS_SIDE_MESSAGE_BUS};
+use crate::{
+    flash, interboard::THIS_SIDE_MESSAGE_BUS, keys::KEY_EVENTS,
+    messages::device_to_device::DeviceToDevice, utils,
+};
 
 static CURRENT_METRICS: Mutex<ThreadModeRawMutex, Metrics> = Mutex::new(Metrics::default());
 

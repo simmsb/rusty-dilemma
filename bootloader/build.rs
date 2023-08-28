@@ -21,7 +21,6 @@ fn main() {
         &[]
     };
 
-
     let out = &PathBuf::from(env::var_os("OUT_DIR").unwrap());
     {
         let mut memory_x_f = File::create(out.join("memory.x")).unwrap();
