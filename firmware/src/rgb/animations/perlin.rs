@@ -15,25 +15,32 @@ pub struct Perlin {
     tick: I16F16,
     tick_rate: I16F16,
     noise: PerlinNoise2D,
-    colour: ColorRGB,
+    colour: Option<ColorRGB>,
     seed: u8,
 }
 
 impl Default for Perlin {
     fn default() -> Self {
         let seed: u8 = MyRng.gen();
+
+        let colour = if MyRng.gen_bool(0.2) {
+            None
+        } else {
+            Some(cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow())
+        };
+
         Self {
             tick: Default::default(),
             tick_rate: fixed!(0.01: I16F16),
             noise: PerlinNoise2D::new(fixed!(255.0: U16F16), seed as i32),
-            colour: cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow(),
+            colour,
             seed,
         }
     }
 }
 
 impl Animation for Perlin {
-    type SyncMessage = (I16F16, ColorRGB, u8);
+    type SyncMessage = (I16F16, Option<ColorRGB>, u8);
 
     fn tick_rate(&self) -> Duration {
         Duration::from_hz(60)
@@ -54,7 +61,17 @@ impl Animation for Perlin {
 
         let brightness = brightness.int().saturating_to_num::<i16>();
 
-        let mut c = self.colour;
+        let mut c = if let Some(c) = self.colour {
+            c
+        } else {
+            let hue = self.noise.get_noise(
+                (I16F16::from_num(light.location.0) + dx * 50) * fixed!(0.01: I16F16),
+                (I16F16::from_num(light.location.1) + dy * 50) * fixed!(0.01: I16F16),
+            );
+
+            let hue = hue.int().saturating_to_num::<i16>();
+            cichlid::HSV::new(hue as u8, 255, 255).to_rgb_rainbow()
+        };
         c.fade_to_black_by(brightness as u8);
         c
     }
