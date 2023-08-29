@@ -7,7 +7,10 @@ use fixed_macro::fixed;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use crate::{
-    rgb::{animation::Animation, math_utils::wrapping_delta_u},
+    rgb::{
+        animation::Animation,
+        math_utils::{rand_rainbow, wrapping_delta_u},
+    },
     rng::{splitmix64, MyRng},
 };
 
@@ -35,7 +38,7 @@ impl Default for Rain {
         let colour = if MyRng.gen_bool(0.2) {
             None
         } else {
-            Some(cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow())
+            Some(rand_rainbow())
         };
 
         Self {
@@ -79,9 +82,7 @@ impl Animation for Rain {
                 x: I16F16::from_num(x),
                 y: I16F16::from_num(y),
                 instant: self.tick,
-                colour: self.colour.unwrap_or_else(|| {
-                    cichlid::HSV::new(self.rng.gen(), 255, 255).to_rgb_rainbow()
-                }),
+                colour: self.colour.unwrap_or_else(|| rand_rainbow()),
             };
             let _ = self.splashes.push_front(splash);
         }

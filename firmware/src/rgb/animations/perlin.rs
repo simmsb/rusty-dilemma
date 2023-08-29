@@ -7,7 +7,10 @@ use fixed_macro::fixed;
 use rand::Rng;
 
 use crate::{
-    rgb::{animation::Animation, math_utils},
+    rgb::{
+        animation::Animation,
+        math_utils::{self, rand_rainbow, rainbow},
+    },
     rng::MyRng,
 };
 
@@ -26,7 +29,7 @@ impl Default for Perlin {
         let colour = if MyRng.gen_bool(0.2) {
             None
         } else {
-            Some(cichlid::HSV::new(MyRng.gen(), 255, 255).to_rgb_rainbow())
+            Some(rand_rainbow())
         };
 
         Self {
@@ -69,8 +72,7 @@ impl Animation for Perlin {
                 (I16F16::from_num(light.location.1) + dy * 50) * fixed!(0.01: I16F16),
             );
 
-            let hue = hue.int().saturating_to_num::<i16>();
-            cichlid::HSV::new(hue as u8, 255, 255).to_rgb_rainbow()
+            rainbow(hue.saturating_to_num())
         };
         c.fade_to_black_by(brightness as u8);
         c
