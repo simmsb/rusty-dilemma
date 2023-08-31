@@ -9,7 +9,7 @@ use rand::Rng;
 use crate::{
     rgb::{
         animation::Animation,
-        math_utils::{self, rand_rainbow, rainbow},
+        math_utils::{self, rainbow, rand_rainbow},
     },
     rng::MyRng,
 };

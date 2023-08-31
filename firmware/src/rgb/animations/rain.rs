@@ -71,9 +71,11 @@ impl Animation for Rain {
             let _ = self.splashes.pop_back();
         }
 
-        if self.splashes.front().map_or(true, |s| {
-            tick_delta(s.instant, self.tick) > fixed!(70.0: I16F16)
-        }) {
+        if !self.splashes.is_full()
+            && self.splashes.front().map_or(true, |s| {
+                tick_delta(s.instant, self.tick) > fixed!(70.0: I16F16)
+            })
+        {
             let (x_range, y_range) = BOUNDS;
             let x = self.rng.gen_range(x_range);
             let y = self.rng.gen_range(y_range);

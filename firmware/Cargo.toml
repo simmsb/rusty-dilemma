@@ -72,6 +72,7 @@ futures = { version = "0.3.28", default-features = false, features = [
     "unstable",
 ] }
 heapless = "0.7.16"
+itertools = { version = "0.11.0", default-features = false }
 keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
 log_log = { package = "log", version = "0.4.19" }
 mipidsi = { version = "0.7.1", optional = true }

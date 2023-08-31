@@ -3088,6 +3088,7 @@ dependencies = [
  "fixed-macro",
  "futures",
  "heapless",
+ "itertools 0.11.0",
  "keyberon",
  "log",
  "mipidsi",

@@ -1,4 +1,5 @@
 pub const NUM_LEDS: u16 = 18 + 18;
+pub const NUM_COLS: usize = 5;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
@@ -63,8 +64,8 @@ const fn index_lights<const N: usize>(lights: [UnindexedLight; N]) -> [Light; N]
     unsafe { MaybeUninit::array_assume_init(out) }
 }
 
-mod left {
-    use super::{index_lights, Light, UnindexedLight, NUM_LEDS};
+pub mod left {
+    use super::{index_lights, Light, UnindexedLight, NUM_COLS, NUM_LEDS};
 
     /// the top right switch in the left keyboard is offset in the x axis by this much
     const TOP_RIGHT_LED_OFFSET: i16 = 90;
@@ -80,7 +81,7 @@ mod left {
     // we use the same relative positions as the right side, just flipped and
     // shifted
 
-    pub static LEFT: [Light; NUM_LEDS as usize] = index_lights([
+    pub const LEFT: [Light; NUM_LEDS as usize] = index_lights([
         u(0, 70),
         u(25, 75),
         u(60, 80),
@@ -120,16 +121,22 @@ mod left {
         // thumb row
         s(-10, 0, 4, 3),
         s(10, -5, 3, 3),
-        s(-10, -15, 2, 3),
+        s(30, -15, 2, 3),
     ]);
+
+    const fn c(x: i16) -> i16 {
+        TOP_RIGHT_LED_OFFSET - x
+    }
+
+    pub const COLUMNS: [i16; NUM_COLS] = [c(0), c(20), c(40), c(60), c(80)];
 }
 
 use core::mem::MaybeUninit;
 
 pub use left::LEFT;
 
-mod right {
-    use super::{index_lights, Light, UnindexedLight, NUM_LEDS};
+pub mod right {
+    use super::{index_lights, Light, UnindexedLight, NUM_COLS, NUM_LEDS};
 
     /// the top left switch in the right keyboard is offset in the x axis by this much
     const RIGHT_LED_OFFSET: i16 = 180;
@@ -143,7 +150,7 @@ mod right {
         UnindexedLight::switch((x + RIGHT_LED_OFFSET, y), (mx + RIGHT_MATRIX_OFFSET, my))
     }
 
-    pub static RIGHT: [Light; NUM_LEDS as usize] = index_lights([
+    pub const RIGHT: [Light; NUM_LEDS as usize] = index_lights([
         u(0, 70),
         u(25, 75),
         u(60, 80),
@@ -183,8 +190,14 @@ mod right {
         // thumb row
         s(-10, 0, 2, 3),
         s(10, -5, 1, 3),
-        s(-10, -15, 0, 3),
+        s(30, -15, 0, 3),
     ]);
+
+    const fn c(x: i16) -> i16 {
+        x + RIGHT_LED_OFFSET
+    }
+
+    pub const COLUMNS: [i16; NUM_COLS] = [c(0), c(20), c(40), c(60), c(80)];
 }
 
 pub use right::RIGHT;

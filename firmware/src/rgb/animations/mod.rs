@@ -10,8 +10,10 @@ use super::{animation::Animation, layout::Light};
 pub mod null;
 pub mod perlin;
 pub mod rain;
+pub mod snow;
 
 pub enum DynAnimation {
+    Snow(snow::Snow),
     Perlin(perlin::Perlin),
     Rain(rain::Rain),
     Null(null::Null),
@@ -20,6 +22,7 @@ pub enum DynAnimation {
 impl DynAnimation {
     pub fn random() -> Self {
         const OPTS: &[fn() -> DynAnimation] = &[
+            || DynAnimation::Snow(snow::Snow::default()),
             || DynAnimation::Perlin(perlin::Perlin::default()),
             || DynAnimation::Rain(rain::Rain::default()),
         ];
@@ -88,6 +91,7 @@ macro_rules! dyn_impl {
 }
 
 dyn_impl!(
+    [Snow, snow::Snow],
     [Perlin, perlin::Perlin],
     [Rain, rain::Rain],
     [Null, null::Null]
@@ -96,6 +100,9 @@ dyn_impl!(
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Debug)]
 #[cfg_attr(feature = "probe", derive(defmt::Format))]
 pub enum AnimationSync {
+    Snow(
+        #[cfg_attr(feature = "probe", defmt(Debug2Format))] <snow::Snow as Animation>::SyncMessage,
+    ),
     Perlin(
         #[cfg_attr(feature = "probe", defmt(Debug2Format))]
         <perlin::Perlin as Animation>::SyncMessage,
@@ -122,6 +129,7 @@ macro_rules! wrap_sync {
     };
 }
 
+wrap_sync!(snow::Snow, AnimationSync::Snow);
 wrap_sync!(perlin::Perlin, AnimationSync::Perlin);
 wrap_sync!(null::Null, AnimationSync::Null);
 wrap_sync!(rain::Rain, AnimationSync::Rain);

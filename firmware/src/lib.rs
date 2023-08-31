@@ -1,6 +1,7 @@
 #![no_std]
 #![allow(incomplete_features)]
 #![feature(
+    iter_repeat_n,
     type_alias_impl_trait,
     trait_alias,
     async_fn_in_trait,
