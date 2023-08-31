@@ -104,7 +104,7 @@ impl Animation for Snow {
                     weighted_iter(&self.column_weights, &rgb::layout::left::COLUMNS)
                 }
                 KeyboardSide::Right => {
-                    weighted_iter(&self.column_weights, &rgb::layout::left::COLUMNS)
+                    weighted_iter(&self.column_weights, &rgb::layout::right::COLUMNS)
                 }
             }
             .choose(&mut self.rng) else {
