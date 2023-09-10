@@ -66,15 +66,17 @@ pub fn init(
     builder: &mut Builder<'static, embassy_rp::usb::Driver<'static, USB>>,
 ) {
     let cdc_state = utils::singleton!(State::new());
-    static FROM_USB_PIPE: Pipe<CS, BUF_SIZE> = Pipe::new();
-    static TO_USB_PIPE: Pipe<CS, BUF_SIZE> = Pipe::new();
+    let from_usb_pipe = utils::singleton!(Pipe::<CS, BUF_SIZE>::new());
+    let to_usb_pipe = utils::singleton!(Pipe::<CS, BUF_SIZE>::new());
 
     let state = make_state(cdc_state, builder);
     let (serial_tx, serial_rx) = state.class.split();
+    let (from_usb_rx, from_usb_tx) = from_usb_pipe.split();
+    let (to_usb_rx, to_usb_tx) = to_usb_pipe.split();
 
-    spawner.must_spawn(serial_in_task(FROM_USB_PIPE.writer(), serial_rx));
-    spawner.must_spawn(serial_out_task(TO_USB_PIPE.reader(), serial_tx));
-    spawner.must_spawn(eventer_task(TO_USB_PIPE.writer(), FROM_USB_PIPE.reader()));
+    spawner.must_spawn(serial_in_task(from_usb_tx, serial_rx));
+    spawner.must_spawn(serial_out_task(to_usb_rx, serial_tx));
+    spawner.must_spawn(eventer_task(to_usb_tx, from_usb_rx));
 }
 
 pub fn make_state<'d, D>(

@@ -69,10 +69,9 @@ pub async fn half_duplex_task(mut tx_sm: SM<0>, mut rx_sm: SM<1>, mut pin: Pin<'
     enter_rx(&mut tx_sm, &mut rx_sm, &mut pin).await;
 
     let mut buf = [0u8; 4];
-    let reader = OTHER_SIDE_TX.reader();
 
     loop {
-        match select(reader.read(&mut buf), rx_sm.rx().wait_pull()).await {
+        match select(OTHER_SIDE_TX.read(&mut buf), rx_sm.rx().wait_pull()).await {
             select::Either::First(n) => {
                 // let now = Instant::now();
                 // crate::log::info!("sending bytes: {:?}", &buf[..n]);
