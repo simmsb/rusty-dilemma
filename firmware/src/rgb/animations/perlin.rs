@@ -35,7 +35,7 @@ impl Default for Perlin {
         Self {
             tick: Default::default(),
             tick_rate: fixed!(0.01: I16F16),
-            noise: PerlinNoise2D::new(fixed!(255.0: U16F16), seed as i32),
+            noise: PerlinNoise2D::new(seed as i32),
             colour,
             seed,
         }
@@ -62,7 +62,7 @@ impl Animation for Perlin {
             (I16F16::from_num(light.location.1) + dy * 100) * fixed!(0.02: I16F16),
         );
 
-        let brightness = brightness.int().saturating_to_num::<i16>();
+        let brightness = (fixed!(255: U16F16) * brightness).int().saturating_to_num::<i16>();
 
         let mut c = if let Some(c) = self.colour {
             c
@@ -100,7 +100,7 @@ impl Animation for Perlin {
         Self {
             tick: sync.0,
             colour: sync.1,
-            noise: PerlinNoise2D::new(fixed!(255.0: U16F16), sync.2 as i32),
+            noise: PerlinNoise2D::new(sync.2 as i32),
             ..Self::default()
         }
     }
@@ -108,23 +108,21 @@ impl Animation for Perlin {
 
 #[derive(Copy, Clone)]
 pub struct PerlinNoise2D {
-    amplitude: U16F16,
     seed: i32,
 }
 
 impl PerlinNoise2D {
-    pub fn new(amplitude: U16F16, seed: i32) -> Self {
-        Self { amplitude, seed }
+    pub fn new(seed: i32) -> Self {
+        Self { seed }
     }
 
     pub fn get_noise(&self, x: I16F16, y: I16F16) -> U16F16 {
-        (self.amplitude
-            * self
-                .get_value(
-                    x + I16F16::from_num(self.seed),
-                    y + I16F16::from_num(self.seed),
-                )
-                .to_num::<U16F16>())
+        self
+            .get_value(
+                x + I16F16::from_num(self.seed),
+                y + I16F16::from_num(self.seed),
+            )
+            .to_num::<U16F16>()
         .to_num()
     }
 
