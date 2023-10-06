@@ -6,7 +6,6 @@ use embedded_graphics::{
     prelude::{DrawTarget, RgbColor},
 };
 use embedded_hal_0_2::digital::v2::OutputPin;
-use embedded_hal_1::delay::DelayUs;
 use slint::platform::software_renderer as renderer;
 
 use super::{draw_buffer::DrawBuffer, DISPLAY_SIZE};
@@ -74,6 +73,8 @@ impl<DI: display_interface::WriteOnlyDataCommand, RST: OutputPin<Error = Infalli
                         window.draw_if_needed(|renderer| {
                             let mut buffer_provider = self.buffer_provider.borrow_mut();
                             renderer
+                                .set_repaint_buffer_type(renderer::RepaintBufferType::NewBuffer);
+                            renderer
                                 .set_repaint_buffer_type(renderer::RepaintBufferType::ReusedBuffer);
                             renderer.render_by_line(&mut *buffer_provider);
                         });
@@ -91,16 +92,6 @@ impl<DI: display_interface::WriteOnlyDataCommand, RST: OutputPin<Error = Infalli
                     if window.has_active_animations() {
                         continue;
                     }
-                }
-            }
-
-            if let Some(d) = slint::platform::duration_until_next_timer_update() {
-                let micros = d.as_micros() as u32;
-                if micros < 10 {
-                    // Cannot wait for less than 10µs, or `schedule()` panics
-                    continue;
-                } else {
-                    embassy_time::Delay.delay_us(micros);
                 }
             }
         }
