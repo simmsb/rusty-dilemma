@@ -9,14 +9,13 @@ use rand::Rng;
 use crate::{
     rgb::{
         animation::Animation,
-        math_utils::{self, rainbow, rand_rainbow},
+        math_utils::{rainbow, rand_rainbow},
     },
     rng::MyRng,
 };
 
 pub struct Perlin {
     tick: I16F16,
-    tick_rate: I16F16,
     noise: PerlinNoise2D,
     colour: Option<ColorRGB>,
     seed: u8,
@@ -34,7 +33,6 @@ impl Default for Perlin {
 
         Self {
             tick: Default::default(),
-            tick_rate: fixed!(0.01: I16F16),
             noise: PerlinNoise2D::new(seed as i32),
             colour,
             seed,
@@ -43,14 +41,14 @@ impl Default for Perlin {
 }
 
 impl Animation for Perlin {
-    type SyncMessage = (I16F16, Option<ColorRGB>, u8);
+    type SyncMessage = (Option<ColorRGB>, u8);
 
     fn tick_rate(&self) -> Duration {
         Duration::from_hz(60)
     }
 
     fn tick(&mut self) {
-        self.tick += self.tick_rate;
+        self.tick += fixed!(0.01: I16F16);
         self.tick %= I16F16::PI * 2;
     }
 
@@ -79,28 +77,17 @@ impl Animation for Perlin {
     }
 
     fn construct_sync(&self) -> Self::SyncMessage {
-        (self.tick, self.colour, self.seed)
+        (self.colour, self.seed)
     }
 
     fn sync(&mut self, sync: Self::SyncMessage) {
-        self.colour = sync.1;
-
-        let delta = math_utils::wrapping_delta(self.tick, sync.0, I16F16::ZERO, I16F16::PI * 2);
-
-        self.tick_rate = if delta.is_negative() {
-            fixed!(0.01: I16F16)
-                + math_utils::sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
-        } else {
-            fixed!(0.01: I16F16)
-                - math_utils::sqr(delta.abs() / (I16F16::PI * 2)) / fixed!(256: I16F16)
-        };
+        self.colour = sync.0;
     }
 
     fn new_from_sync(sync: Self::SyncMessage) -> Self {
         Self {
-            tick: sync.0,
-            colour: sync.1,
-            noise: PerlinNoise2D::new(sync.2 as i32),
+            colour: sync.0,
+            noise: PerlinNoise2D::new(sync.1 as i32),
             ..Self::default()
         }
     }

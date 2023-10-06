@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use cichlid::ColorRGB;
 use fixed_macro::fixed;
 

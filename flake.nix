@@ -33,7 +33,7 @@
         let
           arm-toolchain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
-            sha256 = "sha256-SNA+Wwlw49SYWcfMF7S4QrJba7xonK9Z/SIZV8E4M9c=";
+            sha256 = "sha256-Hf/9yETAPGuj4QOSEsyTuET1ZZa7UnMBmYGrKaQzWsY=";
           };
           native-toolchain = fenix.packages.${system}.complete.withComponents [
             "cargo"
@@ -84,8 +84,7 @@
             nativeBuildInputs = with pkgs; [
               fenix.packages.${system}.rust-analyzer
               cargo-binutils
-              cargo-flash
-              probe-rs-cli
+              probe-rs
               picotool
               pkgsCross.arm-embedded.buildPackages.binutils
             ];

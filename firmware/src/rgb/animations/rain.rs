@@ -55,7 +55,6 @@ fn tick_delta(a: U16F16, b: U16F16) -> U16F16 {
 }
 
 impl Animation for Rain {
-    // just have both halves be separate but sync the colour
     type SyncMessage = Option<ColorRGB>;
 
     fn tick_rate(&self) -> embassy_time::Duration {
