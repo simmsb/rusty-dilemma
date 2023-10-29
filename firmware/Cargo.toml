@@ -14,7 +14,7 @@ path = "src/bin/binary.rs"
 [dependencies]
 atomic-polyfill = "1.0.3"
 bbqueue = { git = "https://github.com/simmsb/bbqueue", features = ["cortex-m", "thumbv6"] }
-bitfield-struct = "0.5.3"
+bitfield-struct = "0.5.4"
 byte-slice-cast = { version = "1.2.2", default-features = false }
 cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", default-features = false, features = [
     "nightly",
@@ -50,7 +50,7 @@ embassy-rp = { version = "0.1.0", features = [
     "rom-v2-intrinsics"
 ] }
 embassy-sync = { version = "0.3.0", features = [ "nightly" ] }
-embassy-time = { version = "0.1.3", features = [
+embassy-time = { version = "0.1.5", features = [
     "nightly",
     "unstable-traits",
 ] }
@@ -68,7 +68,7 @@ embedded-storage = "0.3.0"
 embedded-storage-async = "0.4.0"
 fixed = { version = "1.24.0", features = ["serde"] }
 fixed-macro = "1.2.0"
-futures = { version = "0.3.28", default-features = false, features = [
+futures = { version = "0.3.29", default-features = false, features = [
     "async-await",
     "cfg-target-has-atomic",
     "unstable",
@@ -79,7 +79,7 @@ keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
 log_log = { package = "log", version = "0.4.20" }
 mipidsi = { version = "0.7.1", optional = true }
 num = { version = "0.4.1", default-features = false }
-num_enum = { version = "0.7.0", default-features = false }
+num_enum = { version = "0.7.1", default-features = false }
 once_cell = { version = "1.18.0", features = [
     "atomic-polyfill",
 ], default-features = false }
@@ -100,7 +100,7 @@ usbd-hid = "0.6.1"
 usbd-human-interface-device = "0.4.3"
 
 [build-dependencies]
-chrono = "0.4.19"
+chrono = "0.4.31"
 slint-build = { git = "https://github.com/slint-ui/slint", optional = true }
 
 [features]
