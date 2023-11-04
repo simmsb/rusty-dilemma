@@ -9,15 +9,22 @@ use rand::Rng;
 use crate::{
     rgb::{
         animation::Animation,
-        math_utils::{rainbow, rand_rainbow},
+        math_utils::{rainbow, rand_decimal, rand_rainbow},
     },
     rng::MyRng,
 };
 
+#[derive(serde::Serialize, serde::Deserialize, Clone, Copy, Debug, Hash, Eq, PartialEq)]
+pub enum ColourMode {
+    Random,
+    Single(ColorRGB),
+    Double(ColorRGB, ColorRGB),
+}
+
 pub struct Perlin {
     tick: I16F16,
     noise: PerlinNoise2D,
-    colour: Option<ColorRGB>,
+    colour: ColourMode,
     seed: u8,
 }
 
@@ -26,9 +33,13 @@ impl Default for Perlin {
         let seed: u8 = MyRng.gen();
 
         let colour = if MyRng.gen_bool(0.2) {
-            None
+            ColourMode::Random
+        } else if MyRng.gen_bool(0.4) {
+            let a = rand_decimal();
+            let b = a.wrapping_add(fixed!(0.5: I4F12));
+            ColourMode::Double(rainbow(a), rainbow(b))
         } else {
-            Some(rand_rainbow())
+            ColourMode::Single(rand_rainbow())
         };
 
         Self {
@@ -41,7 +52,7 @@ impl Default for Perlin {
 }
 
 impl Animation for Perlin {
-    type SyncMessage = (Option<ColorRGB>, u8);
+    type SyncMessage = (ColourMode, u8);
 
     fn tick_rate(&self) -> Duration {
         Duration::from_hz(60)
@@ -60,17 +71,30 @@ impl Animation for Perlin {
             (I16F16::from_num(light.location.1) + dy * 100) * fixed!(0.02: I16F16),
         );
 
-        let brightness = (fixed!(255: U16F16) * brightness).int().saturating_to_num::<i16>();
+        let brightness = (fixed!(255: U16F16) * brightness)
+            .int()
+            .saturating_to_num::<i16>();
 
-        let mut c = if let Some(c) = self.colour {
-            c
-        } else {
-            let hue = self.noise.get_noise(
-                (I16F16::from_num(light.location.0) + dx * 50) * fixed!(0.01: I16F16),
-                (I16F16::from_num(light.location.1) + dy * 50) * fixed!(0.01: I16F16),
-            );
+        let mut c = match self.colour {
+            ColourMode::Single(c) => c,
+            ColourMode::Double(a, b) => {
+                let mix = self.noise.get_noise(
+                    (I16F16::from_num(light.location.0) + dx * 50) * fixed!(0.01: I16F16),
+                    (I16F16::from_num(light.location.1) + dy * 50) * fixed!(0.01: I16F16),
+                );
+                let mix = (fixed!(255: U16F16) * mix).int().saturating_to_num::<i16>();
+                let mut c = a;
+                c.blend(b, mix as u8);
+                c
+            }
+            ColourMode::Random => {
+                let hue = self.noise.get_noise(
+                    (I16F16::from_num(light.location.0) + dx * 50) * fixed!(0.01: I16F16),
+                    (I16F16::from_num(light.location.1) + dy * 50) * fixed!(0.01: I16F16),
+                );
 
-            rainbow(hue.saturating_to_num())
+                rainbow(hue.saturating_to_num())
+            }
         };
         c.fade_to_black_by(brightness as u8);
         c
@@ -104,12 +128,11 @@ impl PerlinNoise2D {
     }
 
     pub fn get_noise(&self, x: I16F16, y: I16F16) -> U16F16 {
-        self
-            .get_value(
-                x + I16F16::from_num(self.seed),
-                y + I16F16::from_num(self.seed),
-            )
-            .to_num::<U16F16>()
+        self.get_value(
+            x + I16F16::from_num(self.seed),
+            y + I16F16::from_num(self.seed),
+        )
+        .to_num::<U16F16>()
         .to_num()
     }
 

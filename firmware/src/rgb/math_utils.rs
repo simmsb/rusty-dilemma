@@ -36,8 +36,12 @@ pub(crate) fn sqr(x: I16F16) -> I16F16 {
     x * x
 }
 
+pub(crate) fn rand_decimal() -> I4F12 {
+    I4F12::from_bits(MyRng.gen()).frac()
+}
+
 pub(crate) fn rand_rainbow() -> ColorRGB {
-    rainbow(I4F12::from_bits(MyRng.gen()).frac())
+    rainbow(rand_decimal())
 }
 
 pub(crate) fn rainbow(x: I4F12) -> ColorRGB {
