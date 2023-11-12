@@ -1,4 +1,4 @@
-use atomic_polyfill::{AtomicBool, AtomicU8};
+use portable_atomic::{AtomicBool, AtomicU8};
 use embassy_executor::Spawner;
 use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
@@ -47,8 +47,8 @@ async fn handle_mouse_clicks() {
             .into_iter()
             .sum();
 
-            MOUSE_BUTTON_STATE.store(buttons, atomic_polyfill::Ordering::SeqCst);
-            IS_SCROLLING.store(b.scrolling(), atomic_polyfill::Ordering::SeqCst);
+            MOUSE_BUTTON_STATE.store(buttons, portable_atomic::Ordering::SeqCst);
+            IS_SCROLLING.store(b.scrolling(), portable_atomic::Ordering::SeqCst);
             MOUSE_REPORTS
                 .send(shared::hid::MouseReport::default())
                 .await;
@@ -119,7 +119,7 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
             (x, y) = (x_, y_);
         }
 
-        let (x, y, wheel, pan) = if IS_SCROLLING.load(atomic_polyfill::Ordering::SeqCst) {
+        let (x, y, wheel, pan) = if IS_SCROLLING.load(portable_atomic::Ordering::SeqCst) {
             let y = vertical_scroll_state.update(y_coalescer.take());
             let x = horizontal_scroll_state.update(x_coalescer.take());
             (0, 0, y, x)
@@ -128,7 +128,7 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
         };
 
         let report = MouseReport {
-            buttons: MOUSE_BUTTON_STATE.load(atomic_polyfill::Ordering::SeqCst),
+            buttons: MOUSE_BUTTON_STATE.load(portable_atomic::Ordering::SeqCst),
             x,
             y,
             wheel,

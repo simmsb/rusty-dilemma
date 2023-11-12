@@ -66,9 +66,9 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
         {
             let window = Rc::clone(&window);
             move || {
-                window.set_keypresses(KEYS_PRESSED.load(atomic_polyfill::Ordering::Relaxed) as i32);
+                window.set_keypresses(KEYS_PRESSED.load(portable_atomic::Ordering::Relaxed) as i32);
                 window.set_trackpad_distance(
-                    TRACKPAD_DISTANCE.load(atomic_polyfill::Ordering::Relaxed) as i32,
+                    TRACKPAD_DISTANCE.load(portable_atomic::Ordering::Relaxed) as i32,
                 );
             }
         },
@@ -105,11 +105,11 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
                     bl.set_config(&pwm_cfg);
                     Timer::after(Duration::from_hz(256)).await;
                 }
-                DISPLAY_OFF.store(true, atomic_polyfill::Ordering::Relaxed);
+                DISPLAY_OFF.store(true, portable_atomic::Ordering::Relaxed);
 
                 let r = sub.next_message_pure().await;
 
-                DISPLAY_OFF.store(false, atomic_polyfill::Ordering::Relaxed);
+                DISPLAY_OFF.store(false, portable_atomic::Ordering::Relaxed);
 
                 for n in 0..=256 {
                     pwm_cfg.compare_b = n;
@@ -121,8 +121,8 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
             }
         };
 
-        KEYS_PRESSED.store(keys_pressed.0, atomic_polyfill::Ordering::Release);
-        TRACKPAD_DISTANCE.store(trackpad_distance.0, atomic_polyfill::Ordering::Release);
+        KEYS_PRESSED.store(keys_pressed.0, portable_atomic::Ordering::Release);
+        TRACKPAD_DISTANCE.store(trackpad_distance.0, portable_atomic::Ordering::Release);
     }
 }
 

@@ -55,6 +55,7 @@ pub async fn request_sync() {
 #[embassy_executor::task]
 async fn mouse_counter() {
     let mut sub = THIS_SIDE_MESSAGE_BUS.subscriber().unwrap();
+    let mut n = 0u32;
 
     loop {
         let DeviceToDevice::ForwardedToHostMouse(report) = sub.next_message_pure().await else {
@@ -69,7 +70,12 @@ async fn mouse_counter() {
         let mut m = CURRENT_METRICS.lock().await;
         m.trackpad_distance += distance as usize;
 
-        push_update(m.clone());
+        if n >= 10 {
+            push_update(m.clone());
+            n = 0;
+        } else {
+            n += 1;
+        }
     }
 }
 

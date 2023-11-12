@@ -20,6 +20,7 @@ pub fn init_usb<'d, D: Driver<'d>>(driver: D) -> Builder<'d, D> {
         &mut utils::singleton!([0; 256])[..],
         &mut utils::singleton!([0; 256])[..],
         &mut utils::singleton!([0; 256])[..],
+        &mut utils::singleton!([0; 256])[..],
         &mut utils::singleton!([0; 128])[..],
     )
 }

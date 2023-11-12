@@ -57,7 +57,7 @@ impl<DI: display_interface::WriteOnlyDataCommand, RST: OutputPin<Error = Infalli
         loop {
             slint::platform::update_timers_and_animations();
 
-            let should_be_off = self.off_flag.load(atomic_polyfill::Ordering::Relaxed);
+            let should_be_off = self.off_flag.load(portable_atomic::Ordering::Relaxed);
             if should_be_off != is_off {
                 is_off = should_be_off;
 
