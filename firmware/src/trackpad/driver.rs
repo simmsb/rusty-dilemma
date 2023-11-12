@@ -149,6 +149,13 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
             }
         }
 
+        self.rap_write_reg(regs::SampleRate::from_byte(regs::SampleRate::SPS_100))
+            .await?;
+        // self.era_write_reg(regs::TrackTimerReload::from_byte(
+        //     regs::TrackTimerReload::SPS_200,
+        // ))
+        // .await?;
+
         let should_calibrate = match self.overlay {
             Overlay::Curved => {
                 self.set_adc_attenuation(regs::AdcAttenuation::X2).await?;
@@ -417,6 +424,16 @@ impl<SPI: SpiDevice, const DIAMETER: u32> Trackpad<SPI, DIAMETER> {
         let cfg = self.rap_read_reg::<regs::FeedConfig3>().await?;
         self.rap_write_reg(cfg.with_disable_cross_rate_smoothing(!enabled))
             .await
+    }
+
+    #[allow(unused)]
+    async fn set_noise_comp(&mut self, enabled: bool) -> Result<(), SPI::Error> {
+        let cfg = self.rap_read_reg::<regs::FeedConfig3>().await?;
+        self.rap_write_reg(
+            cfg.with_disable_cross_rate_smoothing(!enabled)
+                .with_disable_noise_avoidance(!enabled),
+        )
+        .await
     }
 }
 

@@ -203,7 +203,7 @@ pub const HOSTREG__PR2AUX_CTRL_DEFVAL: u8 = 0x00;
 /*--------------------------------------------------------------------------*\
 Sample Rate Value
 \*--------------------------------------------------------------------------*/
-register!(u8, SampleRate, HostReg__9, SampleRate::SPS_100);
+register!(u8, SampleRate, HostReg__9, SampleRate::SPS_200);
 impl SampleRate {
     pub const SPS_10: u8 = 0x0A;
     pub const SPS_20: u8 = 0x14;
@@ -211,7 +211,8 @@ impl SampleRate {
     pub const SPS_60: u8 = 0x3C;
     pub const SPS_80: u8 = 0x50;
     pub const SPS_100: u8 = 0x64;
-    pub const SPS_200: u8 = 0xC8;
+    // set TrackTimerReload instead
+    pub const SPS_200: u8 = 0x0;
 }
 
 /*--------------------------------------------------------------------------*\
@@ -457,12 +458,15 @@ pub const EXTREG__ADCMUX_CTRL__SNSN_ENABLE: u8 = 0x04;
 /*--------------------------------------------------------------------------*\
 Timer Reload Registers
 \*--------------------------------------------------------------------------*/
+register!(u16, TrackTimerReload, 0x019F, TrackTimerReload::SPS_100);
+impl TrackTimerReload {
+    pub const SPS_300: u8 = 0x06;
+    pub const SPS_200: u8 = 0x09;
+    pub const SPS_100: u8 = 0x13;
+}
+
 pub const EXTREG__PACKET_TIMER_RELOAD: u16 = 0x019F;
 pub const EXTREG__TRACK_TIMER_RELOAD: u16 = 0x019E;
-// These two registers should have matching content.
-pub const EXTREG__TIMER_RELOAD__300_SPS: u8 = 0x06;
-pub const EXTREG__TIMER_RELOAD__200_SPS: u8 = 0x09;
-pub const EXTREG__TIMER_RELOAD__100_SPS: u8 = 0x13;
 
 /*--------------------------------------------------------------------------*\
                        Track ADC Config

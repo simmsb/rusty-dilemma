@@ -21,7 +21,7 @@ pub struct TransmittedMessage<T> {
 pub fn low_latency_msg<T>(msg: T) -> TransmittedMessage<T> {
     TransmittedMessage {
         msg,
-        timeout: Some(Duration::from_millis(2)),
+        timeout: Some(Duration::from_millis(1)),
     }
 }
 

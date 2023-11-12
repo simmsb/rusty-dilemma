@@ -19,7 +19,7 @@ use crate::{
 
 type CS = embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 
-static MOUSE_REPORTS: Channel<CS, shared::hid::MouseReport, 2> = Channel::new();
+static MOUSE_REPORTS: Channel<CS, shared::hid::MouseReport, 4> = Channel::new();
 static KEYBOARD_REPORTS: Channel<CS, NKROBootKeyboardReport, 2> = Channel::new();
 
 pub async fn publish_mouse_report(report: shared::hid::MouseReport) {
@@ -170,7 +170,7 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
         embassy_usb::class::hid::Config {
             report_descriptor: MouseReport::desc(),
             request_handler: None,
-            poll_ms: 1,
+            poll_ms: 10,
             max_packet_size: 8,
         },
     );
@@ -181,7 +181,7 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, US
         embassy_usb::class::hid::Config {
             report_descriptor: NKRO_BOOT_KEYBOARD_REPORT_DESCRIPTOR,
             request_handler: None,
-            poll_ms: 1,
+            poll_ms: 10,
             max_packet_size: 64,
         },
     );
