@@ -1,4 +1,3 @@
-use portable_atomic::{AtomicBool, AtomicU8};
 use embassy_executor::Spawner;
 use embassy_futures::yield_now;
 use embassy_rp::{peripherals::USB, usb::Driver};
@@ -6,6 +5,7 @@ use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
 use num::Integer;
 use packed_struct::PackedStruct;
+use portable_atomic::{AtomicBool, AtomicU8};
 use usbd_hid::descriptor::{MouseReport, SerializedDescriptor};
 use usbd_human_interface_device::device::keyboard::{
     NKROBootKeyboardReport, NKRO_BOOT_KEYBOARD_REPORT_DESCRIPTOR,
