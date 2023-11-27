@@ -4,7 +4,7 @@ use cichlid::ColorRGB;
 use embassy_futures::select::{select, select3};
 use embassy_rp::peripherals::PIO1;
 use embassy_time::{Duration, Instant, Timer};
-use fixed::types::{I16F16, U0F16, U16F16, U32F32};
+use fixed::types::{U16F16, U32F32};
 use fixed_macro::fixed;
 
 use crate::{
@@ -19,28 +19,13 @@ use super::{
     animations,
     driver::Ws2812,
     layout::{self, Light, NUM_LEDS},
+    math_utils::ease_fade,
     RGB_CMD_CHANNEL,
 };
 
 const MAX_LEVEL: u8 = 180;
 const COLOUR_CORRECTION: ColorRGB = ColorRGB::new(190, 200, 255);
 const FADE_DURATION: Duration = Duration::from_secs(3);
-
-fn ease_fade(pct: U0F16) -> u8 {
-    let mix = if pct < fixed!(0.5: U0F16) {
-        let pct: I16F16 = pct.to_num();
-        2 * pct * pct
-    } else {
-        let pct: I16F16 = pct.to_num();
-        let a = fixed!(-2: I16F16) * pct + fixed!(2: I16F16);
-        let b = a * a;
-        fixed!(1: I16F16) - b / 2
-    };
-
-    mix.lerp(fixed!(0: I16F16), fixed!(255: I16F16))
-        .int()
-        .saturating_to_num()
-}
 
 fn ease_fade_on_time(duration: Duration) -> u8 {
     if duration > FADE_DURATION {

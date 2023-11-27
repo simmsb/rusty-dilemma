@@ -3,7 +3,7 @@
 use cichlid::ColorRGB;
 use fixed_macro::fixed;
 
-use fixed::types::{I12F4, I16F16, I4F12, U16F16};
+use fixed::types::{I12F4, I16F16, I4F12, U0F16, U16F16};
 use rand::Rng;
 
 use crate::rng::MyRng;
@@ -60,4 +60,20 @@ pub(crate) fn rainbow(x: I4F12) -> ColorRGB {
     let b: u8 = b.int().saturating_to_num();
 
     ColorRGB { r, g, b }
+}
+
+pub(crate) fn ease_fade(pct: U0F16) -> u8 {
+    let mix = if pct < fixed!(0.5: U0F16) {
+        let pct: I16F16 = pct.to_num();
+        2 * pct * pct
+    } else {
+        let pct: I16F16 = pct.to_num();
+        let a = fixed!(-2: I16F16) * pct + fixed!(2: I16F16);
+        let b = a * a;
+        fixed!(1: I16F16) - b / 2
+    };
+
+    mix.lerp(fixed!(0: I16F16), fixed!(255: I16F16))
+        .int()
+        .saturating_to_num()
 }

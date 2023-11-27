@@ -2,7 +2,7 @@ use core::ops::Range;
 
 use cichlid::ColorRGB;
 use embassy_time::Duration;
-use fixed::types::{I16F16, U16F16};
+use fixed::types::{I16F16, U0F16, U16F16};
 use fixed_macro::fixed;
 use rand::{rngs::SmallRng, seq::IteratorRandom, Rng, SeedableRng};
 use shared::side::KeyboardSide;
@@ -12,7 +12,7 @@ use crate::{
         self,
         animation::Animation,
         layout::NUM_COLS,
-        math_utils::{rand_rainbow, wrapping_delta_u},
+        math_utils::{ease_fade, rand_rainbow, wrapping_delta_u},
     },
     rng::{splitmix64, MyRng},
     side::get_side,
@@ -138,12 +138,12 @@ impl Animation for Snow {
             // let distance = dx / fixed!(20.0: I16F16);
             let distance = dx / fixed!(10.0: I16F16) + dy / fixed!(40.0: I16F16);
 
-            let level = fixed!(1.0: I16F16)
-                .saturating_sub(distance)
-                .clamp(I16F16::ZERO, I16F16::ONE)
-                .lerp(I16F16::ZERO, fixed!(255: I16F16))
-                .int()
-                .saturating_to_num();
+            let level = ease_fade(
+                fixed!(1.0: I16F16)
+                    .saturating_sub(distance)
+                    .saturating_to_num::<U0F16>()
+                    .clamp(U0F16::ZERO, U0F16::MAX),
+            );
 
             let mut colour = flake.colour;
             colour.scale(level);

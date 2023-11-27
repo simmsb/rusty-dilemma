@@ -2,14 +2,14 @@ use core::ops::Range;
 
 use cichlid::ColorRGB;
 use embassy_time::Duration;
-use fixed::types::{I16F16, U16F16};
+use fixed::types::{I16F16, U0F16, U16F16};
 use fixed_macro::fixed;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 
 use crate::{
     rgb::{
         animation::Animation,
-        math_utils::{rand_rainbow, wrapping_delta_u},
+        math_utils::{ease_fade, rand_rainbow, wrapping_delta_u},
     },
     rng::{splitmix64, MyRng},
 };
@@ -118,7 +118,7 @@ impl Animation for Rain {
             let b = I16F16::ONE
                 .saturating_sub(delta)
                 .clamp(I16F16::ZERO, I16F16::ONE);
-            let b = b.saturating_mul(b);
+            // let b = b.saturating_mul(b).saturating_mul(b);
             let b = b.saturating_mul(b);
 
             let b = if time_delta < fixed!(10.0: I16F16) {
@@ -127,11 +127,10 @@ impl Animation for Rain {
                 b
             };
 
-            let level = b
-                .clamp(I16F16::ZERO, I16F16::ONE)
-                .lerp(I16F16::ZERO, fixed!(255: I16F16))
-                .int()
-                .saturating_to_num();
+            let level = ease_fade(
+                b.saturating_to_num::<U0F16>()
+                    .clamp(U0F16::ZERO, U0F16::MAX),
+            );
 
             let mut colour = splash.colour;
             colour.scale(level);
