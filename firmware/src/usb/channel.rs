@@ -1,5 +1,4 @@
 use embassy_executor::Spawner;
-use embassy_rp::peripherals::USB;
 use embassy_sync::channel::Channel;
 use embassy_sync::pipe::{Pipe, Reader, Writer};
 use embassy_sync::pubsub::PubSubChannel;
@@ -13,7 +12,7 @@ use crate::messages::transmissions;
 use crate::messages::TransmittedMessage;
 use crate::utils;
 
-use super::MAX_PACKET_SIZE;
+use super::{USBDriver, MAX_PACKET_SIZE};
 
 pub static COMMANDS_FROM_HOST: PubSubChannel<CS, HostToDevice, 4, 4, 1> = PubSubChannel::new();
 pub static COMMANDS_TO_HOST: Channel<CS, TransmittedMessage<DeviceToHost>, 16> = Channel::new();
@@ -23,7 +22,7 @@ const BUF_SIZE: usize = 128;
 #[embassy_executor::task]
 async fn serial_in_task(
     out_pipe: Writer<'static, CS, BUF_SIZE>,
-    mut serial_rx: Receiver<'static, embassy_rp::usb::Driver<'static, USB>>,
+    mut serial_rx: Receiver<'static, USBDriver>,
 ) {
     loop {
         let mut rx: [u8; MAX_PACKET_SIZE as usize] = [0; MAX_PACKET_SIZE as usize];
@@ -37,7 +36,7 @@ async fn serial_in_task(
 #[embassy_executor::task]
 async fn serial_out_task(
     in_pipe: Reader<'static, CS, BUF_SIZE>,
-    mut serial_tx: Sender<'static, embassy_rp::usb::Driver<'static, USB>>,
+    mut serial_tx: Sender<'static, USBDriver>,
 ) {
     loop {
         let mut rx: [u8; MAX_PACKET_SIZE as usize] = [0; MAX_PACKET_SIZE as usize];
@@ -61,10 +60,7 @@ async fn eventer_task(tx: Writer<'static, CS, BUF_SIZE>, rx: Reader<'static, CS,
     transmissions::eventer(tx, rx, rx_fn, tx_fn).await;
 }
 
-pub fn init(
-    spawner: &Spawner,
-    builder: &mut Builder<'static, embassy_rp::usb::Driver<'static, USB>>,
-) {
+pub fn init(spawner: &Spawner, builder: &mut Builder<'static, USBDriver>) {
     let cdc_state = utils::singleton!(State::new());
     let from_usb_pipe = utils::singleton!(Pipe::<CS, BUF_SIZE>::new());
     let to_usb_pipe = utils::singleton!(Pipe::<CS, BUF_SIZE>::new());

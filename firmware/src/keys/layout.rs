@@ -265,8 +265,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 .as_slice(),
             ),
             ::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(
-                "𓆏",
-                super::UnicodeMode::Linux,
+                "𓆏"
             )),
             ::keyberon::action::Action::MultipleKeyCodes(
                 &[

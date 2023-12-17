@@ -17,9 +17,26 @@ pub mod device;
 pub mod hid;
 pub mod picotool;
 
+pub type USBDriver = impl embassy_usb::driver::Driver<'static>;
+
+static GUESSED_OS: once_cell::sync::OnceCell<embassy_os_guess::OS> =
+    once_cell::sync::OnceCell::new();
+
+pub fn guessed_host_os() -> Option<embassy_os_guess::OS> {
+    GUESSED_OS.get().copied()
+}
+
+fn set_guesser(driver: Driver<'static, USB>) -> USBDriver {
+    let guesser = embassy_os_guess::OSGuesser::new(|guess| {
+        let _ = GUESSED_OS.set(guess);
+    });
+    guesser.wrap_driver(driver)
+}
+
 pub fn init(spawner: &Spawner, driver: Driver<'static, USB>) {
     log::info!("Initializing usb");
 
+    let driver = set_guesser(driver);
     let mut builder = device::init_usb(driver);
 
     channel::init(spawner, &mut builder);

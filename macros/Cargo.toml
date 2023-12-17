@@ -11,7 +11,8 @@ proc-macro = true
 
 [dependencies]
 phf_codegen = "0.11.1"
-proc-macro-crate = "1.3.1"
-proc-macro2 = "1.0.59"
+proc-macro-crate = { git = "https://github.com/bkchr/proc-macro-crate", rev = "89166accf43a380a7a8e66c2eea20ce4fd9dae8f", version = "2.0.1" }
+# proc-macro-crate = "2.0.1"
+proc-macro2 = "1.0.70"
 quote = "1.0.28"
 syn = "2.0.18"

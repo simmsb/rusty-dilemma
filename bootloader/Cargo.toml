@@ -17,11 +17,9 @@ cortex-m-rt = "0.7.3"
 embassy-rp = { version = "0.1.0", features = [
     "unstable-pac",
     "time-driver",
-    "unstable-traits",
-    "nightly",
-    "critical-section-impl",
+    "critical-section-impl"
 ] }
-atomic-polyfill = "1.0.2"
+atomic-polyfill = "1.0.3"
 rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", optional = true }
 
 [features]
@@ -31,4 +29,4 @@ binaryinfo = ["rp-binary-info"]
 default = ["binaryinfo"]
 
 [build-dependencies]
-chrono = "0.4.19"
+chrono = "0.4.31"

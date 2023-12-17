@@ -1,10 +1,9 @@
 #![no_std]
-#![allow(incomplete_features)]
+#![allow(incomplete_features, async_fn_in_trait)]
 #![feature(
     iter_repeat_n,
     type_alias_impl_trait,
     trait_alias,
-    async_fn_in_trait,
     maybe_uninit_uninit_array,
     const_maybe_uninit_uninit_array,
     maybe_uninit_array_assume_init,
@@ -66,13 +65,13 @@ pub fn set_status_led(value: Level) {
 
 pub static VERSION: &str = "0.1.0";
 
-fn detect_usb(pin: Input<'_, PIN_19>) -> bool {
+fn detect_usb(mut pin: Input<'_, PIN_19>) -> bool {
     let connected = pin.is_high();
     log::info!("Usb connected? {}", connected);
     connected
 }
 
-fn detect_side(pin: Input<'_, PIN_29>) -> KeyboardSide {
+fn detect_side(mut pin: Input<'_, PIN_29>) -> KeyboardSide {
     let is_right = pin.is_high();
     let side = if is_right {
         KeyboardSide::Right

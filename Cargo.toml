@@ -12,8 +12,8 @@ embassy-rp = { git = "https://github.com/embassy-rs/embassy" }
 embassy-time = { git = "https://github.com/embassy-rs/embassy" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
 
-[patch."https://github.com/embassy-rs/ekv"]
-ekv = { git = "https://github.com/simmsb/ekv" }
+# [patch."https://github.com/embassy-rs/ekv"]
+# ekv = { git = "https://github.com/simmsb/ekv" }
 
 [profile.dev]
 codegen-units = 1
@@ -27,7 +27,7 @@ lto = 'thin'
 [profile.release]
 codegen-units = 1
 debug = 0
-strip = true
+# strip = true
 debug-assertions = false # <-
 incremental = false
 lto = 'fat'

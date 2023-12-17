@@ -1,6 +1,5 @@
 use embassy_executor::Spawner;
 use embassy_futures::yield_now;
-use embassy_rp::{peripherals::USB, usb::Driver};
 use embassy_sync::channel::Channel;
 use embassy_usb::{class::hid::HidWriter, Builder};
 use num::Integer;
@@ -16,6 +15,8 @@ use crate::{
     messages::{device_to_device::DeviceToDevice, low_latency_msg},
     side, utils,
 };
+
+use super::USBDriver;
 
 type CS = embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 
@@ -103,7 +104,7 @@ impl MovementCoalescer {
 }
 
 #[embassy_executor::task]
-async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
+async fn mouse_writer(mut mouse_writer: HidWriter<'static, USBDriver, 64>) {
     let mut vertical_scroll_state = ScrollDivider::default();
     let mut horizontal_scroll_state = ScrollDivider::default();
     let mut x_coalescer = MovementCoalescer::default();
@@ -140,7 +141,7 @@ async fn mouse_writer(mut mouse_writer: HidWriter<'static, Driver<'static, USB>,
 }
 
 #[embassy_executor::task]
-async fn keyboard_writer(mut keyboard_writer: HidWriter<'static, Driver<'static, USB>, 64>) {
+async fn keyboard_writer(mut keyboard_writer: HidWriter<'static, USBDriver, 64>) {
     loop {
         let report = KEYBOARD_REPORTS.receive().await;
         let _ = keyboard_writer.write(&report.pack().unwrap()).await;
@@ -160,7 +161,7 @@ async fn interboard_receiver() {
     }
 }
 
-pub fn init(spawner: &Spawner, builder: &mut Builder<'static, Driver<'static, USB>>) {
+pub fn init(spawner: &Spawner, builder: &mut Builder<'static, USBDriver>) {
     let mouse_state = utils::singleton!(embassy_usb::class::hid::State::new());
     let keyboard_state = utils::singleton!(embassy_usb::class::hid::State::new());
 

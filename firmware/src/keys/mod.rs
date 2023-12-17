@@ -36,7 +36,7 @@ pub enum CustomEvent {
     MouseLeft,
     MouseRight,
     MouseScroll,
-    TypeUnicode(&'static str, UnicodeMode),
+    TypeUnicode(&'static str),
 }
 
 pub mod chord;
@@ -180,9 +180,9 @@ async fn key_event_processor() {
                         CustomEvent::MouseLeft => mouse_state.set_left(is_press),
                         CustomEvent::MouseRight => mouse_state.set_right(is_press),
                         CustomEvent::MouseScroll => mouse_state.set_scrolling(is_press),
-                        CustomEvent::TypeUnicode(msg, mode) => {
+                        CustomEvent::TypeUnicode(msg) => {
                             if !is_press {
-                                unicode::send_unicode(msg, mode).await;
+                                unicode::send_unicode(msg).await;
                             }
                         }
                     }

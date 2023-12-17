@@ -13,7 +13,7 @@ path = "src/bin/binary.rs"
 
 [dependencies]
 bbqueue = { git = "https://github.com/simmsb/bbqueue", features = ["cortex-m", "thumbv6"] }
-bitfield-struct = "0.5.4"
+bitfield-struct = "0.5.6"
 byte-slice-cast = { version = "1.2.2", default-features = false }
 cichlid = { git = "https://github.com/simmsb/cichlid", version = "0.2.1", default-features = false, features = [
     "nightly",
@@ -31,40 +31,36 @@ dilemma_macros = { path = "../macros" }
 display-interface = { version = "0.4.1", optional = true }
 ekv = { git = "https://github.com/embassy-rs/ekv", version = "0.1.0", features = [ "crc", "align-4", "page-size-4096" ] }
 embassy-embedded-hal = { version = "0.1.0" }
-embassy-executor = { version = "0.3.2", features = [
+embassy-executor = { version = "0.4.0", features = [
     "nightly",
     "arch-cortex-m",
     "executor-thread",
     "integrated-timers",
     "nightly",
 ] }
-embassy-futures = { version = "0.1.0" }
+embassy-futures = { version = "0.1.1" }
+embassy-os-guess = { git = "https://github.com/simmsb/embassy-os-guess", version = "0.1.0", features = ["log"] }
 embassy-rp = { version = "0.1.0", features = [
     "unstable-pac",
     "time-driver",
-    "unstable-traits",
-    "nightly",
     "critical-section-impl",
     "rom-func-cache",
     "rom-v2-intrinsics"
 ] }
-embassy-sync = { version = "0.4.0", features = [ "nightly" ] }
-embassy-time = { version = "0.1.5", features = [
-    "nightly",
-    "unstable-traits",
-] }
+embassy-sync = { version = "0.5.0" }
+embassy-time = { version = "0.2.0" }
 embassy-usb = { version = "0.1.0", features = [
     "max-interface-count-6",
 ] }
-embedded-alloc = { version = "0.5.0", optional = true }
+embedded-alloc = { version = "0.5.1", optional = true }
 embedded-graphics = { version = "0.8.1", optional = true }
 embedded-hal-0-2 = { package = "embedded-hal", version = "0.2" }
-embedded-hal-1 = { package = "embedded-hal", version = "1.0.0-rc.1" }
-embedded-hal-async = "1.0.0-rc.1"
-embedded-hal-bus = { version = "0.1.0-rc.1", features = [ "async" ] }
-embedded-io-async = { version = "0.6.0" }
-embedded-storage = "0.3.0"
-embedded-storage-async = "0.4.0"
+embedded-hal-1 = { package = "embedded-hal", version = "1.0.0-rc.3" }
+embedded-hal-async = "1.0.0-rc.3"
+embedded-hal-bus = { version = "0.1.0-rc.3", features = [ "async" ] }
+embedded-io-async = { version = "0.6.1" }
+embedded-storage = "0.3.1"
+embedded-storage-async = "0.4.1"
 fixed = { version = "1.24.0", features = ["serde"] }
 fixed-macro = "1.2.0"
 futures = { version = "0.3.29", default-features = false, features = [
@@ -79,7 +75,7 @@ log_log = { package = "log", version = "0.4.20" }
 mipidsi = { version = "0.7.1", optional = true }
 num = { version = "0.4.1", default-features = false }
 num_enum = { version = "0.7.1", default-features = false }
-once_cell = { version = "1.18.0", features = [
+once_cell = { version = "1.19.0", features = [
     "atomic-polyfill",
 ], default-features = false }
 packed_struct = { version = "0.10.1", default-features = false }
@@ -88,16 +84,16 @@ panic-reset = "0.1.1"
 phf = { version = "0.11.2", default-features = false }
 pio = "0.2.1"
 pio-proc = "0.2.2"
-portable-atomic = { version = "1.5.1", features = ["critical-section"] }
+portable-atomic = { version = "1.6.0", features = ["critical-section"] }
 postcard = { version = "1.0.8", features = ['experimental-derive'] }
 rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
 rp-binary-info = { git = "https://github.com/rp-rs/rp-binary-info.git", optional = true }
-serde = { version = "1.0.192", default-features = false, features = ["derive"] }
+serde = { version = "1.0.193", default-features = false, features = ["derive"] }
 shared = { path = "../shared" }
 slint = { git = "https://github.com/slint-ui/slint", default-features = false, optional = true }
 static_cell = "2.0.0"
 usbd-hid = "0.6.1"
-usbd-human-interface-device = "0.4.3"
+usbd-human-interface-device = "0.4.4"
 
 [build-dependencies]
 chrono = "0.4.31"

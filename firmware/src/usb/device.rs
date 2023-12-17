@@ -1,8 +1,9 @@
-use embassy_rp::peripherals::USB;
 use embassy_usb::driver::Driver;
 use embassy_usb::{Builder, Config};
 
 use crate::utils;
+
+use super::USBDriver;
 
 pub const MAX_PACKET_SIZE: u16 = 64;
 
@@ -26,7 +27,7 @@ pub fn init_usb<'d, D: Driver<'d>>(driver: D) -> Builder<'d, D> {
 }
 
 #[embassy_executor::task]
-pub async fn run_usb(builder: Builder<'static, embassy_rp::usb::Driver<'static, USB>>) {
+pub async fn run_usb(builder: Builder<'static, USBDriver>) {
     let mut device = builder.build();
     device.run().await;
 }
