@@ -15,8 +15,7 @@ pub mod driver;
 mod glide;
 pub mod regs;
 
-type TrackpadSpi =
-    ExclusiveDevice<Spi<'static, SPI0, Async>, Output<'static, PIN_21>, embassy_time::Delay>;
+type TrackpadSpi = ExclusiveDevice<Spi<'static, SPI0, Async>, Output<'static>, embassy_time::Delay>;
 
 #[allow(clippy::too_many_arguments)]
 pub fn init(

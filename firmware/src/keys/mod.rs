@@ -1,9 +1,6 @@
 use embassy_executor::Spawner;
 use embassy_futures::select::select;
-use embassy_rp::{
-    gpio::{Input, Output},
-    peripherals::{PIN_26, PIN_27, PIN_28, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9},
-};
+use embassy_rp::gpio::{Input, Output};
 use embassy_sync::{
     blocking_mutex::raw::ThreadModeRawMutex, channel::Channel, pubsub::PubSubChannel,
 };
@@ -55,19 +52,8 @@ pub static KEY_EVENTS: PubSubChannel<ThreadModeRawMutex, keyberon::layout::Event
 static KEYS_TO_OTHER_SIDE: Channel<ThreadModeRawMutex, keyberon::layout::Event, 4> = Channel::new();
 
 pub type ScannerInstance<'a> = scan::Scanner<
-    (
-        Input<'a, PIN_4>,
-        Input<'a, PIN_5>,
-        Input<'a, PIN_27>,
-        Input<'a, PIN_26>,
-    ),
-    (
-        Output<'a, PIN_8>,
-        Output<'a, PIN_9>,
-        Output<'a, PIN_7>,
-        Output<'a, PIN_6>,
-        Output<'a, PIN_28>,
-    ),
+    (Input<'a>, Input<'a>, Input<'a>, Input<'a>),
+    (Output<'a>, Output<'a>, Output<'a>, Output<'a>, Output<'a>),
 >;
 
 #[embassy_executor::task]

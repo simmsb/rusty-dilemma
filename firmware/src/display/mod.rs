@@ -43,10 +43,7 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
     let display = mipidsi::Builder::st7789(di)
         .with_display_size(DISPLAY_SIZE.width as _, DISPLAY_SIZE.height as _)
         .with_invert_colors(mipidsi::ColorInversion::Inverted)
-        .init(
-            &mut embassy_time::Delay,
-            None::<embassy_rp::gpio::Output<embassy_rp::gpio::AnyPin>>,
-        )
+        .init(&mut embassy_time::Delay, None::<embassy_rp::gpio::Output>)
         .unwrap();
 
     let buffer_provider = DrawBuffer {

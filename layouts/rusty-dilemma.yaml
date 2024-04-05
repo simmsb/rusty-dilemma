@@ -222,6 +222,41 @@ combos:
   layers:
   - base
 - key_positions:
+  - 0
+  - 1
+  key:
+    tap: ws1
+  layers:
+  - sym
+- key_positions:
+  - 1
+  - 2
+  key:
+    tap: ws2
+  layers:
+  - sym
+- key_positions:
+  - 2
+  - 3
+  key:
+    tap: ws3
+  layers:
+  - sym
+- key_positions:
+  - 3
+  - 4
+  key:
+    tap: ws4
+  layers:
+  - sym
+- key_positions:
+  - 4
+  - 5
+  key:
+    tap: ws5
+  layers:
+  - sym
+- key_positions:
   - 5
   - 6
   key:
@@ -233,6 +268,20 @@ combos:
   - 7
   key:
     tap: Mouse Right
+  layers:
+  - sym
+- key_positions:
+  - 10
+  - 11
+  key:
+    tap: ws6
+  layers:
+  - sym
+- key_positions:
+  - 11
+  - 12
+  key:
+    tap: ws7
   layers:
   - sym
 - key_positions:

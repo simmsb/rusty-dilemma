@@ -7,7 +7,6 @@ layout {
 
 options rusty_dilemma {
   hold_tap_timeout: "400";
-  hold_tap_config: "PermissiveHold";
   hold_tap_interval: "200";
   custom_event: "super::CustomEvent";
 }
@@ -48,27 +47,62 @@ key metax {
 }
 
 key toad_linux {
-  out keyberon: "::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(\"𓆏\", super::UnicodeMode::Linux))";
+  out keyberon: "::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(\"𓆏\"))";
   out keymap_drawer: "𓆏 ";
 }
 
+key ws1 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb1].as_slice())";
+  out keymap_drawer: "ws1";
+}
+
+key ws2 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb2].as_slice())";
+  out keymap_drawer: "ws2";
+}
+
+key ws3 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb3].as_slice())";
+  out keymap_drawer: "ws3";
+}
+
+key ws4 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb4].as_slice())";
+  out keymap_drawer: "ws4";
+}
+
+key ws5 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb5].as_slice())";
+  out keymap_drawer: "ws5";
+}
+
+key ws6 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb6].as_slice())";
+  out keymap_drawer: "ws6";
+}
+
+key ws7 {
+  out keyberon: "::keyberon::action::Action::MultipleKeyCodes(&[::keyberon::key_code::KeyCode::LCtrl, ::keyberon::key_code::KeyCode::Kb7].as_slice())";
+  out keymap_drawer: "ws7";
+}
+
 layer base {
-  'q'        >esc< 'w'         'e'       'r'       't'          'y'         >bspace< 'u'          >del< 'i'    >'/'< 'o'   >'\'< 'p';
-  'a'@lshift       's'         'd'       'f'       'g'          'h'         >'<'<    'j'          >':'< 'k'    >'>'< 'l'         ';'@rshift;
-  'z'@lctrl        'x' >metax< 'c'  >f6< 'v'       'b'          'n'         >'"'<    'm'          >'''< ','    >'_'< '.'         '/'@rctrl;
-                               lalt      tab@lgui  space@[sym]  space@[num]          enter@scroll       ralt;
+  'q'         >esc< 'w'         'e'        'r'            't'               'y'         >bspace< 'u'          >del< 'i'    >'/'< 'o'   >'\'< 'p';
+  'a'@~lshift       's'         'd'        'f'            'g'               'h'         >'<'<    'j'          >':'< 'k'    >'>'< 'l'         ';'@~rshift;
+  'z'@lctrl         'x' >metax< 'c'  >f6<  'v'            'b'               'n'         >'"'<    'm'          >'''< ','    >'_'< '.'         '/'@rctrl;
+                                lalt       tab@lgui       space@[sym]       space@[num]          enter@scroll       ralt;
 }
 
 layer sym {
-  '!'              '@'         '{'       '}'       '|'          '`'         >ml<     '~'          >mr<  '\'          n           '"';
-  '#'@lshift       '$'         '('       ')'       toad_linux   '+'                  '-'                '/'          '*'         '''@rshift;
-  '%'@lctrl        '^'         '['       ']'       n            '&'                  '='                ','          '.'         '_'@rctrl;
-                               n         lalt      space        '='                  n                  n;
+  '!'         >ws1< '@' >ws2<   '{'  >ws3< '}'      >ws4< '|'         >ws5< '`'         >ml<     '~'          >mr<  '\'          n           '"';
+  '#'@~lshift >ws6< '$' >ws7<   '('        ')'            toad_linux        '+'                  '-'                '/'          '*'         '''@~rshift;
+  '%'@lctrl         '^'         '['        ']'            n                 '&'                  '='                ','          '.'         '_'@rctrl;
+                                n          lalt           space             '='                  n                  n;
 }
 
 layer num {
-  '1'              '2'         '3'       '4'       '5'          '6'         >ml<     '7'          >mr<  '8'          '9'         '0';
-  f1@lshift        f2          f3        f4        f5           left                 down               up           right       volup@rshift;
-  f6@lctrl         f7          f8        f9        f10          pgdown               ctrldown           ctrlup       pgup        voldown@rctrl;
-                               n         n         '='          n                    n                  end;
+  '1'               '2'         '3'        '4'            '5'               '6'         >ml<     '7'          >mr<  '8'          '9'         '0';
+  f1@~lshift        f2          f3         f4             f5                left                 down               up           right       volup@~rshift;
+  f6@lctrl          f7          f8         f9             f10               pgdown               ctrldown           ctrlup       pgup        voldown@rctrl;
+                                n          n              '='               n                    n                  end;
 }

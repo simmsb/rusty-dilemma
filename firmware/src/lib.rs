@@ -22,9 +22,8 @@ use core::mem::ManuallyDrop;
 use embassy_executor::Spawner;
 use embassy_rp::bind_interrupts;
 use embassy_rp::dma::Channel;
-use embassy_rp::gpio::Input;
-use embassy_rp::gpio::{Level, Output, Pull};
-use embassy_rp::peripherals::{PIN_17, PIN_19, PIN_29, USB};
+use embassy_rp::gpio::{Input, Level, Output, Pull};
+use embassy_rp::peripherals::{PIN_17, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::usb::Driver;
 use embassy_time::{Duration, Timer};
@@ -65,13 +64,13 @@ pub fn set_status_led(value: Level) {
 
 pub static VERSION: &str = "0.1.0";
 
-fn detect_usb(mut pin: Input<'_, PIN_19>) -> bool {
+fn detect_usb(pin: Input) -> bool {
     let connected = pin.is_high();
     log::info!("Usb connected? {}", connected);
     connected
 }
 
-fn detect_side(mut pin: Input<'_, PIN_29>) -> KeyboardSide {
+fn detect_side(pin: Input) -> KeyboardSide {
     let is_right = pin.is_high();
     let side = if is_right {
         KeyboardSide::Right

@@ -1,18 +1,24 @@
 pub fn chorder() -> super::chord::Chorder {
     dilemma_macros::chords!(
-        [(0, 0), (0, 1)] => [(4, 0)],
-        [(0, 5), (0, 6)] => [(4, 1)],
-        [(0, 6), (0, 7)] => [(4, 2)],
-        [(0, 7), (0, 8)] => [(4, 3)],
-        [(0, 8), (0, 9)] => [(4, 4)],
-        [(1, 5), (1, 6)] => [(4, 5)],
-        [(1, 7), (1, 8)] => [(4, 7)],
-        [(2, 1), (2, 2)] => [(4, 8)],
-        [(2, 2), (2, 3)] => [(4, 9)],
-        [(2, 5), (2, 6)] => [(5, 0)],
         [(2, 6), (2, 7)] => [(5, 1)],
-        [(2, 7), (2, 8)] => [(5, 2)],
+        [(0, 5), (0, 6)] => [(4, 1)],
+        [(1, 7), (1, 8)] => [(4, 7)],
+        [(0, 2), (0, 3)] => [(5, 4)],
+        [(2, 5), (2, 6)] => [(5, 0)],
+        [(1, 1), (1, 2)] => [(5, 8)],
+        [(1, 5), (1, 6)] => [(4, 5)],
+        [(0, 1), (0, 2)] => [(5, 3)],
         [(1, 6), (1, 7)] => [(4, 6)],
+        [(0, 4), (0, 5)] => [(5, 6)],
+        [(0, 3), (0, 4)] => [(5, 5)],
+        [(1, 0), (1, 1)] => [(5, 7)],
+        [(0, 6), (0, 7)] => [(4, 2)],
+        [(0, 8), (0, 9)] => [(4, 4)],
+        [(2, 2), (2, 3)] => [(4, 9)],
+        [(0, 0), (0, 1)] => [(4, 0)],
+        [(0, 7), (0, 8)] => [(4, 3)],
+        [(2, 7), (2, 8)] => [(5, 2)],
+        [(2, 1), (2, 2)] => [(4, 8)],
     )
 }
 pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
@@ -34,7 +40,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 timeout: 400,
                 hold: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::LShift),
                 tap: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::A),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
             ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::S),
@@ -49,7 +55,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 timeout: 400,
                 hold: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::RShift),
                 tap: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::SColon),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
         ],
@@ -240,7 +246,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                     ]
                     .as_slice(),
                 ),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
             ::keyberon::action::Action::MultipleKeyCodes(
@@ -264,9 +270,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 ]
                 .as_slice(),
             ),
-            ::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode(
-                "𓆏"
-            )),
+            ::keyberon::action::Action::Custom(super::CustomEvent::TypeUnicode("𓆏")),
             ::keyberon::action::Action::MultipleKeyCodes(
                 &[
                     ::keyberon::key_code::KeyCode::LShift,
@@ -287,7 +291,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 timeout: 400,
                 hold: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::RShift),
                 tap: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::Quote),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
         ],
@@ -352,7 +356,13 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
             ::keyberon::action::Action::NoOp,
         ],
         [
-            ::keyberon::action::Action::NoOp,
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb1,
+                ]
+                .as_slice(),
+            ),
             ::keyberon::action::Action::Custom(super::CustomEvent::MouseLeft),
             ::keyberon::action::Action::Custom(super::CustomEvent::MouseRight),
             ::keyberon::action::Action::NoOp,
@@ -367,12 +377,48 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
             ::keyberon::action::Action::NoOp,
             ::keyberon::action::Action::NoOp,
             ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
-            ::keyberon::action::Action::NoOp,
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb2,
+                ]
+                .as_slice(),
+            ),
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb3,
+                ]
+                .as_slice(),
+            ),
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb4,
+                ]
+                .as_slice(),
+            ),
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb5,
+                ]
+                .as_slice(),
+            ),
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb6,
+                ]
+                .as_slice(),
+            ),
+            ::keyberon::action::Action::MultipleKeyCodes(
+                &[
+                    ::keyberon::key_code::KeyCode::LCtrl,
+                    ::keyberon::key_code::KeyCode::Kb7,
+                ]
+                .as_slice(),
+            ),
             ::keyberon::action::Action::NoOp,
         ],
     ],
@@ -394,7 +440,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 timeout: 400,
                 hold: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::LShift),
                 tap: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::F1),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
             ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::F2),
@@ -409,7 +455,7 @@ pub static LAYERS: ::keyberon::layout::Layers<10, 6, 3, super::CustomEvent> = [
                 timeout: 400,
                 hold: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::RShift),
                 tap: ::keyberon::action::Action::KeyCode(::keyberon::key_code::KeyCode::VolUp),
-                config: ::keyberon::action::HoldTapConfig::PermissiveHold,
+                config: ::keyberon::action::HoldTapConfig::HoldOnOtherKeyPress,
                 tap_hold_interval: 200,
             }),
         ],
