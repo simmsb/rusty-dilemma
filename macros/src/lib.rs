@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    bracketed, parenthesized, parse::Parse, parse_macro_input, punctuated::Punctuated, token, LitInt,
+    bracketed, parenthesized, parse::Parse, parse_macro_input, punctuated::Punctuated, token,
+    LitInt,
 };
 
 #[allow(unused)]
@@ -114,7 +115,10 @@ pub fn chords(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
     let mut key_chord_map_p = phf_codegen::Map::new();
     for (key, val) in key_chord_map {
-        key_chord_map_p.entry([key.0, key.1], &format!("{{ static A: &[usize] = &{:?}; A }}", val));
+        key_chord_map_p.entry(
+            [key.0, key.1],
+            &format!("{{ static A: &[usize] = &{:?}; A }}", val),
+        );
     }
     let key_chord_map_t = key_chord_map_p
         .build()

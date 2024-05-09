@@ -138,7 +138,9 @@ pub fn init(
 ) {
     spawner.must_spawn(metrics_updater(bl, pwm));
 
-    spawn_core1(core1, unsafe { &mut *core::ptr::addr_of_mut!(CORE1_STACK) }, move || {
-        run(spi, clk, mosi, cs, dc)
-    });
+    spawn_core1(
+        core1,
+        unsafe { &mut *core::ptr::addr_of_mut!(CORE1_STACK) },
+        move || run(spi, clk, mosi, cs, dc),
+    );
 }
