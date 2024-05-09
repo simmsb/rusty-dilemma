@@ -1,14 +1,14 @@
 [workspace]
-resolver = "2"
-members = ["firmware", "shared", "bootloader"]
 exclude = ["macros"]
+members = ["firmware", "shared", "bootloader"]
+resolver = "2"
 
 [patch.crates-io]
-embassy-sync = { git = "https://github.com/embassy-rs/embassy" }
 embassy-embedded-hal = { git = "https://github.com/embassy-rs/embassy" }
 embassy-executor = { git = "https://github.com/embassy-rs/embassy" }
 embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy" }
 embassy-time = { git = "https://github.com/embassy-rs/embassy" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
 embassy-usb-driver = { git = "https://github.com/embassy-rs/embassy" }
@@ -21,9 +21,9 @@ codegen-units = 1
 debug = 2
 debug-assertions = true # <-
 incremental = false
+lto = 'thin'
 opt-level = 2           # <-
 overflow-checks = true  # <-
-lto = 'thin'
 
 [profile.release]
 codegen-units = 1

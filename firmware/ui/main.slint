@@ -58,7 +58,8 @@ component Value {
 
 export component MainWindow inherits Window {
     in property <int> keypresses;
-    in property <int> trackpad-distance;
+    in property <int> ticks;
+    in property <int> cpu-util;
 
     width: 240px;
     height: 240px;
@@ -66,7 +67,8 @@ export component MainWindow inherits Window {
 
     private property <[{title: string, value: string}]> values: [
         {title: "Keystrokes", value: keypresses},
-        {title: "Trackpad distance", value: trackpad-distance},
+        {title: "Ticks", value: ticks},
+        {title: "CPU Util", value: cpu-util},
     ];
 
     private property <length> item-padding: 20px;

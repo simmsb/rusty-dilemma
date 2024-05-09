@@ -52,7 +52,7 @@ async fn trackpad_task(spi: TrackpadSpi) {
         return;
     }
 
-    let mut ticker = Ticker::every(Duration::from_hz(125));
+    let mut ticker = Ticker::every(Duration::from_hz(250));
 
     loop {
         match trackpad.get_report().await {

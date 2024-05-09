@@ -1,5 +1,8 @@
+use core::{arch::asm, marker::PhantomData};
+
 #[cfg(feature = "probe")]
 pub use defmt as log;
+use embassy_executor::Spawner;
 use embassy_time::{Duration, Instant, Timer};
 
 #[cfg(not(feature = "probe"))]
@@ -61,5 +64,67 @@ impl Ticker {
         Timer::at(next_tick).await;
 
         self.last_tick = next_tick;
+    }
+}
+
+pub mod executor_metrics {
+    use portable_atomic::{AtomicU64, AtomicUsize};
+
+    pub static WAKEUPS: AtomicUsize = AtomicUsize::new(0);
+    pub static AWAKE: AtomicU64 = AtomicU64::new(0);
+    pub static SLEEP: AtomicU64 = AtomicU64::new(0);
+}
+
+pub struct MeasuringExecutor {
+    inner: embassy_executor::raw::Executor,
+    not_send: PhantomData<*mut ()>,
+    samples: heapless::HistoryBuffer<(u16, u16), 8>,
+}
+
+const THREAD_PENDER: usize = usize::MAX;
+
+impl MeasuringExecutor {
+    pub fn new() -> Self {
+        Self {
+            inner: embassy_executor::raw::Executor::new(THREAD_PENDER as *mut ()),
+            not_send: PhantomData,
+            samples: heapless::HistoryBuffer::new(),
+        }
+    }
+
+    pub fn run(&'static mut self, init: impl FnOnce(Spawner)) -> ! {
+        init(self.inner.spawner());
+
+        loop {
+            let start = embassy_time::Instant::now();
+
+            unsafe {
+                self.inner.poll();
+            }
+
+            let finished = embassy_time::Instant::now();
+
+            unsafe {
+                asm!("wfe");
+            }
+
+            let now = embassy_time::Instant::now();
+
+            let awake = finished.as_ticks().saturating_sub(start.as_ticks()) as u16;
+            let sleeping = now.as_ticks().saturating_sub(finished.as_ticks()) as u16;
+
+            self.samples.write((awake, sleeping));
+
+            let (awake, sleeping) = self.samples.iter().fold(
+                (0, 0),
+                |(total_awake, total_asleep), (awake, sleeping)| {
+                    (total_awake + *awake as u64, total_asleep + *sleeping as u64)
+                },
+            );
+
+            executor_metrics::WAKEUPS.add(1, portable_atomic::Ordering::Relaxed);
+            executor_metrics::AWAKE.add(awake, portable_atomic::Ordering::Relaxed);
+            executor_metrics::SLEEP.add(sleeping, portable_atomic::Ordering::Release);
+        }
     }
 }

@@ -115,7 +115,7 @@ async fn send_events_to_other_side() {
             Event::Press(x, y) => DeviceToDevice::KeyPress(x, y),
             Event::Release(x, y) => DeviceToDevice::KeyRelease(x, y),
         };
-        interboard::send_msg(reliable_msg(evt)).await;
+        interboard::send_msg(reliable_msg(evt), 1).await;
     }
 }
 
@@ -175,7 +175,7 @@ async fn key_event_processor() {
 
                     let evt = DeviceToDevice::SyncMouseState(mouse_state);
 
-                    interboard::send_msg(reliable_msg(evt.clone())).await;
+                    interboard::send_msg(reliable_msg(evt.clone()), 1).await;
                     msg_bus_pub.publish(evt).await;
                 }
             }

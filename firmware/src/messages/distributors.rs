@@ -19,7 +19,7 @@ pub async fn from_usb_distributor() {
             handle_from_host(msg.msg.clone()).await;
         }
         if msg.targets_side(side::get_other_side()) {
-            interboard::send_msg(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg))).await;
+            interboard::send_msg(reliable_msg(DeviceToDevice::ForwardedFromHost(msg.msg)), 2).await;
         }
     }
 }
@@ -41,7 +41,7 @@ pub async fn from_other_side_distributor() {
         match msg {
             DeviceToDevice::Ping => {
                 // log::info!("Got a ping");
-                interboard::send_msg(reliable_msg(DeviceToDevice::Pong)).await;
+                interboard::send_msg(reliable_msg(DeviceToDevice::Pong), 3).await;
             }
             DeviceToDevice::Pong => {
                 // log::info!("Got a pong");
@@ -78,7 +78,7 @@ pub async fn send_to_host(
     } else if provenance == MessageProvenance::Origin {
         let msg = DeviceToDevice::ForwardedToHost(msg);
         let msg = TransmittedMessage { msg, timeout };
-        interboard::send_msg(msg).await;
+        interboard::send_msg(msg, 3).await;
     }
 }
 
@@ -97,7 +97,7 @@ pub fn try_send_to_host(
     } else if provenance == MessageProvenance::Origin {
         let msg = DeviceToDevice::ForwardedToHost(msg);
         let msg = TransmittedMessage { msg, timeout };
-        interboard::try_send_msg(msg).ok()
+        interboard::try_send_msg(msg, 3).ok()
     } else {
         // if we get here it means both sides have no usb connection
         Some(())

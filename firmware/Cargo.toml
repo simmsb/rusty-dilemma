@@ -73,6 +73,7 @@ futures = { version = "0.3.30", default-features = false, features = [
 heapless = "0.8.0"
 itertools = { version = "0.12.1", default-features = false }
 keyberon = { git = "https://github.com/TeXitoi/keyberon", version = "0.2.0" }
+libm = { version = "0.2.8", optional = true }
 log_log = { package = "log", version = "0.4.21" }
 mipidsi = { git = "https://github.com/almindor/mipidsi", optional = true }
 num = { version = "0.4.3", default-features = false }
@@ -96,19 +97,17 @@ slint = { git = "https://github.com/slint-ui/slint", default-features = false, o
 static_cell = { version = "2.1.0", features = ["nightly"] }
 usbd-hid = "0.7.0"
 usbd-human-interface-device = "0.5.0"
-libm = { version = "0.2.8", optional = true }
 
 [build-dependencies]
 chrono = "0.4.38"
 slint-build = { git = "https://github.com/slint-ui/slint", optional = true }
 
 [features]
-probe = ["defmt",
-      "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]
-binaryinfo = ["rp-binary-info"]
 alloc = ["embedded-alloc"]
-display-slint = ["slint", "slint/libm", "slint/compat-1-2", "slint/renderer-software", "slint/unsafe-single-threaded", "slint-build", "display-interface", "alloc", "mipidsi", "embedded-graphics"]
+binaryinfo = ["rp-binary-info"]
 bootloader = []
-m2 = []
 
 default = ["display-slint", "bootloader"]
+display-slint = ["slint", "slint/libm", "slint/compat-1-2", "slint/renderer-software", "slint/unsafe-single-threaded", "slint-build", "display-interface", "alloc", "mipidsi", "embedded-graphics"]
+m2 = []
+probe = ["defmt", "defmt-rtt", "panic-probe", "shared/defmt", "embassy-embedded-hal/defmt", "embassy-sync/defmt", "embassy-executor/defmt", "embassy-time/defmt", "embassy-time/defmt-timestamp-uptime", "embassy-rp/defmt", "embassy-usb/defmt", "postcard/use-defmt"]

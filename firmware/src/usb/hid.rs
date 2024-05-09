@@ -198,9 +198,10 @@ pub fn init(spawner: &Spawner, builder: &mut Builder<'static, USBDriver>) {
 
 pub async fn send_mouse_hid_to_host(report: shared::hid::MouseReport) {
     if side::this_side_has_usb() {
-        publish_mouse_report(report.clone()).await;
+        publish_mouse_report(report).await;
+    } else {
+        let msg = DeviceToDevice::ForwardedToHostMouse(report);
+        let msg = low_latency_msg(msg);
+        interboard::send_msg(msg, 0).await;
     }
-    let msg = DeviceToDevice::ForwardedToHostMouse(report);
-    let msg = low_latency_msg(msg);
-    interboard::send_msg(msg).await;
 }

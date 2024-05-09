@@ -20,7 +20,7 @@ struct EventSenderImpl<'e, T> {
 
 pub trait EventSender<T> {
     async fn send(&self, cmd: TransmittedMessage<T>, id: u8) {
-        let TransmittedMessage { msg, timeout } = cmd;
+        let TransmittedMessage { msg, timeout, .. } = cmd;
         if let Some(timeout) = timeout {
             let _ = self.send_reliable(msg, timeout, id).await;
         } else {
@@ -207,12 +207,7 @@ pub async fn eventer<Sent, Received, TX, RX, FnRx, FnTx, FnRxFut, FnTxFut>(
     let sender_proc = async {
         let mut id: u8 = 0;
         loop {
-            let TransmittedMessage { msg, timeout } = fn_rx().await;
-            if let Some(timeout) = timeout {
-                let _ = sender.send_reliable(msg, timeout, id).await;
-            } else {
-                let _ = sender.send_unreliable(msg, id).await;
-            }
+            sender.send(fn_rx().await, id).await;
             id += 1;
             id &= 0b1111111;
         }

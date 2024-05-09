@@ -118,7 +118,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
 
             // reporo the animation to the other side
             let cmd = DeviceToDevice::SetAnimation(animation.animation.construct_sync());
-            interboard::send_msg(reliable_msg(cmd)).await;
+            interboard::send_msg(reliable_msg(cmd), 3).await;
 
             Some((Instant::now(), animation))
         } else {
@@ -139,7 +139,7 @@ pub async fn rgb_runner(mut driver: Ws2812<'static, PIO1, 0, { NUM_LEDS as usize
             last_sync = Instant::now();
 
             let cmd = DeviceToDevice::SyncAnimation(current.animation.construct_sync());
-            interboard::send_msg(unreliable_msg(cmd)).await;
+            interboard::send_msg(unreliable_msg(cmd), 3).await;
         }
 
         if let Ok(cmd) = RGB_CMD_CHANNEL.try_receive() {

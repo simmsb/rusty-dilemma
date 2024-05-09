@@ -66,7 +66,7 @@ async fn animation_randomizer() {
         let sync = anim.construct_sync();
 
         send_cmd(Command::SetNextAnimation(sync.clone())).await;
-        interboard::send_msg(reliable_msg(DeviceToDevice::SetAnimation(sync))).await;
+        interboard::send_msg(reliable_msg(DeviceToDevice::SetAnimation(sync)), 3).await;
     }
 }
 

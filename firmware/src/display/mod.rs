@@ -64,9 +64,17 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
             let window = Rc::clone(&window);
             move || {
                 window.set_keypresses(KEYS_PRESSED.load(portable_atomic::Ordering::Relaxed) as i32);
-                window.set_trackpad_distance(
-                    TRACKPAD_DISTANCE.load(portable_atomic::Ordering::Relaxed) as i32,
+                window.set_ticks(
+                    crate::utils::executor_metrics::WAKEUPS.load(portable_atomic::Ordering::Relaxed)
+                        as i32,
                 );
+
+                let awake = crate::utils::executor_metrics::AWAKE.load(portable_atomic::Ordering::Relaxed);
+                let sleep = crate::utils::executor_metrics::SLEEP.load(portable_atomic::Ordering::Relaxed);
+
+                let percentage_awake = 100 - ((100 * sleep) / (sleep + awake + 1));
+
+                window.set_cpu_util(percentage_awake as i32);
             }
         },
     );
@@ -77,7 +85,6 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
 }
 
 static KEYS_PRESSED: AtomicUsize = AtomicUsize::new(0);
-static TRACKPAD_DISTANCE: AtomicUsize = AtomicUsize::new(0);
 
 #[embassy_executor::task]
 async fn metrics_updater(bl: PIN_13, pwm: PWM_SLICE6) {
@@ -92,7 +99,6 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_SLICE6) {
     loop {
         let Metrics {
             keys_pressed,
-            trackpad_distance,
         } = match embassy_time::with_timeout(Duration::from_secs(30), sub.next_message_pure()).await
         {
             Ok(m) => m,
@@ -119,7 +125,6 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_SLICE6) {
         };
 
         KEYS_PRESSED.store(keys_pressed.0, portable_atomic::Ordering::Release);
-        TRACKPAD_DISTANCE.store(trackpad_distance.0, portable_atomic::Ordering::Release);
     }
 }
 

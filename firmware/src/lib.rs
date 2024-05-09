@@ -104,7 +104,7 @@ pub async fn main(spawner: Spawner) {
             post_div2: 2,
         });
     }
-    let p = embassy_rp::init(Default::default());
+    let p = embassy_rp::init(config);
 
     set_status_led(Level::High);
 
