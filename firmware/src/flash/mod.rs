@@ -52,7 +52,7 @@ pub async fn set<T: core::any::Any + serde::Serialize>(value: &T) -> Option<()> 
 pub async fn get<T: core::any::Any + serde::de::DeserializeOwned>() -> Option<T> {
     let mut buf = [0u8; ekv::config::MAX_VALUE_SIZE];
 
-    let mut tx = DB.get().unwrap().read_transaction().await;
+    let tx = DB.get().unwrap().read_transaction().await;
 
     // convert the typeid of the key to a byte array
     let key = unsafe {

@@ -5,7 +5,7 @@ use embedded_graphics::{
     pixelcolor::Rgb565,
     prelude::{DrawTarget, RgbColor},
 };
-use embedded_hal_0_2::digital::v2::OutputPin;
+use embedded_hal_1::digital::OutputPin;
 use slint::platform::software_renderer as renderer;
 
 use super::{draw_buffer::DrawBuffer, DISPLAY_SIZE};

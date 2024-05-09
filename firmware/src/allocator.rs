@@ -6,9 +6,6 @@ static ALLOCATOR: embedded_alloc::Heap = embedded_alloc::Heap::empty();
 
 pub fn init() {
     unsafe {
-        ALLOCATOR.init(
-            &mut HEAP as *const u8 as usize,
-            core::mem::size_of_val(&HEAP),
-        );
+        ALLOCATOR.init(core::ptr::addr_of!(HEAP) as *const u8 as usize, HEAP_SIZE);
     }
 }

@@ -4,10 +4,8 @@
 use core::sync::atomic::AtomicU32;
 
 use cortex_m_rt::{entry, exception};
-use embassy_rp::{
-    gpio::{Level, Output},
-    rom_data::reset_to_usb_boot,
-};
+use rp2040_hal::{pac, rom_data::reset_to_usb_boot, Sio};
+use embedded_hal::digital::OutputPin;
 
 #[cfg(feature = "binaryinfo")]
 pub mod binary_info;
@@ -40,10 +38,16 @@ unsafe fn check_bootloader() {
     reset_to_usb_boot(1 << 17, 0);
 }
 
+
+pub const FLASH_BASE: *const u32 = 0x10000000 as _;
+
 #[entry]
 fn main() -> ! {
-    let p_ = embassy_rp::init(Default::default());
-    let mut s = Output::new(p_.PIN_17, Level::High);
+    let mut pac = pac::Peripherals::take().unwrap();
+    let sio = Sio::new(pac.SIO);
+    let pins = rp2040_hal::gpio::Pins::new(pac.IO_BANK0, pac.PADS_BANK0, sio.gpio_bank0, &mut pac.RESETS);
+    let mut s = pins.gpio17.into_push_pull_output();
+    s.set_high().unwrap();
 
     unsafe {
         check_bootloader();
@@ -51,9 +55,9 @@ fn main() -> ! {
 
     unsafe {
         let p = cortex_m::Peripherals::steal();
-        let start = embassy_rp::flash::FLASH_BASE as u32
+        let start = FLASH_BASE as u32
             + &__bootloader_application_start as *const u32 as u32;
-        s.set_low();
+        s.set_low().unwrap();
         p.SCB.vtor.write(start);
         cortex_m::asm::bootload(start as *const u32);
     }

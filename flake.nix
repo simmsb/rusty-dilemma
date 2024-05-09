@@ -33,7 +33,7 @@
         let
           arm-toolchain = fenix.packages.${system}.fromToolchainFile {
             file = ./rust-toolchain.toml;
-            sha256 = "sha256-rKWLtVt/HKraS2WoyT3Wacc/yIhHZmFJnslU4Q0DMGI=";
+            sha256 = "sha256-Aoc5PJYT5h7tE6joA5+6yusOBCzQxSf/18hm7PDmZCI=";
           };
           native-toolchain = fenix.packages.${system}.complete.withComponents [
             "cargo"
@@ -80,13 +80,13 @@
         rec
         {
           devShells.default = pkgs.mkShell {
-            inputsFrom = [ (firmware { args = "--lib"; profile = "dev"; }) ];
+            # inputsFrom = [ (firmware { args = "--lib"; profile = "dev"; }) ];
             nativeBuildInputs = with pkgs; [
-              fenix.packages.${system}.rust-analyzer
-              cargo-binutils
-              probe-rs
+              # fenix.packages.${system}.rust-analyzer
+              # cargo-binutils
+              # probe-rs
               picotool
-              pkgsCross.arm-embedded.buildPackages.binutils
+              # pkgsCross.arm-embedded.buildPackages.binutils
             ];
           };
           packages.default = firmware { args = "--lib"; profile = "dev"; };

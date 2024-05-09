@@ -1,11 +1,11 @@
 flash:
-  cargo strip --bin binary --release -Zbuild-std=core,alloc,panic_abort -Zbuild-std-features=panic_immediate_abort -- --strip-all -o target/binary.elf
+  cargo strip --bin binary --release -- --strip-all -o target/binary.elf
   echo "Binary size is $(ls -lah target/binary.elf)"
   until picotool load -f ./target/binary.elf; do echo "trying again"; sleep 1; done
   picotool reboot
 
 flash-bl:
-  cargo build --release -Zbuild-std=core,alloc,panic_abort -Zbuild-std-features=panic_immediate_abort
+  cargo build --release
   cp ./target/thumbv6m-none-eabi/release/boot ./target/boot.elf
   until picotool load -f ./target/boot.elf; do echo "trying again"; sleep 1; done
 

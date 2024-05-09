@@ -11,6 +11,7 @@ embassy-futures = { git = "https://github.com/embassy-rs/embassy" }
 embassy-rp = { git = "https://github.com/embassy-rs/embassy" }
 embassy-time = { git = "https://github.com/embassy-rs/embassy" }
 embassy-usb = { git = "https://github.com/embassy-rs/embassy" }
+embassy-usb-driver = { git = "https://github.com/embassy-rs/embassy" }
 
 # [patch."https://github.com/embassy-rs/ekv"]
 # ekv = { git = "https://github.com/simmsb/ekv" }

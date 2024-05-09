@@ -1,8 +1,6 @@
 use embassy_usb::driver::Driver;
 use embassy_usb::{Builder, Config};
 
-use crate::utils;
-
 use super::USBDriver;
 
 pub const MAX_PACKET_SIZE: u16 = 64;
@@ -18,11 +16,10 @@ pub fn init_usb<'d, D: Driver<'d>>(driver: D) -> Builder<'d, D> {
     Builder::new(
         driver,
         config,
-        &mut utils::singleton!([0; 256])[..],
-        &mut utils::singleton!([0; 256])[..],
-        &mut utils::singleton!([0; 256])[..],
-        &mut utils::singleton!([0; 256])[..],
-        &mut utils::singleton!([0; 128])[..],
+        static_cell::make_static!([0; 256]),
+        static_cell::make_static!([0; 256]),
+        static_cell::make_static!([0; 256]),
+        static_cell::make_static!([0; 256]),
     )
 }
 

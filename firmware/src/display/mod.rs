@@ -4,7 +4,7 @@ use alloc::{boxed::Box, rc::Rc};
 use embassy_executor::Spawner;
 use embassy_rp::{
     multicore::{spawn_core1, Stack},
-    peripherals::{CORE1, PIN_11, PIN_12, PIN_13, PIN_22, PIN_23, PWM_CH6, SPI0},
+    peripherals::{CORE1, PIN_11, PIN_12, PIN_13, PIN_22, PIN_23, PWM_SLICE6, SPI0},
     spi::Spi,
 };
 use embassy_time::{Duration, Timer};
@@ -36,14 +36,14 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
     let cs = embassy_rp::gpio::Output::new(cs, embassy_rp::gpio::Level::Low);
 
     let spi = Spi::new_blocking_txonly(spi, clk, mosi, config);
-    let spi = ExclusiveDevice::new(spi, cs, embassy_time::Delay);
+    let spi = ExclusiveDevice::new(spi, cs, embassy_time::Delay).unwrap();
 
     let di = display_interface::SPIInterfaceNoCS::new(spi, dc);
 
-    let display = mipidsi::Builder::st7789(di)
-        .with_display_size(DISPLAY_SIZE.width as _, DISPLAY_SIZE.height as _)
-        .with_invert_colors(mipidsi::ColorInversion::Inverted)
-        .init(&mut embassy_time::Delay, None::<embassy_rp::gpio::Output>)
+    let display = mipidsi::Builder::new(mipidsi::models::ST7789, di)
+        .display_size(DISPLAY_SIZE.width as _, DISPLAY_SIZE.height as _)
+        .invert_colors(mipidsi::options::ColorInversion::Inverted)
+        .init(&mut embassy_time::Delay)
         .unwrap();
 
     let buffer_provider = DrawBuffer {
@@ -80,7 +80,7 @@ static KEYS_PRESSED: AtomicUsize = AtomicUsize::new(0);
 static TRACKPAD_DISTANCE: AtomicUsize = AtomicUsize::new(0);
 
 #[embassy_executor::task]
-async fn metrics_updater(bl: PIN_13, pwm: PWM_CH6) {
+async fn metrics_updater(bl: PIN_13, pwm: PWM_SLICE6) {
     let mut sub = METRIC_UPDATES.subscriber().unwrap();
     let mut pwm_cfg = embassy_rp::pwm::Config::default();
     pwm_cfg.top = 256;
@@ -134,11 +134,11 @@ pub fn init(
     cs: PIN_12,
     dc: PIN_11,
     bl: PIN_13,
-    pwm: PWM_CH6,
+    pwm: PWM_SLICE6,
 ) {
     spawner.must_spawn(metrics_updater(bl, pwm));
 
-    spawn_core1(core1, unsafe { &mut CORE1_STACK }, move || {
+    spawn_core1(core1, unsafe { &mut *core::ptr::addr_of_mut!(CORE1_STACK) }, move || {
         run(spi, clk, mosi, cs, dc)
     });
 }

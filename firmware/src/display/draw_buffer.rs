@@ -1,7 +1,7 @@
 use core::convert::Infallible;
 
-use embedded_hal_0_2 as hal;
-use hal::digital::v2::OutputPin;
+use embedded_hal_1 as hal;
+use hal::digital::OutputPin;
 use slint::platform::software_renderer::LineBufferProvider;
 
 use super::TargetPixel;

@@ -3,6 +3,7 @@
 #![feature(
     iter_repeat_n,
     type_alias_impl_trait,
+    impl_trait_in_assoc_type,
     trait_alias,
     maybe_uninit_uninit_array,
     const_maybe_uninit_uninit_array,
@@ -28,6 +29,7 @@ use embassy_rp::pio::Pio;
 use embassy_rp::usb::Driver;
 use embassy_time::{Duration, Timer};
 use shared::side::KeyboardSide;
+
 
 #[cfg(not(feature = "probe"))]
 use panic_reset as _;
@@ -182,7 +184,7 @@ pub async fn main(spawner: Spawner) {
         {
             display::init(
                 &spawner, p.CORE1, p.SPI0, p.PIN_22, p.PIN_23, p.PIN_12, p.PIN_11, p.PIN_13,
-                p.PWM_CH6,
+                p.PWM_SLICE6,
             );
         }
     }

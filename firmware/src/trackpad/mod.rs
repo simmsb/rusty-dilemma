@@ -31,7 +31,8 @@ pub fn init(
     let mut config = spi::Config::default();
     config.phase = spi::Phase::CaptureOnSecondTransition;
     let spi = Spi::new(spi, clk, mosi, miso, tx_dma, rx_dma, config);
-    let spi = ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::Low), embassy_time::Delay);
+    let spi =
+        ExclusiveDevice::new(spi, Output::new(cs, gpio::Level::Low), embassy_time::Delay).unwrap();
 
     spawner.must_spawn(trackpad_task(spi));
 }
