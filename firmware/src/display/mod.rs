@@ -69,8 +69,10 @@ fn run(spi: SPI0, clk: PIN_22, mosi: PIN_23, cs: PIN_12, dc: PIN_11) -> ! {
                         as i32,
                 );
 
-                let awake = crate::utils::executor_metrics::AWAKE.load(portable_atomic::Ordering::Relaxed);
-                let sleep = crate::utils::executor_metrics::SLEEP.load(portable_atomic::Ordering::Relaxed);
+                let awake =
+                    crate::utils::executor_metrics::AWAKE.load(portable_atomic::Ordering::Relaxed);
+                let sleep =
+                    crate::utils::executor_metrics::SLEEP.load(portable_atomic::Ordering::Relaxed);
 
                 let percentage_awake = 100 - ((100 * sleep) / (sleep + awake + 1));
 
@@ -97,9 +99,11 @@ async fn metrics_updater(bl: PIN_13, pwm: PWM_SLICE6) {
     metrics::request_sync().await;
 
     loop {
-        let Metrics {
-            keys_pressed,
-        } = match embassy_time::with_timeout(Duration::from_secs(30), sub.next_message_pure()).await
+        let Metrics { keys_pressed } = match embassy_time::with_timeout(
+            Duration::from_secs(30),
+            sub.next_message_pure(),
+        )
+        .await
         {
             Ok(m) => m,
             Err(_e) => {

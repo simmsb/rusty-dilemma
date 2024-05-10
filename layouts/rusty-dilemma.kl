@@ -87,22 +87,22 @@ key ws7 {
 }
 
 layer base {
-  'q'         >esc< 'w'         'e'        'r'            't'               'y'         >bspace< 'u'          >del< 'i'    >'/'< 'o'   >'\'< 'p';
-  'a'@~lshift       's'         'd'        'f'            'g'               'h'         >'<'<    'j'          >':'< 'k'    >'>'< 'l'         ';'@~rshift;
-  'z'@lctrl         'x' >metax< 'c'  >f6<  'v'            'b'               'n'         >'"'<    'm'          >'''< ','    >'_'< '.'         '/'@rctrl;
-                                lalt       tab@lgui       space@[sym]       space@[num]          enter@scroll       ralt;
+  'q'              >esc< 'w'         'e'        'r'            't'               'y'         >bspace< 'u'          >del< 'i'    >'/'< 'o'   >'\'< 'p';
+  'a'@~[200]lshift       's'         'd'        'f'            'g'               'h'         >'<'<    'j'          >':'< 'k'    >'>'< 'l'         ';'@~[200]rshift;
+  'z'@~[200]lctrl        'x' >metax< 'c'  >f6<  'v'            'b'               'n'         >'"'<    'm'          >'''< ','    >'_'< '.'         '/'@~[200]rctrl;
+                                     lalt       tab@lgui       space@[sym]       space@[num]          enter@scroll       ralt;
 }
 
 layer sym {
-  '!'         >ws1< '@' >ws2<   '{'  >ws3< '}'      >ws4< '|'         >ws5< '`'         >ml<     '~'          >mr<  '\'          n           '"';
-  '#'@~lshift >ws6< '$' >ws7<   '('        ')'            toad_linux        '+'                  '-'                '/'          '*'         '''@~rshift;
-  '%'@lctrl         '^'         '['        ']'            n                 '&'                  '='                ','          '.'         '_'@rctrl;
-                                n          lalt           space             '='                  n                  n;
+  '!'              >ws1< '@' >ws2<   '{'  >ws3< '}'      >ws4< '|'         >ws5< '`'         >ml<     '~'          >mr<  '\'          n           '"';
+  '#'@~[200]lshift >ws6< '$' >ws7<   '('        ')'            toad_linux        '+'                  '-'                '/'          '*'         '''@~[200]rshift;
+  '%'@~[200]lctrl        '^'         '['        ']'            n                 '&'                  '='                ','          '.'         '_'@~[200]rctrl;
+                                     n          lalt           space             '='                  n                  n;
 }
 
 layer num {
-  '1'               '2'         '3'        '4'            '5'               '6'         >ml<     '7'          >mr<  '8'          '9'         '0';
-  f1@~lshift        f2          f3         f4             f5                left                 down               up           right       volup@~rshift;
-  f6@lctrl          f7          f8         f9             f10               pgdown               ctrldown           ctrlup       pgup        voldown@rctrl;
-                                n          n              '='               n                    n                  end;
+  '1'                    '2'         '3'        '4'            '5'               '6'         >ml<     '7'          >mr<  '8'          '9'         '0';
+  f1@~[200]lshift        f2          f3         f4             f5                left                 down               up           right       volup@~[200]rshift;
+  f6@~[200]lctrl         f7          f8         f9             f10               pgdown               ctrldown           ctrlup       pgup        voldown@~[200]rctrl;
+                                     n          n              '='               n                    n                  end;
 }
